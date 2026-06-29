@@ -1,0 +1,131 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-serif: "Georgia", "Times New Roman", serif;
+
+  /* Light / paper editorial palette */
+  --color-paper: #ffffff;
+  --color-cream: #f7f4ee;
+  --color-cream-deep: #ece7dc;
+  --color-line: #e4dfd3;
+  --color-ink: #1b1916;
+  --color-ink-soft: #514c43;
+  --color-ink-faint: #8c8678;
+  --color-accent: #b5531d;
+  --color-accent-soft: #f3e4d7;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  font-size: 18px;
+}
+
+@media (max-width: 640px) {
+  html {
+    font-size: 17px;
+  }
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100svh;
+}
+
+body {
+  background: linear-gradient(180deg, #ffffff 0%, #faf7f1 100%);
+  background-attachment: fixed;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Vinyl rotation --- */
+@keyframes vinyl-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.vinyl-disc {
+  will-change: transform;
+}
+
+.vinyl-disc[data-spin="playing"] {
+  animation: vinyl-spin 4s linear infinite;
+}
+
+/* Paused keeps current angle instead of resetting. */
+.vinyl-disc[data-spin="paused"] {
+  animation: vinyl-spin 4s linear infinite;
+  animation-play-state: paused;
+}
+
+.vinyl-disc[data-spin="idle"],
+.vinyl-disc[data-spin="ready"],
+.vinyl-disc[data-spin="ended"] {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vinyl-disc[data-spin="playing"],
+  .vinyl-disc[data-spin="paused"] {
+    animation: none;
+  }
+}
+
+/* --- Staggered card entrance ("촤라락") --- */
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cascade > * {
+  opacity: 0;
+}
+
+.cascade[data-open="true"] > * {
+  animation: card-in 380ms ease both;
+}
+
+/* --- Inline player reveal --- */
+@keyframes player-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.player-reveal {
+  animation: player-in 320ms ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cascade > *,
+  .cascade[data-open="true"] > * {
+    animation: none;
+    opacity: 1;
+  }
+  .player-reveal {
+    animation: none;
+  }
+}
