@@ -8,7 +8,7 @@ interface LoginModalProps {
 }
 
 const field =
-  "rounded-2xl border border-line bg-paper px-4 py-2.5 text-base outline-none focus-visible:border-accent";
+  "rounded-2xl border border-line bg-paper px-4 py-2.5 font-serif text-base outline-none focus-visible:border-accent";
 
 export function LoginModal({ onClose }: LoginModalProps) {
   const { signIn } = useAuth();

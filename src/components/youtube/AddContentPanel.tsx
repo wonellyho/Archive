@@ -24,7 +24,7 @@ interface AddContentPanelProps {
 }
 
 const fieldClass =
-  "rounded-2xl border border-line bg-paper px-4 py-2.5 text-base outline-none focus-visible:border-accent";
+  "rounded-2xl border border-line bg-paper px-4 py-2.5 font-serif text-base outline-none focus-visible:border-accent";
 
 export function AddContentPanel({
   type,
@@ -91,7 +91,7 @@ export function AddContentPanel({
   return (
     <section
       aria-label={`${typeLabel} 추가`}
-      className="flex flex-col gap-5 rounded-4xl border border-line bg-cream p-6 shadow-md sm:p-8"
+      className="flex flex-col gap-5 rounded-4xl border border-line bg-cream p-6 font-serif shadow-md sm:p-8"
     >
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-medium text-ink">{typeLabel} 추가</h3>

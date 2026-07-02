@@ -29,7 +29,7 @@ export function PublicProfilePage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-5 py-12 sm:px-8 sm:py-16">
+    <main className="mx-auto flex w-full max-w-5xl flex-col gap-18 px-5 py-12 sm:px-8 sm:py-16">
       <OwnerControls />
       <ProfileHeader profile={profile} />
       <TabBar tabs={TABS} activeId={tab} onChange={setTab} />
