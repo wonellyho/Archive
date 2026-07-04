@@ -47,6 +47,90 @@ async def _select(
     return resp.json()
 
 
+# ── 쓰기 (service_role 필수) ──────────────────────────────────────────
+
+
+def _write_credentials() -> tuple[str, str]:
+    """쓰기용 (base_url, service_role_key). 미설정 시 503."""
+    settings = get_settings()
+    if not (settings.supabase_url and settings.supabase_service_role_key):
+        raise HTTPException(
+            503, "서버에 쓰기용 Supabase 키(service_role)가 설정되지 않았습니다."
+        )
+    return (
+        f"{settings.supabase_url.rstrip('/')}/rest/v1",
+        settings.supabase_service_role_key,
+    )
+
+
+async def _write(
+    method: str,
+    table: str,
+    *,
+    params: dict[str, str] | None = None,
+    json: Any = None,
+    prefer: str | None = None,
+) -> Any:
+    base, key = _write_credentials()
+    headers = {"apikey": key, "Authorization": f"Bearer {key}"}
+    if prefer:
+        headers["Prefer"] = prefer
+    try:
+        resp = await get_client().request(
+            method, f"{base}/{table}", params=params, json=json, headers=headers
+        )
+    except httpx.HTTPError:
+        raise HTTPException(502, "데이터베이스 요청에 실패했습니다.")
+    if resp.status_code == 409:
+        # 중복 PK(23505) 또는 FK 위반(23503) — 클라이언트 요청 문제로 구분
+        raise HTTPException(409, "중복 ID이거나 참조(폴더)가 유효하지 않습니다.")
+    if resp.status_code >= 300:
+        raise HTTPException(502, f"데이터베이스 쓰기 오류 (HTTP {resp.status_code}).")
+    return resp.json() if resp.content else None
+
+
+async def upsert_profile(fields: dict[str, Any]) -> None:
+    """단일 프로필(id=me) upsert — 프론트 saveProfile과 동일 동작."""
+    await _write(
+        "POST",
+        "profiles",
+        params={"on_conflict": "id"},
+        json={"id": PROFILE_ID, **fields},
+        prefer="resolution=merge-duplicates",
+    )
+
+
+async def next_sort_order(table: str, content_type: str) -> int:
+    """type별 다음 sort_order — 프론트 nextSortOrder(max+1)와 동일 규칙."""
+    base, key = _credentials()
+    rows = await _select(
+        base,
+        key,
+        table,
+        {
+            "select": "sort_order",
+            "type": f"eq.{content_type}",
+            "order": "sort_order.desc",
+            "limit": "1",
+        },
+    )
+    return (rows[0]["sort_order"] + 1) if rows else 0
+
+
+async def insert_row(table: str, row: dict[str, Any]) -> dict[str, Any]:
+    """행 삽입 후 생성된 행(서버 권위 created_at 포함)을 반환한다."""
+    created = await _write("POST", table, json=row, prefer="return=representation")
+    return created[0]
+
+
+async def patch_row(table: str, row_id: str, fields: dict[str, Any]) -> None:
+    await _write("PATCH", table, params={"id": f"eq.{row_id}"}, json=fields)
+
+
+async def delete_rows(table: str, column: str, value: str) -> None:
+    await _write("DELETE", table, params={column: f"eq.{value}"})
+
+
 async def fetch_bootstrap() -> tuple[dict[str, Any] | None, list[dict], list[dict]]:
     """프로필(단일)·폴더·콘텐츠를 병렬 조회한다.
 

@@ -3,12 +3,13 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from .config import get_settings
 from .http import close_client
-from .routers import bootstrap, health, youtube
+from .routers import bootstrap, contents, folders, health, profile, youtube
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -84,7 +85,19 @@ if settings.auth_optional:
 
 app.include_router(health.router)
 app.include_router(bootstrap.router)
+app.include_router(profile.router)
+app.include_router(folders.router)
+app.include_router(contents.router)
 app.include_router(youtube.router)
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """미처리 예외를 표준 500 응답으로 — 내부 정보(스택·쿼리)를 노출하지 않는다."""
+    logger.exception("미처리 예외: %s %s", request.method, request.url.path)
+    return JSONResponse(
+        status_code=500, content={"detail": "서버 내부 오류가 발생했습니다."}
+    )
 
 
 @app.get("/", tags=["health"], summary="서비스 정보", include_in_schema=False)
