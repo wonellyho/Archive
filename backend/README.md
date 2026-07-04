@@ -29,11 +29,11 @@ pip install -r requirements.txt
 cp .env.example .env       # Windows: copy .env.example .env
 
 # 4) 실행
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8001
 ```
 
-- 헬스체크: <http://localhost:8000/health>
-- API 문서(Swagger): <http://localhost:8000/docs>
+- 헬스체크: <http://localhost:8001/health>
+- API 문서(Swagger): <http://localhost:8001/docs>
 
 ## 현재 엔드포인트
 | 메서드 | 경로 | 설명 | 인증 |
