@@ -1,0 +1,10 @@
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.30
+pydantic>=2.7
+pydantic-settings>=2.3
+pyjwt[crypto]>=2.8
+httpx>=0.27
+
+# 후속 이슈에서 사용 예정
+# anthropic>=0.40
+# supabase>=2.7
