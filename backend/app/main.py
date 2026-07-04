@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
-from .routers import health, youtube
+from .routers import bootstrap, health, youtube
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -30,6 +30,10 @@ DESCRIPTION = """
 
 TAGS_METADATA = [
     {"name": "health", "description": "서버 상태 확인 — 인증 불필요."},
+    {
+        "name": "data",
+        "description": "프로필·폴더·콘텐츠 데이터 — 읽기는 공개, 쓰기는 🔒 로그인 필요.",
+    },
     {
         "name": "youtube",
         "description": "YouTube 검색 프록시 — API 키는 서버에만 있습니다. 🔒 로그인 필요.",
@@ -69,6 +73,7 @@ if settings.auth_optional:
         logger.warning("AUTH_OPTIONAL=true — 인증 없이 API가 열려 있습니다(로컬 전용).")
 
 app.include_router(health.router)
+app.include_router(bootstrap.router)
 app.include_router(youtube.router)
 
 

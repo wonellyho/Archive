@@ -39,6 +39,7 @@ uvicorn app.main:app --reload --port 8001
 | 메서드 | 경로 | 설명 | 인증 |
 |---|---|---|---|
 | GET | `/health` | 서버 상태 확인 | 불필요 |
+| GET | `/api/bootstrap` | 초기 데이터 전체 로드(프로필+폴더+콘텐츠) | 불필요(공개) |
 | GET | `/api/youtube/search?q=&type=` | YouTube 검색 프록시(키 은닉) | 필요 |
 
 ## 폴더 구조
