@@ -18,7 +18,9 @@ SEARCH_ENDPOINT = "https://www.googleapis.com/youtube/v3/search"
 @router.get("/search", response_model=list[YouTubeSearchResult])
 async def search(
     q: str = Query(min_length=2, max_length=100, description="검색어"),
-    type: str = Query("music", pattern="^(music|video)$", description="music | video"),
+    content_type: str = Query(
+        "music", alias="type", pattern="^(music|video)$", description="music | video"
+    ),
     user: CurrentUser = Depends(get_current_user),
 ) -> list[YouTubeSearchResult]:
     settings = get_settings()
@@ -32,7 +34,7 @@ async def search(
         "q": q,
         "key": settings.youtube_api_key,
     }
-    if type == "music":
+    if content_type == "music":
         params["videoCategoryId"] = "10"  # 음악 카테고리(기존 로직 유지)
 
     try:
