@@ -16,10 +16,19 @@ class CamelModel(BaseModel):
 
 
 class YouTubeSearchResult(CamelModel):
-    youtube_video_id: str
-    title: str
-    channel_title: str
-    thumbnail_url: str
+    youtube_video_id: str = Field(
+        description="YouTube 영상 ID (재생·등록에 사용)", examples=["BzYnNdJhZQw"]
+    )
+    title: str = Field(
+        description="원본 영상 제목", examples=["[MV] IU(아이유) _ Through the Night(밤편지)"]
+    )
+    channel_title: str = Field(
+        description="원본 채널명", examples=["1theK (원더케이)"]
+    )
+    thumbnail_url: str = Field(
+        description="썸네일 URL (medium 우선)",
+        examples=["https://i.ytimg.com/vi/BzYnNdJhZQw/mqdefault.jpg"],
+    )
 
 
 # ── 아래는 후속 이슈(프로필/폴더/콘텐츠 CRUD 이관)에서 사용할 데이터 계약 ──

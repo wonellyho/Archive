@@ -13,7 +13,12 @@ from .config import get_settings
 
 logger = logging.getLogger(__name__)
 
-bearer = HTTPBearer(auto_error=False)
+bearer = HTTPBearer(
+    auto_error=False,
+    scheme_name="SupabaseJWT",
+    description="Supabase 로그인 후 발급되는 access token을 붙여넣으세요. "
+    "(프론트: `supabase.auth.getSession()` → `session.access_token`)",
+)
 
 
 @dataclass
