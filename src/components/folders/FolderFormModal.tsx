@@ -51,7 +51,7 @@ export function FolderFormModal({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="예: Night Walk"
-            className="rounded-2xl border border-line bg-paper px-4 py-2.5 text-base outline-none focus-visible:border-accent"
+            className="rounded-2xl border border-line bg-paper px-4 py-2.5 font-serif text-base outline-none focus-visible:border-accent"
           />
         </label>
 

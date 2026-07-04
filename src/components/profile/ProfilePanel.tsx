@@ -17,7 +17,7 @@ export function ProfilePanel() {
       className="mx-auto flex w-full max-w-2xl flex-col items-center gap-8 rounded-3xl border border-line bg-paper/70 px-6 py-12 text-center shadow-sm sm:px-12"
     >
       {profile.bio ? (
-        <p className="max-w-prose font-serif text-2xl leading-relaxed text-ink sm:text-3xl">
+        <p className="max-w-prose whitespace-pre-line font-serif text-2xl leading-relaxed text-ink sm:text-3xl">
           {profile.bio}
         </p>
       ) : (

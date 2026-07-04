@@ -31,7 +31,7 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
         aria-modal="true"
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
-        className="my-auto w-full max-w-lg rounded-3xl border border-line bg-paper p-6 shadow-xl sm:p-8"
+        className="my-auto w-full max-w-lg rounded-3xl border border-line bg-paper p-6 font-serif shadow-xl sm:p-8"
       >
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-xl font-medium text-ink">{title}</h2>

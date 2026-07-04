@@ -31,7 +31,7 @@ export function ContentComment({ content }: ContentCommentProps) {
       </figcaption>
 
       {content.body ? (
-        <p className="mt-6 max-w-prose text-base leading-relaxed text-ink-soft">
+        <p className="mt-6 max-w-prose whitespace-pre-line text-base leading-relaxed text-ink-soft">
           {content.body}
         </p>
       ) : null}
