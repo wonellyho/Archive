@@ -1,6 +1,7 @@
 """API 데이터 계약(Pydantic). JSON은 camelCase로 직렬화되어 프론트 TS 타입과 1:1로 맞는다."""
 
 from typing import Literal, Optional
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
@@ -94,11 +95,49 @@ class BootstrapResponse(CamelModel):
     video_contents: list[Content]
 
 
-class ContentIn(CamelModel):
-    """콘텐츠 등록 요청(P3에서 사용). id는 클라 UUID를 서버가 검증·수용."""
+# ── 쓰기 요청 스키마 ──
+# id는 클라이언트가 생성한 UUID를 서버가 형식 검증 후 수용한다
+# (프론트 컨텍스트의 동기 반환 계약 보존). created_at·sort_order는 서버 권위값.
 
+
+class ProfileIn(Profile):
+    """프로필 저장 요청 — 응답용 Profile과 달리 길이 제한을 강제한다.
+
+    (응답 모델에 제한을 걸면 기존 저장값이 더 길 때 읽기가 깨질 수 있어 분리)
+    """
+
+    name: str = Field(default="", max_length=100)
+    tagline: str = Field(default="", max_length=200)
+    bio: str = Field(default="", max_length=2000)
+    keywords: list[str] = Field(default_factory=list, max_length=30)
+
+
+class FolderIn(CamelModel):
+    """폴더 생성 요청."""
+
+    id: UUID
     type: ContentType
-    folder_id: Optional[str] = None
+    name: str = Field(min_length=1, max_length=100)
+    # 커버는 base64 data URL일 수 있어 길이 제한을 두지 않는다(M4에서 Storage 이전).
+    cover_image_url: Optional[str] = None
+
+
+class FolderPatch(CamelModel):
+    """폴더 수정 요청 — 보낸 필드만 반영(exclude_unset).
+
+    coverImageUrl은 [필드 없음]=변경 안 함 / [null]=커버 제거 를 구분한다.
+    """
+
+    name: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    cover_image_url: Optional[str] = None
+
+
+class ContentIn(CamelModel):
+    """콘텐츠 등록 요청."""
+
+    id: UUID
+    type: ContentType
+    folder_id: Optional[str] = Field(default=None, description="null = 미분류")
     youtube_video_id: str = Field(min_length=1, max_length=32)
     source_title: str = Field(default="", max_length=300)
     source_channel: str = Field(default="", max_length=200)
@@ -106,3 +145,11 @@ class ContentIn(CamelModel):
     title: str = Field(default="", max_length=120)
     subtitle: str = Field(default="", max_length=200)
     body: str = Field(default="", max_length=2000)
+
+
+class ContentPatch(CamelModel):
+    """콘텐츠 수정 요청 — 사용자 작성 필드만(프론트 ContentPatch와 동일)."""
+
+    title: Optional[str] = Field(default=None, max_length=120)
+    subtitle: Optional[str] = Field(default=None, max_length=200)
+    body: Optional[str] = Field(default=None, max_length=2000)
