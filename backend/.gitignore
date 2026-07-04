@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# 가상환경
+.venv/
+venv/
+env/
+
+# 환경변수 (예시 파일만 커밋)
+.env
+.env.*
+!.env.example
