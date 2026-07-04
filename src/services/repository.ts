@@ -94,8 +94,8 @@ const localRepository: TasteRepository = {
 };
 
 export function getRepository(): TasteRepository {
-  // 백엔드 API가 설정되면 하이브리드 저장소(읽기=API, 쓰기=Supabase 직행).
-  // 쓰기가 아직 Supabase 직행이므로 Supabase 설정도 함께 필요하다.
+  // 백엔드 API가 설정되면 읽기·쓰기 전부 API 경유(P4 완료).
+  // 쓰기 인증 토큰 발급에 Supabase 로그인이 필요하므로 Supabase 설정도 함께 요구한다.
   if (isApiConfigured && isSupabaseConfigured) return apiRepository;
   return isSupabaseConfigured ? supabaseRepository : localRepository;
 }
