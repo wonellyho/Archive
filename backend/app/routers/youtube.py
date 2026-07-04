@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from ..config import get_settings
 from ..deps import CurrentUser, get_current_user
+from ..http import get_client
 from ..schemas import YouTubeSearchResult
 
 router = APIRouter(prefix="/api/youtube", tags=["youtube"])
@@ -67,8 +68,7 @@ async def search(
         params["videoCategoryId"] = "10"  # 음악 카테고리(기존 로직 유지)
 
     try:
-        async with httpx.AsyncClient(timeout=10) as client:
-            resp = await client.get(SEARCH_ENDPOINT, params=params)
+        resp = await get_client().get(SEARCH_ENDPOINT, params=params)
     except httpx.HTTPError:
         raise HTTPException(502, "YouTube 요청에 실패했습니다.")
 

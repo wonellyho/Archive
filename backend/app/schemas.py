@@ -46,10 +46,14 @@ class Profile(CamelModel):
     )
 
 
-# 프론트 storageService.ts defaultProfile 과 동일 (프로필 행이 없을 때)
-DEFAULT_PROFILE = Profile(
-    name="My Archive", tagline="Things I keep returning to.", bio="", keywords=[]
-)
+def default_profile() -> Profile:
+    """프론트 storageService.ts defaultProfile 과 동일 (프로필 행이 없을 때).
+
+    Pydantic 모델은 가변 객체이므로 공유 인스턴스 대신 매번 새로 만든다.
+    """
+    return Profile(
+        name="My Archive", tagline="Things I keep returning to.", bio="", keywords=[]
+    )
 
 
 class Folder(CamelModel):

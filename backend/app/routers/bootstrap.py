@@ -6,7 +6,7 @@
 from fastapi import APIRouter
 
 from .. import db
-from ..schemas import DEFAULT_PROFILE, BootstrapResponse, Content, Folder, Profile
+from ..schemas import BootstrapResponse, Content, Folder, Profile, default_profile
 
 router = APIRouter(prefix="/api", tags=["data"])
 
@@ -37,7 +37,7 @@ async def bootstrap() -> BootstrapResponse:
             profile_image_url=profile_row.get("profile_image_url"),
         )
         if profile_row
-        else DEFAULT_PROFILE
+        else default_profile()
     )
 
     folders = [Folder(**row) for row in folder_rows]
