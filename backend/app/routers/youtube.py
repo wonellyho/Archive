@@ -15,7 +15,36 @@ router = APIRouter(prefix="/api/youtube", tags=["youtube"])
 SEARCH_ENDPOINT = "https://www.googleapis.com/youtube/v3/search"
 
 
-@router.get("/search", response_model=list[YouTubeSearchResult])
+_ERROR_RESPONSES = {
+    401: {
+        "description": "인증 실패 — 우측 상단 Authorize 버튼으로 토큰을 설정하세요.",
+        "content": {"application/json": {"example": {"detail": "인증 토큰이 필요합니다."}}},
+    },
+    429: {
+        "description": "YouTube 검색 할당량 초과(하루 단위 리셋) 또는 서버 키 오류.",
+        "content": {
+            "application/json": {
+                "example": {"detail": "YouTube 할당량 초과 또는 키가 유효하지 않습니다."}
+            }
+        },
+    },
+    502: {"description": "YouTube 응답 오류(네트워크 포함) — 잠시 후 재시도."},
+    503: {"description": "서버 환경변수 미설정(YOUTUBE_API_KEY 등) — 백엔드 담당에게 문의."},
+}
+
+
+@router.get(
+    "/search",
+    response_model=list[YouTubeSearchResult],
+    summary="YouTube 영상/음악 검색",
+    response_description="검색 결과 목록 (최대 12개, 관련도순)",
+    responses=_ERROR_RESPONSES,
+    description=(
+        "프론트 `youtubeService.searchYouTube()`가 하던 검색을 서버가 대신 수행합니다. "
+        "`type=music`이면 음악 카테고리로 필터링됩니다. "
+        "응답 필드는 프론트 TS 타입 `YouTubeSearchResult`와 동일합니다."
+    ),
+)
 async def search(
     q: str = Query(min_length=2, max_length=100, description="검색어"),
     content_type: str = Query(
