@@ -5,6 +5,8 @@ import type { FolderPatch, ContentPatch } from "../context/tasteDataContext";
 import { localTasteStorage } from "./storageService";
 import { isSupabaseConfigured } from "./supabaseClient";
 import { supabaseRepository } from "./supabaseRepository";
+import { apiRepository } from "./apiRepository";
+import { isApiConfigured } from "./apiClient";
 
 export interface RepoData {
   profile: Profile;
@@ -92,5 +94,8 @@ const localRepository: TasteRepository = {
 };
 
 export function getRepository(): TasteRepository {
+  // 백엔드 API가 설정되면 하이브리드 저장소(읽기=API, 쓰기=Supabase 직행).
+  // 쓰기가 아직 Supabase 직행이므로 Supabase 설정도 함께 필요하다.
+  if (isApiConfigured && isSupabaseConfigured) return apiRepository;
   return isSupabaseConfigured ? supabaseRepository : localRepository;
 }
