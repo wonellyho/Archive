@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     supabase_url: str = ""
     # 레거시 HS256 프로젝트에서만 설정. 설정 시 JWKS 대신 공유 시크릿 검증.
     supabase_jwt_secret: str = ""
+    # 공개 읽기용(RLS 공개 읽기 정책 하에서 조회). 프론트 anon 키와 동일 값.
+    supabase_anon_key: str = ""
+    # 쓰기용(서버 전용 비밀키!). P3(쓰기 API)부터 필요. 설정 시 읽기에도 우선 사용.
     supabase_service_role_key: str = ""
 
     # YouTube Data API v3 — 서버 전용! 절대 프론트에 두지 말 것

@@ -1,15 +1,24 @@
 """FastAPI 앱 진입점. 미들웨어·라우터를 등록한다."""
 
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
-from .routers import health, youtube
+from .http import close_client
+from .routers import bootstrap, health, youtube
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    yield
+    # 공유 HTTP 클라이언트 정리
+    await close_client()
 
 DESCRIPTION = """
 개인 취향 아카이빙 서비스 **Archive**의 백엔드 API입니다.
@@ -31,6 +40,10 @@ DESCRIPTION = """
 TAGS_METADATA = [
     {"name": "health", "description": "서버 상태 확인 — 인증 불필요."},
     {
+        "name": "data",
+        "description": "프로필·폴더·콘텐츠 데이터 — 읽기는 공개, 쓰기는 🔒 로그인 필요.",
+    },
+    {
         "name": "youtube",
         "description": "YouTube 검색 프록시 — API 키는 서버에만 있습니다. 🔒 로그인 필요.",
     },
@@ -40,6 +53,7 @@ app = FastAPI(
     title="Archive Backend API",
     description=DESCRIPTION,
     version="0.1.0",
+    lifespan=lifespan,
     openapi_tags=TAGS_METADATA,
     swagger_ui_parameters={
         # 발급받은 토큰을 새로고침 후에도 유지 (프론트 DX)
@@ -69,6 +83,7 @@ if settings.auth_optional:
         logger.warning("AUTH_OPTIONAL=true — 인증 없이 API가 열려 있습니다(로컬 전용).")
 
 app.include_router(health.router)
+app.include_router(bootstrap.router)
 app.include_router(youtube.router)
 
 

@@ -1,6 +1,5 @@
 """API 데이터 계약(Pydantic). JSON은 camelCase로 직렬화되어 프론트 TS 타입과 1:1로 맞는다."""
 
-from datetime import datetime
 from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -31,17 +30,72 @@ class YouTubeSearchResult(CamelModel):
     )
 
 
-# ── 아래는 후속 이슈(프로필/폴더/콘텐츠 CRUD 이관)에서 사용할 데이터 계약 ──
+# ── 데이터 계약 (프론트 types/*.ts 와 1:1) ──
+# created_at은 파리티(기존 loadAll이 문자열 그대로 전달)를 위해 str로 통과시킨다.
+
+
 class Profile(CamelModel):
+    """프론트 types/profile.ts Profile."""
+
     name: str = ""
     tagline: str = ""
     bio: str = ""
     keywords: list[str] = Field(default_factory=list)
-    profile_image_url: Optional[str] = None
+    profile_image_url: Optional[str] = Field(
+        default=None, description="프로필 이미지(현재 data URL, M4에서 Storage URL로)"
+    )
+
+
+def default_profile() -> Profile:
+    """프론트 storageService.ts defaultProfile 과 동일 (프로필 행이 없을 때).
+
+    Pydantic 모델은 가변 객체이므로 공유 인스턴스 대신 매번 새로 만든다.
+    """
+    return Profile(
+        name="My Archive", tagline="Things I keep returning to.", bio="", keywords=[]
+    )
+
+
+class Folder(CamelModel):
+    """프론트 types/folder.ts TasteFolder."""
+
+    id: str
+    type: ContentType
+    name: str
+    cover_image_url: Optional[str] = None
+    sort_order: int
+    created_at: str
+
+
+class Content(CamelModel):
+    """프론트 types/content.ts TasteContent. (user_id는 M2 멀티유저에서 추가)"""
+
+    id: str
+    type: ContentType
+    folder_id: Optional[str] = Field(default=None, description="null = 미분류")
+    youtube_video_id: str
+    source_title: str = ""
+    source_channel: str = ""
+    thumbnail_url: str = ""
+    title: str = ""
+    subtitle: str = ""
+    body: str = ""
+    sort_order: int
+    created_at: str
+
+
+class BootstrapResponse(CamelModel):
+    """프론트 services/repository.ts RepoData — loadAll() 응답과 동일한 형태."""
+
+    profile: Profile
+    music_folders: list[Folder]
+    video_folders: list[Folder]
+    music_contents: list[Content]
+    video_contents: list[Content]
 
 
 class ContentIn(CamelModel):
-    """클라이언트가 보내는 콘텐츠 등록 요청. id/createdAt/userId는 서버가 발급."""
+    """콘텐츠 등록 요청(P3에서 사용). id는 클라 UUID를 서버가 검증·수용."""
 
     type: ContentType
     folder_id: Optional[str] = None
@@ -52,10 +106,3 @@ class ContentIn(CamelModel):
     title: str = Field(default="", max_length=120)
     subtitle: str = Field(default="", max_length=200)
     body: str = Field(default="", max_length=2000)
-
-
-class Content(ContentIn):
-    id: str
-    user_id: str
-    sort_order: int
-    created_at: datetime
