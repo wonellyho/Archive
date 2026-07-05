@@ -1,12 +1,37 @@
-"""프로필 쓰기. 프론트 supabaseRepository.saveProfile()을 서버로 이관한 것."""
+"""프로필 조회/쓰기. 프론트 supabaseRepository.saveProfile() 이관 + 내 프로필 조회."""
 
 from fastapi import APIRouter, Depends
 
 from .. import db
 from ..deps import CurrentUser, get_current_user
-from ..schemas import ProfileIn
+from ..schemas import Profile, ProfileIn, default_profile
 
 router = APIRouter(prefix="/api", tags=["data"])
+
+
+@router.get(
+    "/me",
+    response_model=Profile,
+    summary="내 프로필 조회 🔒",
+    response_description="현재 로그인한 사용자의 프로필(username 포함)",
+    responses={401: {"description": "인증 실패 — 로그인 토큰 필요."}},
+    description=(
+        "로그인한 본인의 프로필을 반환합니다(토큰의 사용자 기준). "
+        "아직 프로필을 저장한 적 없는 신규 사용자는 기본 프로필을 반환합니다(404 아님)."
+    ),
+)
+async def get_me(user: CurrentUser = Depends(get_current_user)) -> Profile:
+    row = await db.fetch_profile(user.id)
+    if not row:
+        return default_profile()
+    return Profile(
+        name=row.get("name", ""),
+        tagline=row.get("tagline", ""),
+        bio=row.get("bio", ""),
+        keywords=row.get("keywords") or [],
+        profile_image_url=row.get("profile_image_url"),
+        username=row.get("username"),
+    )
 
 
 @router.put(

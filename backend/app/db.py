@@ -118,6 +118,15 @@ async def upsert_profile(
     )
 
 
+async def fetch_profile(user_id: str) -> dict[str, Any] | None:
+    """현재 사용자(user_id)의 프로필 행을 조회. 없으면 None(신규 유저)."""
+    base, key = _credentials()
+    rows = await _select(
+        base, key, "profiles", {"user_id": f"eq.{user_id}", "select": "*"}
+    )
+    return rows[0] if rows else None
+
+
 async def fetch_public_archive(
     username: str,
 ) -> tuple[dict[str, Any], list[dict], list[dict]] | None:
