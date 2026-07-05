@@ -20,6 +20,7 @@ from .routers import (
     profile,
     public,
     saves,
+    timeline,
     uploads,
     youtube,
 )
@@ -80,6 +81,10 @@ TAGS_METADATA = [
     {
         "name": "public",
         "description": "공개 아카이브 — /u/{username}로 특정 사용자의 아카이브 조회(인증 불필요).",
+    },
+    {
+        "name": "timeline",
+        "description": "취향 타임라인 — 콘텐츠를 담은 시점을 월별로 집계(인증 불필요).",
     },
 ]
 
@@ -150,6 +155,7 @@ app.include_router(llm.router)
 app.include_router(uploads.router)
 app.include_router(saves.router)
 app.include_router(public.router)
+app.include_router(timeline.router)
 
 
 @app.exception_handler(RateLimitExceeded)
