@@ -244,6 +244,41 @@ async def list_saved_contents(user_id: str) -> list[dict[str, Any]]:
     return [row["contents"] for row in rows if row.get("contents")]
 
 
+# ── 유사 콘텐츠 추천 (M8-B) ───────────────────────────────────────────
+
+
+async def fetch_similar_pool(
+    content_id: str,
+) -> tuple[dict[str, Any], list[dict[str, Any]]] | None:
+    """대상 콘텐츠 + 후보(같은 채널 또는 같은 타입)를 조회. 없으면 None.
+
+    랭킹(점수화·정렬)은 라우터의 순수 함수 rank_similar에서 수행한다.
+    공개 읽기 정책이라 후보는 전체 사용자 콘텐츠(멀티유저 시 교차 발견).
+    """
+    base, key = _credentials()
+    target_rows = await _select(
+        base, key, "contents", {"id": f"eq.{content_id}", "select": "id,type,source_channel"}
+    )
+    if not target_rows:
+        return None
+    target = target_rows[0]
+
+    same_type = await _select(
+        base, key, "contents", {"type": f"eq.{target.get('type')}", "select": "*"}
+    )
+    channel = target.get("source_channel") or ""
+    same_channel: list[dict] = []
+    if channel:
+        same_channel = await _select(
+            base, key, "contents", {"source_channel": f"eq.{channel}", "select": "*"}
+        )
+
+    merged: dict[str, dict] = {row["id"]: row for row in same_type}
+    for row in same_channel:
+        merged[row["id"]] = row
+    return target, list(merged.values())
+
+
 # ── 취향 타임라인 (M8-A) ──────────────────────────────────────────────
 
 

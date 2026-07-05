@@ -14,6 +14,7 @@ from .limiter import limiter
 from .routers import (
     bootstrap,
     contents,
+    discover,
     folders,
     health,
     llm,
@@ -86,6 +87,10 @@ TAGS_METADATA = [
         "name": "timeline",
         "description": "취향 타임라인 — 콘텐츠를 담은 시점을 월별로 집계(인증 불필요).",
     },
+    {
+        "name": "discover",
+        "description": "유사 콘텐츠 추천 — 결이 비슷한 콘텐츠 발견(같은 채널·타입, 인증 불필요).",
+    },
 ]
 
 app = FastAPI(
@@ -156,6 +161,7 @@ app.include_router(uploads.router)
 app.include_router(saves.router)
 app.include_router(public.router)
 app.include_router(timeline.router)
+app.include_router(discover.router)
 
 
 @app.exception_handler(RateLimitExceeded)
