@@ -33,8 +33,14 @@ class Settings(BaseSettings):
     # YouTube Data API v3 — 서버 전용! 절대 프론트에 두지 말 것
     youtube_api_key: str = ""
 
-    # Claude API — 추후 LLM 기능
+    # Claude API — LLM 문구추천(M6). 서버 전용 비밀키!
     anthropic_api_key: str = ""
+    # LLM 모델(교체 시 이 값만 변경). 기본 = Claude Haiku 4.5.
+    llm_model: str = "claude-haiku-4-5"
+    # 토큰 예산: 응답 최대 토큰(비용·남용 상한). 12자 문구엔 400이면 충분.
+    llm_max_tokens: int = 400
+    # rate limit: 사용자당 60초 내 허용 호출 수(초과 시 429).
+    llm_rate_per_min: int = 10
 
     # 개발용: true면 토큰 없이도 API를 통과시킨다(로컬 통합 편의, 배포 환경 금지)
     auth_optional: bool = False

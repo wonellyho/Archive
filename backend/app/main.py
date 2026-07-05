@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 
 from .config import get_settings
 from .http import close_client
-from .routers import bootstrap, contents, folders, health, profile, youtube
+from .routers import bootstrap, contents, folders, health, llm, profile, youtube
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -47,6 +47,10 @@ TAGS_METADATA = [
     {
         "name": "youtube",
         "description": "YouTube 검색 프록시 — API 키는 서버에만 있습니다. 🔒 로그인 필요.",
+    },
+    {
+        "name": "llm",
+        "description": "LLM 문구추천 — 키 은닉·인젝션 방어·rate limit 적용. 🔒 로그인 필요.",
     },
 ]
 
@@ -89,6 +93,7 @@ app.include_router(profile.router)
 app.include_router(folders.router)
 app.include_router(contents.router)
 app.include_router(youtube.router)
+app.include_router(llm.router)
 
 
 @app.exception_handler(Exception)
