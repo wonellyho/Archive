@@ -16,10 +16,14 @@ router = APIRouter(prefix="/api", tags=["data"])
     response_description="저장 성공(본문 없음)",
     responses={
         401: {"description": "인증 실패 — 로그인 토큰 필요."},
-        403: {"description": "다른 사용자의 프로필 — 수정 권한 없음."},
+        409: {"description": "이미 사용 중인 username."},
+        422: {"description": "username 형식 위반 또는 필드 길이 초과."},
         503: {"description": "서버 쓰기 키(service_role) 미설정."},
     },
-    description="프로필 전체를 교체 저장(upsert)합니다. 소유자만 수정 가능. 프론트 `saveProfile()`과 동일 동작.",
+    description=(
+        "현재 사용자의 프로필을 저장(upsert)합니다. 본인 프로필만 대상(1인 1행). "
+        "username을 주면 공개 페이지(/u/{username}) 주소가 됩니다."
+    ),
 )
 async def save_profile(
     body: ProfileIn, user: CurrentUser = Depends(get_current_user)
@@ -33,4 +37,5 @@ async def save_profile(
             "profile_image_url": body.profile_image_url,
         },
         user.id,
+        body.username,
     )

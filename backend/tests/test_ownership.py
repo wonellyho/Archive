@@ -1,7 +1,8 @@
-"""M2-B(#17): 백엔드 쓰기 소유권 검증 — 프로필 소유권 경로.
+"""M2/M7-B: 프로필 쓰기 소유권 + username 검증.
 
-service_role은 RLS를 우회하므로 백엔드가 직접 소유권을 강제한다.
-폴더/콘텐츠의 user_id 스탬프·스코프는 test_write_api.py에서 검증한다.
+M7-B에서 프로필은 유저별(1인 1행)로 바뀌었다. on_conflict=user_id 이므로
+항상 '본인 행'만 대상이라 별도 403 검사가 필요 없다(소유권 내재).
+username은 스키마에서 형식·예약어 검증되고, 타 사용자 중복은 db에서 409.
 """
 
 import pytest
@@ -23,13 +24,34 @@ def authed():
 
 @pytest.fixture(autouse=True)
 def _fake_creds(monkeypatch):
-    # 실제 Supabase 접속 정보(env)에 의존하지 않도록 고정.
     monkeypatch.setattr(db, "_credentials", lambda: ("http://db", "key"))
 
 
-def test_비소유자_프로필_수정은_403(authed, monkeypatch):
+def test_프로필_저장은_user_id로_upsert하고_id는_안보낸다(authed, monkeypatch):
+    calls = {"select": 0}
+    captured = {}
+
     async def fake_select(base, key, table, params):
-        return [{"user_id": "someone-else"}]  # 다른 사용자 소유
+        calls["select"] += 1
+        return []
+
+    async def fake_write(method, table, *, params=None, json=None, prefer=None):
+        captured.update(params=params, json=json)
+
+    monkeypatch.setattr(db, "_select", fake_select)
+    monkeypatch.setattr(db, "_write", fake_write)
+
+    resp = client.put("/api/profile", json={"name": "정훈"})  # username 없음
+    assert resp.status_code == 204
+    assert captured["json"]["user_id"] == "test-user"  # 소유자 스탬프
+    assert "id" not in captured["json"]  # id는 안 보냄(신규=DB기본값, 기존=유지)
+    assert captured["params"] == {"on_conflict": "user_id"}
+    assert calls["select"] == 0  # username 없으면 중복확인 select 생략
+
+
+def test_username_중복이면_409_쓰기없음(authed, monkeypatch):
+    async def fake_select(base, key, table, params):
+        return [{"user_id": "someone-else"}]  # 다른 유저가 사용 중
 
     called = {"write": False}
 
@@ -39,42 +61,32 @@ def test_비소유자_프로필_수정은_403(authed, monkeypatch):
     monkeypatch.setattr(db, "_select", fake_select)
     monkeypatch.setattr(db, "_write", fake_write)
 
-    resp = client.put("/api/profile", json={"name": "탈취 시도"})
-    assert resp.status_code == 403
-    assert called["write"] is False  # 쓰기까지 가지 않음
+    resp = client.put("/api/profile", json={"name": "x", "username": "taken"})
+    assert resp.status_code == 409
+    assert called["write"] is False
 
 
-def test_소유자_프로필_저장은_user_id를_스탬프한다(authed, monkeypatch):
+def test_username_본인것이면_통과하고_저장된다(authed, monkeypatch):
     async def fake_select(base, key, table, params):
         return [{"user_id": "test-user"}]  # 본인 소유
 
     captured = {}
 
     async def fake_write(method, table, *, params=None, json=None, prefer=None):
-        captured.update(json)
+        captured.update(json=json)
 
     monkeypatch.setattr(db, "_select", fake_select)
     monkeypatch.setattr(db, "_write", fake_write)
 
-    resp = client.put("/api/profile", json={"name": "정훈"})
+    resp = client.put("/api/profile", json={"name": "x", "username": "Mine_01"})
     assert resp.status_code == 204
-    assert captured["id"] == "me"
-    assert captured["user_id"] == "test-user"
-    assert captured["name"] == "정훈"
+    assert captured["json"]["username"] == "mine_01"  # 소문자 정규화
 
 
-def test_프로필_없으면_현재_사용자를_소유자로_생성(authed, monkeypatch):
-    async def fake_select(base, key, table, params):
-        return []  # 아직 프로필 없음(전환기)
-
-    captured = {}
-
-    async def fake_write(method, table, *, params=None, json=None, prefer=None):
-        captured.update(json)
-
-    monkeypatch.setattr(db, "_select", fake_select)
-    monkeypatch.setattr(db, "_write", fake_write)
-
-    resp = client.put("/api/profile", json={"name": "새 프로필"})
-    assert resp.status_code == 204
-    assert captured["user_id"] == "test-user"
+@pytest.mark.parametrize(
+    "username",
+    ["me", "ab", "has space", "UPPER!", "a" * 31, "admin", "u"],
+)
+def test_username_형식·예약어_위반은_422(authed, username):
+    resp = client.put("/api/profile", json={"name": "x", "username": username})
+    assert resp.status_code == 422
