@@ -3,9 +3,10 @@
 인증 불필요 — 방문자(비로그인)도 프로필을 볼 수 있어야 한다. 쓰기는 P3에서 JWT 보호.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 
 from .. import db
+from ..limiter import LIMIT_BOOTSTRAP, limiter
 from ..schemas import BootstrapResponse, Content, Folder, Profile, default_profile
 
 router = APIRouter(prefix="/api", tags=["data"])
@@ -25,7 +26,8 @@ router = APIRouter(prefix="/api", tags=["data"])
         "비로그인 방문자도 호출 가능(공개 읽기). 폴더·콘텐츠는 `sortOrder` 오름차순 정렬."
     ),
 )
-async def bootstrap() -> BootstrapResponse:
+@limiter.limit(LIMIT_BOOTSTRAP)
+async def bootstrap(request: Request) -> BootstrapResponse:
     profile_row, folder_rows, content_rows = await db.fetch_bootstrap()
 
     profile = (
