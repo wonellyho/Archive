@@ -228,3 +228,22 @@ class SaveIn(CamelModel):
     """찜 요청 — 찜할 콘텐츠 id."""
 
     content_id: UUID = Field(description="찜할 콘텐츠의 id")
+
+
+# ── 취향 타임라인 (M8-A) ──
+
+
+class TimelineBucket(CamelModel):
+    """한 기간(월)의 콘텐츠 집계."""
+
+    period: str = Field(description="기간(YYYY-MM)", examples=["2026-07"])
+    total: int = Field(description="해당 기간 콘텐츠 수")
+    music: int = Field(description="음악 수")
+    video: int = Field(description="영상 수")
+
+
+class TimelineResponse(CamelModel):
+    """사용자 취향 타임라인 — 기간별 버킷(오름차순)."""
+
+    username: str
+    buckets: list[TimelineBucket]

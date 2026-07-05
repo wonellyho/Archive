@@ -244,6 +244,29 @@ async def list_saved_contents(user_id: str) -> list[dict[str, Any]]:
     return [row["contents"] for row in rows if row.get("contents")]
 
 
+# ── 취향 타임라인 (M8-A) ──────────────────────────────────────────────
+
+
+async def fetch_timeline_rows(username: str) -> list[dict[str, Any]] | None:
+    """username 사용자의 콘텐츠 (created_at, type)만 조회. 없으면 None.
+
+    집계(월별 버킷)는 라우터에서 수행한다(데이터 소량 기준; 대규모는 후속 RPC).
+    """
+    base, key = _credentials()
+    prof = await _select(
+        base, key, "profiles", {"username": f"eq.{username}", "select": "user_id"}
+    )
+    if not prof:
+        return None
+    uid = prof[0].get("user_id")
+    return await _select(
+        base,
+        key,
+        "contents",
+        {"user_id": f"eq.{uid}", "select": "created_at,type", "order": "created_at.asc"},
+    )
+
+
 async def fetch_bootstrap() -> tuple[dict[str, Any] | None, list[dict], list[dict]]:
     """프로필(단일)·폴더·콘텐츠를 병렬 조회한다.
 
