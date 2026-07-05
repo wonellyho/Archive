@@ -30,7 +30,7 @@ _COMMON_ERRORS = {
 async def create_folder(
     body: FolderIn, user: CurrentUser = Depends(get_current_user)
 ) -> Folder:
-    sort_order = await db.next_sort_order("folders", body.type)
+    sort_order = await db.next_sort_order("folders", body.type, user.id)
     row = await db.insert_row(
         "folders",
         {
@@ -39,6 +39,7 @@ async def create_folder(
             "name": body.name,
             "cover_image_url": body.cover_image_url,
             "sort_order": sort_order,
+            "user_id": user.id,
         },
     )
     return Folder(**row)
@@ -61,7 +62,7 @@ async def update_folder(
     fields = body.model_dump(exclude_unset=True)
     if not fields:
         return
-    await db.patch_row("folders", folder_id, fields)
+    await db.patch_row("folders", folder_id, fields, user.id)
 
 
 @router.delete(
@@ -75,5 +76,5 @@ async def update_folder(
 async def delete_folder(
     folder_id: str, user: CurrentUser = Depends(get_current_user)
 ) -> None:
-    await db.delete_rows("contents", "folder_id", folder_id)
-    await db.delete_rows("folders", "id", folder_id)
+    await db.delete_rows("contents", "folder_id", folder_id, user.id)
+    await db.delete_rows("folders", "id", folder_id, user.id)

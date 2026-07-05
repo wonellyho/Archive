@@ -89,19 +89,34 @@ async def _write(
     return resp.json() if resp.content else None
 
 
-async def upsert_profile(fields: dict[str, Any]) -> None:
-    """단일 프로필(id=me) upsert — 프론트 saveProfile과 동일 동작."""
+async def upsert_profile(fields: dict[str, Any], user_id: str) -> None:
+    """단일 프로필(id=me) upsert — 소유자만 수정 가능.
+
+    service_role은 RLS를 우회하므로 백엔드가 직접 소유권을 확인한다:
+    프로필이 이미 다른 사용자 소유면 403, 그 외엔 user_id를 스탬프해 upsert.
+    """
+    base, key = _credentials()
+    existing = await _select(
+        base, key, "profiles", {"id": f"eq.{PROFILE_ID}", "select": "user_id"}
+    )
+    if existing:
+        owner = existing[0].get("user_id")
+        if owner is not None and owner != user_id:
+            raise HTTPException(403, "다른 사용자의 프로필은 수정할 수 없습니다.")
     await _write(
         "POST",
         "profiles",
         params={"on_conflict": "id"},
-        json={"id": PROFILE_ID, **fields},
+        json={"id": PROFILE_ID, "user_id": user_id, **fields},
         prefer="resolution=merge-duplicates",
     )
 
 
-async def next_sort_order(table: str, content_type: str) -> int:
-    """type별 다음 sort_order — 프론트 nextSortOrder(max+1)와 동일 규칙."""
+async def next_sort_order(table: str, content_type: str, user_id: str) -> int:
+    """(user_id, type)별 다음 sort_order — 프론트 nextSortOrder(max+1)와 동일 규칙.
+
+    멀티유저 대비 사용자별로 스코프한다(단일 사용자에선 기존과 동일 결과).
+    """
     base, key = _credentials()
     rows = await _select(
         base,
@@ -109,6 +124,7 @@ async def next_sort_order(table: str, content_type: str) -> int:
         table,
         {
             "select": "sort_order",
+            "user_id": f"eq.{user_id}",
             "type": f"eq.{content_type}",
             "order": "sort_order.desc",
             "limit": "1",
@@ -118,17 +134,33 @@ async def next_sort_order(table: str, content_type: str) -> int:
 
 
 async def insert_row(table: str, row: dict[str, Any]) -> dict[str, Any]:
-    """행 삽입 후 생성된 행(서버 권위 created_at 포함)을 반환한다."""
+    """행 삽입 후 생성된 행(서버 권위 created_at 포함)을 반환한다.
+
+    호출자는 row에 user_id(소유자)를 포함해야 한다(스키마 NOT NULL).
+    """
     created = await _write("POST", table, json=row, prefer="return=representation")
     return created[0]
 
 
-async def patch_row(table: str, row_id: str, fields: dict[str, Any]) -> None:
-    await _write("PATCH", table, params={"id": f"eq.{row_id}"}, json=fields)
+async def patch_row(
+    table: str, row_id: str, fields: dict[str, Any], user_id: str
+) -> None:
+    """소유자 행만 수정 — id와 user_id로 스코프(타인 행이면 0행 영향)."""
+    await _write(
+        "PATCH",
+        table,
+        params={"id": f"eq.{row_id}", "user_id": f"eq.{user_id}"},
+        json=fields,
+    )
 
 
-async def delete_rows(table: str, column: str, value: str) -> None:
-    await _write("DELETE", table, params={column: f"eq.{value}"})
+async def delete_rows(table: str, column: str, value: str, user_id: str) -> None:
+    """소유자 행만 삭제 — 필터 컬럼과 user_id로 스코프."""
+    await _write(
+        "DELETE",
+        table,
+        params={column: f"eq.{value}", "user_id": f"eq.{user_id}"},
+    )
 
 
 async def fetch_bootstrap() -> tuple[dict[str, Any] | None, list[dict], list[dict]]:
