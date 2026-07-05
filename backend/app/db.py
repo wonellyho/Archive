@@ -89,27 +89,53 @@ async def _write(
     return resp.json() if resp.content else None
 
 
-async def upsert_profile(fields: dict[str, Any], user_id: str) -> None:
-    """단일 프로필(id=me) upsert — 소유자만 수정 가능.
+async def upsert_profile(
+    fields: dict[str, Any], user_id: str, username: str | None = None
+) -> None:
+    """현재 사용자의 프로필을 upsert(1인 1행) — M7-B 멀티유저.
 
-    service_role은 RLS를 우회하므로 백엔드가 직접 소유권을 확인한다:
-    프로필이 이미 다른 사용자 소유면 403, 그 외엔 user_id를 스탬프해 upsert.
+    on_conflict=user_id 이므로 항상 '본인 행'만 대상(소유권 내재 — 남의 프로필 불가).
+    id는 보내지 않는다: 신규는 DB 기본값(uuid), 기존 'me' 행은 id를 유지한다.
+    username은 스키마에서 형식·예약어 검증됨(소문자 정규화). 여기선 타 사용자 중복만 확인.
     """
     base, key = _credentials()
-    existing = await _select(
-        base, key, "profiles", {"id": f"eq.{PROFILE_ID}", "select": "user_id"}
-    )
-    if existing:
-        owner = existing[0].get("user_id")
-        if owner is not None and owner != user_id:
-            raise HTTPException(403, "다른 사용자의 프로필은 수정할 수 없습니다.")
+    if username is not None:
+        taken = await _select(
+            base, key, "profiles", {"username": f"eq.{username}", "select": "user_id"}
+        )
+        if taken and taken[0].get("user_id") != user_id:
+            raise HTTPException(409, "이미 사용 중인 username입니다.")
+
+    payload: dict[str, Any] = {"user_id": user_id, **fields}
+    if username is not None:
+        payload["username"] = username
     await _write(
         "POST",
         "profiles",
-        params={"on_conflict": "id"},
-        json={"id": PROFILE_ID, "user_id": user_id, **fields},
+        params={"on_conflict": "user_id"},
+        json=payload,
         prefer="resolution=merge-duplicates",
     )
+
+
+async def fetch_public_archive(
+    username: str,
+) -> tuple[dict[str, Any], list[dict], list[dict]] | None:
+    """username으로 공개 아카이브(프로필+폴더+콘텐츠)를 조회. 없으면 None."""
+    base, key = _credentials()
+    prof = await _select(
+        base, key, "profiles", {"username": f"eq.{username}", "select": "*"}
+    )
+    if not prof:
+        return None
+    uid = prof[0].get("user_id")
+    folders = await _select(
+        base, key, "folders", {"user_id": f"eq.{uid}", "select": "*", "order": "sort_order.asc"}
+    )
+    contents = await _select(
+        base, key, "contents", {"user_id": f"eq.{uid}", "select": "*", "order": "sort_order.asc"}
+    )
+    return prof[0], folders, contents
 
 
 async def next_sort_order(table: str, content_type: str, user_id: str) -> int:

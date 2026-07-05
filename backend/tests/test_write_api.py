@@ -69,20 +69,28 @@ def test_쓰기는_토큰_없이_401(method, path):
 def test_프로필_저장은_upsert로_전달된다(authed, monkeypatch):
     captured = {}
 
-    async def fake_upsert(fields, user_id):
+    async def fake_upsert(fields, user_id, username=None):
         captured.update(fields)
         captured["_user_id"] = user_id
+        captured["_username"] = username
 
     monkeypatch.setattr(db, "upsert_profile", fake_upsert)
     resp = client.put(
         "/api/profile",
-        json={"name": "정훈", "tagline": "한 줄", "bio": "", "keywords": ["보안"]},
+        json={
+            "name": "정훈",
+            "tagline": "한 줄",
+            "bio": "",
+            "keywords": ["보안"],
+            "username": "JungHoon_01",
+        },
     )
     assert resp.status_code == 204
     assert captured["name"] == "정훈"
     assert captured["keywords"] == ["보안"]
     assert captured["profile_image_url"] is None
     assert captured["_user_id"] == "test-user"  # 소유자 스탬프
+    assert captured["_username"] == "junghoon_01"  # 소문자 정규화
 
 
 def test_프로필_이름_길이_초과는_422(authed):

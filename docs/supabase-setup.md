@@ -14,13 +14,14 @@ localStorage(개인 브라우저)로 동작합니다.
 -- 프로필 (사이트 단일 프로필: id='me')
 -- 컬럼 순서는 실제 DB와 동일(user_id는 M2에서 add column 되어 맨 끝).
 create table if not exists profiles (
-  id text primary key,
+  id text primary key default gen_random_uuid()::text,  -- 유저별 프로필: 신규는 자동 생성
   name text not null default '',
   tagline text not null default '',
   bio text not null default '',
   keywords text[] not null default '{}',
   profile_image_url text,
-  user_id uuid not null references auth.users (id)
+  user_id uuid not null references auth.users (id),
+  username text                                          -- 공개 페이지 /u/{username} (선택)
 );
 
 create table if not exists folders (
@@ -51,6 +52,10 @@ create table if not exists contents (
 
 create index if not exists idx_folders_user_id  on folders (user_id);
 create index if not exists idx_contents_user_id on contents (user_id);
+
+-- 프로필: 1인 1행 + username 유일(대소문자 무시, 값 있을 때만)
+create unique index if not exists uq_profiles_user_id  on profiles (user_id);
+create unique index if not exists uq_profiles_username on profiles (lower(username));
 
 -- Row Level Security: 누구나 읽기 / 본인 소유 데이터만 쓰기
 alter table profiles enable row level security;

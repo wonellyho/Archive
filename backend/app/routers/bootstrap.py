@@ -12,6 +12,38 @@ from ..schemas import BootstrapResponse, Content, Folder, Profile, default_profi
 router = APIRouter(prefix="/api", tags=["data"])
 
 
+def build_archive_response(
+    profile_row: dict | None,
+    folder_rows: list[dict],
+    content_rows: list[dict],
+) -> BootstrapResponse:
+    """DB 행들을 프론트 RepoData(BootstrapResponse) 형태로 조립한다.
+
+    bootstrap(홈)과 공개 아카이브(/api/u/{username})가 공유한다.
+    """
+    profile = (
+        Profile(
+            name=profile_row.get("name", ""),
+            tagline=profile_row.get("tagline", ""),
+            bio=profile_row.get("bio", ""),
+            keywords=profile_row.get("keywords") or [],
+            profile_image_url=profile_row.get("profile_image_url"),
+            username=profile_row.get("username"),
+        )
+        if profile_row
+        else default_profile()
+    )
+    folders = [Folder(**row) for row in folder_rows]
+    contents = [Content(**row) for row in content_rows]
+    return BootstrapResponse(
+        profile=profile,
+        music_folders=[f for f in folders if f.type == "music"],
+        video_folders=[f for f in folders if f.type == "video"],
+        music_contents=[c for c in contents if c.type == "music"],
+        video_contents=[c for c in contents if c.type == "video"],
+    )
+
+
 @router.get(
     "/bootstrap",
     response_model=BootstrapResponse,
@@ -29,26 +61,4 @@ router = APIRouter(prefix="/api", tags=["data"])
 @limiter.limit(LIMIT_BOOTSTRAP)
 async def bootstrap(request: Request) -> BootstrapResponse:
     profile_row, folder_rows, content_rows = await db.fetch_bootstrap()
-
-    profile = (
-        Profile(
-            name=profile_row.get("name", ""),
-            tagline=profile_row.get("tagline", ""),
-            bio=profile_row.get("bio", ""),
-            keywords=profile_row.get("keywords") or [],
-            profile_image_url=profile_row.get("profile_image_url"),
-        )
-        if profile_row
-        else default_profile()
-    )
-
-    folders = [Folder(**row) for row in folder_rows]
-    contents = [Content(**row) for row in content_rows]
-
-    return BootstrapResponse(
-        profile=profile,
-        music_folders=[f for f in folders if f.type == "music"],
-        video_folders=[f for f in folders if f.type == "video"],
-        music_contents=[c for c in contents if c.type == "music"],
-        video_contents=[c for c in contents if c.type == "video"],
-    )
+    return build_archive_response(profile_row, folder_rows, content_rows)

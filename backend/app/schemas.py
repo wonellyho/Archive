@@ -1,12 +1,22 @@
 """API 데이터 계약(Pydantic). JSON은 camelCase로 직렬화되어 프론트 TS 타입과 1:1로 맞는다."""
 
+import re
 from typing import Literal, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic.alias_generators import to_camel
 
 ContentType = Literal["music", "video"]
+
+# username: 영문 소문자·숫자·_·- 3~30자. 예약어는 공개 라우트/시스템과 충돌 방지.
+_USERNAME_RE = re.compile(r"^[a-z0-9_-]{3,30}$")
+_RESERVED_USERNAMES = {
+    "me", "api", "admin", "administrator", "root", "u", "user", "users",
+    "health", "docs", "redoc", "openapi", "bootstrap", "saves", "uploads",
+    "llm", "youtube", "profile", "profiles", "folders", "contents", "www",
+    "null", "undefined", "system", "support",
+}
 
 
 class CamelModel(BaseModel):
@@ -43,7 +53,10 @@ class Profile(CamelModel):
     bio: str = ""
     keywords: list[str] = Field(default_factory=list)
     profile_image_url: Optional[str] = Field(
-        default=None, description="프로필 이미지(현재 data URL, M4에서 Storage URL로)"
+        default=None, description="프로필 이미지(Storage URL 또는 data URL)"
+    )
+    username: Optional[str] = Field(
+        default=None, description="공개 페이지 주소(/u/{username})용. 없을 수 있음."
     )
 
 
@@ -110,6 +123,21 @@ class ProfileIn(Profile):
     tagline: str = Field(default="", max_length=200)
     bio: str = Field(default="", max_length=2000)
     keywords: list[str] = Field(default_factory=list, max_length=30)
+
+    @field_validator("username")
+    @classmethod
+    def _normalize_username(cls, v: Optional[str]) -> Optional[str]:
+        """소문자 정규화 + 형식·예약어 검증. 빈 값은 None(미설정)으로 취급."""
+        if v is None:
+            return None
+        v = v.strip().lower()
+        if v == "":
+            return None
+        if not _USERNAME_RE.match(v):
+            raise ValueError("username은 영문 소문자·숫자·_·- 3~30자여야 합니다.")
+        if v in _RESERVED_USERNAMES:
+            raise ValueError("사용할 수 없는 username입니다.")
+        return v
 
 
 class FolderIn(CamelModel):
