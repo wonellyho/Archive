@@ -153,3 +153,29 @@ class ContentPatch(CamelModel):
     title: Optional[str] = Field(default=None, max_length=120)
     subtitle: Optional[str] = Field(default=None, max_length=200)
     body: Optional[str] = Field(default=None, max_length=2000)
+
+
+# ── LLM 문구추천 (M6) ──
+
+
+class SuggestIn(CamelModel):
+    """LLM 문구추천 요청. 모든 텍스트는 '데이터'로 취급되어 프롬프트에 격리된다."""
+
+    type: ContentType
+    source_title: str = Field(
+        min_length=1, max_length=300, description="원본 영상/음악 제목"
+    )
+    source_channel: str = Field(default="", max_length=200, description="원본 채널명")
+    note: str = Field(
+        default="", max_length=500, description="사용자가 남긴 감상 메모(선택)"
+    )
+
+
+class SuggestResult(CamelModel):
+    """LLM 문구추천 응답 — 출력 검증(개수·길이)을 통과한 값만 담긴다."""
+
+    taglines: list[str] = Field(
+        description="추천 문구 후보(한국어, 각 24자 내외)",
+        examples=[["밤에 스며드는 편지", "조용히 되감는 하루", "느린 위로"]],
+    )
+    mood: str = Field(description="분위기 한 단어", examples=["잔잔함"])
