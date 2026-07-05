@@ -9,5 +9,8 @@ httpx==0.28.1
 # LLM (M6 문구추천 — Claude Haiku 4.5)
 anthropic==0.116.0
 
+# rate limit (M5 — 공개/비용 엔드포인트 남용 방지, per-IP)
+slowapi==0.1.10
+
 # 테스트
 pytest==9.1.1

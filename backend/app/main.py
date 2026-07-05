@@ -6,9 +6,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
 
 from .config import get_settings
 from .http import close_client
+from .limiter import limiter
 from .routers import bootstrap, contents, folders, health, llm, profile, youtube
 
 logger = logging.getLogger(__name__)
@@ -81,6 +83,30 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 
+# rate limit(per-IP) — 라우터의 @limiter.limit 데코레이터가 이 인스턴스를 사용.
+app.state.limiter = limiter
+
+# 보안 응답 헤더. Swagger(/docs 등)는 CDN 자원·인라인 스크립트가 필요해 CSP만 제외.
+_STRICT_CSP = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+_CSP_EXCLUDED = ("/docs", "/redoc", "/openapi.json")
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "no-referrer")
+    response.headers.setdefault("Cross-Origin-Resource-Policy", "same-origin")
+    if not request.url.path.startswith(_CSP_EXCLUDED):
+        # API 응답은 HTML/자원을 로드할 일이 없어 최대한 잠근다.
+        response.headers.setdefault("Content-Security-Policy", _STRICT_CSP)
+    if get_settings().is_production:
+        response.headers.setdefault(
+            "Strict-Transport-Security", "max-age=63072000; includeSubDomains"
+        )
+    return response
+
 if settings.auth_optional:
     if settings.is_production:
         logger.warning("AUTH_OPTIONAL=true 는 production에서 무시됩니다.")
@@ -94,6 +120,15 @@ app.include_router(folders.router)
 app.include_router(contents.router)
 app.include_router(youtube.router)
 app.include_router(llm.router)
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+    """slowapi 초과를 표준 한국어 detail로 응답(기본 응답 형식 통일)."""
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "요청이 너무 잦습니다. 잠시 후 다시 시도해 주세요."},
+    )
 
 
 @app.exception_handler(Exception)

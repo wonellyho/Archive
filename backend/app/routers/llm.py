@@ -7,10 +7,11 @@
   4) 인젝션 방어·출력 검증 — llm.base(프롬프트 격리 + 스키마/길이 강제)
 """
 
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException, Request
 
 from ..deps import CurrentUser, get_current_user
 from ..config import get_settings
+from ..limiter import LIMIT_LLM, limiter
 from ..llm import LLMError, LLMRateLimited, get_provider
 from ..llm.ratelimit import get_rate_limiter
 from ..schemas import SuggestIn, SuggestResult
@@ -68,7 +69,9 @@ _ERROR_RESPONSES = {
         "응답은 개수·길이 검증을 통과한 값만 반환합니다."
     ),
 )
+@limiter.limit(LIMIT_LLM)
 async def suggest(
+    request: Request,
     body: SuggestIn = Body(openapi_examples=_SUGGEST_EXAMPLES),
     user: CurrentUser = Depends(get_current_user),
 ) -> SuggestResult:

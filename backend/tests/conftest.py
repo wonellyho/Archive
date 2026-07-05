@@ -8,6 +8,7 @@
 import pytest
 
 from app.config import get_settings
+from app.limiter import limiter
 
 
 @pytest.fixture(autouse=True)
@@ -17,3 +18,14 @@ def _deterministic_auth():
     settings.auth_optional = False
     yield
     settings.auth_optional = original
+
+
+@pytest.fixture(autouse=True)
+def _disable_rate_limit():
+    """기본적으로 rate limit을 끈다(누적 카운트로 기존 테스트가 흔들리지 않게).
+
+    rate limit 자체를 검증하는 테스트만 내부에서 limiter.enabled = True로 켠다.
+    """
+    limiter.enabled = False
+    yield
+    limiter.enabled = True

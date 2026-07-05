@@ -4,11 +4,12 @@
 """
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from ..config import get_settings
 from ..deps import CurrentUser, get_current_user
 from ..http import get_client
+from ..limiter import LIMIT_SEARCH, limiter
 from ..schemas import YouTubeSearchResult
 
 router = APIRouter(prefix="/api/youtube", tags=["youtube"])
@@ -46,7 +47,9 @@ _ERROR_RESPONSES = {
         "응답 필드는 프론트 TS 타입 `YouTubeSearchResult`와 동일합니다."
     ),
 )
+@limiter.limit(LIMIT_SEARCH)
 async def search(
+    request: Request,
     q: str = Query(min_length=2, max_length=100, description="검색어"),
     content_type: str = Query(
         "music", alias="type", pattern="^(music|video)$", description="music | video"
