@@ -163,6 +163,61 @@ async def delete_rows(table: str, column: str, value: str, user_id: str) -> None
     )
 
 
+# ── 찜(saves) — M7-A ──────────────────────────────────────────────────
+
+
+async def add_save(user_id: str, content_id: str) -> None:
+    """찜 추가(멱등). 이미 찜했으면 무시, 없는 콘텐츠(FK 위반)면 404.
+
+    service_role은 RLS를 우회하므로 user_id를 백엔드가 직접 스탬프한다.
+    """
+    base, key = _write_credentials()
+    try:
+        resp = await get_client().post(
+            f"{base}/saves",
+            params={"on_conflict": "user_id,content_id"},
+            json={"user_id": user_id, "content_id": content_id},
+            headers={
+                "apikey": key,
+                "Authorization": f"Bearer {key}",
+                "Prefer": "return=minimal,resolution=ignore-duplicates",
+            },
+        )
+    except httpx.HTTPError:
+        raise HTTPException(502, "데이터베이스 요청에 실패했습니다.")
+    if resp.status_code < 300:
+        return
+    if resp.status_code == 409:
+        # 중복은 ignore-duplicates로 흡수되므로 409 = 존재하지 않는 content_id(FK).
+        raise HTTPException(404, "콘텐츠를 찾을 수 없습니다.")
+    raise HTTPException(502, f"데이터베이스 쓰기 오류 (HTTP {resp.status_code}).")
+
+
+async def remove_save(user_id: str, content_id: str) -> None:
+    """찜 해제 — 본인 것만(user_id 스코프). 없으면 0행(무해)."""
+    await _write(
+        "DELETE",
+        "saves",
+        params={"user_id": f"eq.{user_id}", "content_id": f"eq.{content_id}"},
+    )
+
+
+async def list_saved_contents(user_id: str) -> list[dict[str, Any]]:
+    """내가 찜한 콘텐츠 목록(찜한 최신순). saves→contents 임베드 조회."""
+    base, key = _credentials()
+    rows = await _select(
+        base,
+        key,
+        "saves",
+        {
+            "user_id": f"eq.{user_id}",
+            "select": "created_at,contents(*)",
+            "order": "created_at.desc",
+        },
+    )
+    return [row["contents"] for row in rows if row.get("contents")]
+
+
 async def fetch_bootstrap() -> tuple[dict[str, Any] | None, list[dict], list[dict]]:
     """프로필(단일)·폴더·콘텐츠를 병렬 조회한다.
 

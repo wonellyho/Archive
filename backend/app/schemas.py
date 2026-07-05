@@ -191,3 +191,12 @@ class UploadResult(CamelModel):
         description="업로드된 이미지의 공개 URL(coverImageUrl·profileImageUrl에 사용)",
         examples=["https://xxxx.supabase.co/storage/v1/object/public/images/<uid>/<id>.jpg"],
     )
+
+
+# ── 찜(saves) — M7-A ──
+
+
+class SaveIn(CamelModel):
+    """찜 요청 — 찜할 콘텐츠 id."""
+
+    content_id: UUID = Field(description="찜할 콘텐츠의 id")

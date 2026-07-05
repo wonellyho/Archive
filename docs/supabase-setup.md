@@ -85,6 +85,25 @@ create policy "owner delete contents" on contents for delete to authenticated us
 
 > 버킷 이름을 바꾸려면 `backend/.env`의 `STORAGE_BUCKET`도 함께 바꾸세요(기본 `images`). 업로드 크기 상한은 `MAX_UPLOAD_BYTES`(기본 2MB).
 
+## 1-2. 찜(saves) 테이블 (M7-A)
+
+로그인 사용자가 콘텐츠를 찜(북마크)합니다. **본인 찜만** 읽고/쓰기 가능.
+
+```sql
+create table if not exists saves (
+  user_id uuid not null references auth.users (id),
+  content_id uuid not null references contents (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (user_id, content_id)
+);
+create index if not exists idx_saves_user_id on saves (user_id);
+
+alter table saves enable row level security;
+create policy "own read saves"   on saves for select to authenticated using (auth.uid() = user_id);
+create policy "own insert saves" on saves for insert to authenticated with check (auth.uid() = user_id);
+create policy "own delete saves" on saves for delete to authenticated using (auth.uid() = user_id);
+```
+
 ## 2. 본인(관리자) 계정 만들기
 
 1. **Authentication → Providers → Email** 활성화.
