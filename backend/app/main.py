@@ -11,7 +11,16 @@ from slowapi.errors import RateLimitExceeded
 from .config import get_settings
 from .http import close_client
 from .limiter import limiter
-from .routers import bootstrap, contents, folders, health, llm, profile, youtube
+from .routers import (
+    bootstrap,
+    contents,
+    folders,
+    health,
+    llm,
+    profile,
+    uploads,
+    youtube,
+)
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -57,6 +66,10 @@ TAGS_METADATA = [
     {
         "name": "llm",
         "description": "LLM 문구추천 — 키 은닉·인젝션 방어·rate limit 적용. 🔒 로그인 필요.",
+    },
+    {
+        "name": "uploads",
+        "description": "이미지 업로드 — 타입·크기·매직바이트 검증 후 Storage에 저장. 🔒 로그인 필요.",
     },
 ]
 
@@ -124,6 +137,7 @@ app.include_router(folders.router)
 app.include_router(contents.router)
 app.include_router(youtube.router)
 app.include_router(llm.router)
+app.include_router(uploads.router)
 
 
 @app.exception_handler(RateLimitExceeded)

@@ -179,3 +179,15 @@ class SuggestResult(CamelModel):
         examples=[["밤에 스며드는 편지", "조용히 되감는 하루", "느린 위로"]],
     )
     mood: str = Field(description="분위기 한 단어", examples=["잔잔함"])
+
+
+# ── 이미지 업로드 (M4) ──
+
+
+class UploadResult(CamelModel):
+    """이미지 업로드 응답 — Storage 공개 URL. 폴더/프로필 저장 시 이 URL을 사용."""
+
+    url: str = Field(
+        description="업로드된 이미지의 공개 URL(coverImageUrl·profileImageUrl에 사용)",
+        examples=["https://xxxx.supabase.co/storage/v1/object/public/images/<uid>/<id>.jpg"],
+    )
