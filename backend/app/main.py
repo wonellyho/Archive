@@ -18,6 +18,7 @@ from .routers import (
     health,
     llm,
     profile,
+    saves,
     uploads,
     youtube,
 )
@@ -70,6 +71,10 @@ TAGS_METADATA = [
     {
         "name": "uploads",
         "description": "이미지 업로드 — 타입·크기·매직바이트 검증 후 Storage에 저장. 🔒 로그인 필요.",
+    },
+    {
+        "name": "saves",
+        "description": "찜 — 콘텐츠 북마크. 본인 찜만 조회/추가/해제. 🔒 로그인 필요.",
     },
 ]
 
@@ -138,6 +143,7 @@ app.include_router(contents.router)
 app.include_router(youtube.router)
 app.include_router(llm.router)
 app.include_router(uploads.router)
+app.include_router(saves.router)
 
 
 @app.exception_handler(RateLimitExceeded)
