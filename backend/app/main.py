@@ -30,14 +30,18 @@ DESCRIPTION = """
 - Base URL(로컬): `http://localhost:8001` → 프론트 `.env`의 `VITE_API_URL`
 - 응답 JSON은 **camelCase** — 프론트 TS 타입과 1:1로 맞습니다.
 
-## 인증 방법 🔒
-잠금 표시가 있는 엔드포인트는 Supabase 로그인 토큰이 필요합니다.
+## 인증 방법 🔒 (두 가지)
 
-1. 프론트(또는 Supabase)에서 로그인 후 **access token**을 얻는다.
-2. 우측 상단 **Authorize** 버튼을 눌러 토큰을 붙여넣는다. (`Bearer ` 접두어는 자동)
-3. 이후 모든 요청에 토큰이 자동 첨부된다. (새로고침해도 유지)
+**방법 1 — 실토큰(Authorize) · 쓰기까지 전부 테스트할 때**
+1. 프론트를 로그인한 상태에서 **access token**을 얻는다.
+   - DevTools → Application → Local Storage → `sb-…-auth-token` 항목의 `access_token` 값 복사
+   - 또는 콘솔: `const k=Object.keys(localStorage).find(k=>k.endsWith('-auth-token')); JSON.parse(localStorage.getItem(k)).access_token`
+2. 우측 상단 **Authorize** 버튼에 붙여넣기 (`Bearer ` 접두어는 자동, 새로고침해도 유지)
+3. 이후 모든 🔒 요청에 자동 첨부. (토큰은 약 1시간 뒤 만료 → 다시 복사)
 
-> 로컬에서 토큰 없이 테스트하려면 `backend/.env`에 `AUTH_OPTIONAL=true` (배포 환경에서는 무시됨)
+**방법 2 — 토큰 없이 열기: `AUTH_OPTIONAL=true`**
+- `backend/.env`에 `AUTH_OPTIONAL=true` 후 서버 재시작(로컬 전용, 배포에선 무시).
+- ⚠️ **읽기·검색·LLM만** 열립니다. **DB 쓰기(프로필·폴더·콘텐츠)는 실패**(소유권 user_id가 실제 계정이어야 하는데 개발용 가짜 사용자라 FK 위반) → 쓰기 테스트는 **방법 1(실토큰)** 을 쓰세요.
 """
 
 TAGS_METADATA = [

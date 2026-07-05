@@ -29,7 +29,7 @@ _COMMON_ERRORS = {
 async def create_content(
     body: ContentIn, user: CurrentUser = Depends(get_current_user)
 ) -> Content:
-    sort_order = await db.next_sort_order("contents", body.type)
+    sort_order = await db.next_sort_order("contents", body.type, user.id)
     row = await db.insert_row(
         "contents",
         {
@@ -44,6 +44,7 @@ async def create_content(
             "subtitle": body.subtitle,
             "body": body.body,
             "sort_order": sort_order,
+            "user_id": user.id,
         },
     )
     return Content(**row)
@@ -63,7 +64,7 @@ async def update_content(
     fields = body.model_dump(exclude_unset=True)
     if not fields:
         return
-    await db.patch_row("contents", content_id, fields)
+    await db.patch_row("contents", content_id, fields, user.id)
 
 
 @router.delete(
@@ -76,4 +77,4 @@ async def update_content(
 async def delete_content(
     content_id: str, user: CurrentUser = Depends(get_current_user)
 ) -> None:
-    await db.delete_rows("contents", "id", content_id)
+    await db.delete_rows("contents", "id", content_id, user.id)

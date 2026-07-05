@@ -8,10 +8,13 @@ localStorage(개인 브라우저)로 동작합니다.
 1. https://supabase.com 에서 새 프로젝트 생성.
 2. 좌측 **SQL Editor** → 아래 SQL을 붙여넣고 실행.
 
+> 현재 스키마 = **M2(user_id 소유권) 반영**(2026-07-05). 각 행에 소유자(`user_id`)가 있고, 로그인 사용자는 **자기 소유 데이터만** 쓸 수 있습니다.
+
 ```sql
--- 프로필 (단일 행)
+-- 프로필 (사이트 단일 프로필: id='me')
 create table if not exists profiles (
   id text primary key,
+  user_id uuid not null references auth.users (id),
   name text not null default '',
   tagline text not null default '',
   bio text not null default '',
@@ -21,6 +24,7 @@ create table if not exists profiles (
 
 create table if not exists folders (
   id uuid primary key,
+  user_id uuid not null references auth.users (id),
   type text not null check (type in ('music', 'video')),
   name text not null,
   cover_image_url text,
@@ -30,6 +34,7 @@ create table if not exists folders (
 
 create table if not exists contents (
   id uuid primary key,
+  user_id uuid not null references auth.users (id),
   type text not null check (type in ('music', 'video')),
   folder_id uuid references folders (id) on delete cascade,
   youtube_video_id text not null,
@@ -43,7 +48,10 @@ create table if not exists contents (
   created_at timestamptz not null default now()
 );
 
--- Row Level Security: 누구나 읽기 / 로그인한 사용자만 쓰기
+create index if not exists idx_folders_user_id  on folders (user_id);
+create index if not exists idx_contents_user_id on contents (user_id);
+
+-- Row Level Security: 누구나 읽기 / 본인 소유 데이터만 쓰기
 alter table profiles enable row level security;
 alter table folders enable row level security;
 alter table contents enable row level security;
@@ -52,10 +60,19 @@ create policy "public read profiles" on profiles for select using (true);
 create policy "public read folders" on folders for select using (true);
 create policy "public read contents" on contents for select using (true);
 
-create policy "owner write profiles" on profiles for all to authenticated using (true) with check (true);
-create policy "owner write folders" on folders for all to authenticated using (true) with check (true);
-create policy "owner write contents" on contents for all to authenticated using (true) with check (true);
+-- 소유권 기반 쓰기: 로그인 사용자가 auth.uid() = user_id 인 행만 (insert/update/delete)
+create policy "owner insert profiles" on profiles for insert to authenticated with check (auth.uid() = user_id);
+create policy "owner update profiles" on profiles for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "owner delete profiles" on profiles for delete to authenticated using (auth.uid() = user_id);
+create policy "owner insert folders" on folders for insert to authenticated with check (auth.uid() = user_id);
+create policy "owner update folders" on folders for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "owner delete folders" on folders for delete to authenticated using (auth.uid() = user_id);
+create policy "owner insert contents" on contents for insert to authenticated with check (auth.uid() = user_id);
+create policy "owner update contents" on contents for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "owner delete contents" on contents for delete to authenticated using (auth.uid() = user_id);
 ```
+
+> 백엔드(FastAPI)는 service_role 키로 쓰기하며 RLS를 우회하므로, **소유권은 백엔드가 직접 재확인**합니다(생성 시 `user_id` 스탬프, 수정/삭제 시 `user_id` 스코프). 위 RLS는 직접 DB 접근에 대한 2차 방어입니다.
 
 ## 2. 본인(관리자) 계정 만들기
 
@@ -72,8 +89,8 @@ VITE_SUPABASE_URL=https://xxxxx.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOi...
 ```
 
-> anon 키는 클라이언트에 노출돼도 안전합니다. 위 RLS 정책이 쓰기를 막아주기
-> 때문에, 로그인하지 않은 방문자는 읽기만 가능합니다.
+> anon 키는 클라이언트에 노출돼도 안전합니다. 위 RLS 정책상 방문자는 읽기만,
+> 로그인 사용자도 **본인 소유(user_id) 데이터만** 쓸 수 있습니다.
 
 개발 서버를 재시작하면 적용됩니다. 우측 상단 **🔒 관리자**로 로그인하면 편집
 모드가 켜집니다.
