@@ -42,6 +42,10 @@ class Settings(BaseSettings):
     # rate limit: 사용자당 60초 내 허용 호출 수(초과 시 429).
     llm_rate_per_min: int = 10
 
+    # 이미지 업로드(M4) — Supabase Storage 공개 버킷 이름, 업로드 크기 상한(바이트).
+    storage_bucket: str = "images"
+    max_upload_bytes: int = 2 * 1024 * 1024  # 2MB
+
     # 개발용: true면 토큰 없이도 API를 통과시킨다(로컬 통합 편의, 배포 환경 금지)
     auth_optional: bool = False
 

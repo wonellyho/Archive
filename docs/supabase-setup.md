@@ -12,29 +12,29 @@ localStorage(개인 브라우저)로 동작합니다.
 
 ```sql
 -- 프로필 (사이트 단일 프로필: id='me')
+-- 컬럼 순서는 실제 DB와 동일(user_id는 M2에서 add column 되어 맨 끝).
 create table if not exists profiles (
   id text primary key,
-  user_id uuid not null references auth.users (id),
   name text not null default '',
   tagline text not null default '',
   bio text not null default '',
   keywords text[] not null default '{}',
-  profile_image_url text
+  profile_image_url text,
+  user_id uuid not null references auth.users (id)
 );
 
 create table if not exists folders (
   id uuid primary key,
-  user_id uuid not null references auth.users (id),
   type text not null check (type in ('music', 'video')),
   name text not null,
   cover_image_url text,
   sort_order int not null default 0,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  user_id uuid not null references auth.users (id)
 );
 
 create table if not exists contents (
   id uuid primary key,
-  user_id uuid not null references auth.users (id),
   type text not null check (type in ('music', 'video')),
   folder_id uuid references folders (id) on delete cascade,
   youtube_video_id text not null,
@@ -45,7 +45,8 @@ create table if not exists contents (
   subtitle text not null default '',
   body text not null default '',
   sort_order int not null default 0,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  user_id uuid not null references auth.users (id)
 );
 
 create index if not exists idx_folders_user_id  on folders (user_id);
@@ -73,6 +74,16 @@ create policy "owner delete contents" on contents for delete to authenticated us
 ```
 
 > 백엔드(FastAPI)는 service_role 키로 쓰기하며 RLS를 우회하므로, **소유권은 백엔드가 직접 재확인**합니다(생성 시 `user_id` 스탬프, 수정/삭제 시 `user_id` 스코프). 위 RLS는 직접 DB 접근에 대한 2차 방어입니다.
+
+## 1-1. 이미지 Storage 버킷 (M4)
+
+커버·프로필 이미지는 base64 대신 Supabase Storage 공개 버킷에 저장합니다.
+
+1. 대시보드 → **Storage** → **New bucket**
+2. 이름 **`images`**, **Public bucket** 켜기(공개 읽기) → Create
+3. 업로드는 백엔드가 service_role로 대신 수행하므로 별도 쓰기 정책 불필요. 이미지는 공개 URL로 서빙됩니다.
+
+> 버킷 이름을 바꾸려면 `backend/.env`의 `STORAGE_BUCKET`도 함께 바꾸세요(기본 `images`). 업로드 크기 상한은 `MAX_UPLOAD_BYTES`(기본 2MB).
 
 ## 2. 본인(관리자) 계정 만들기
 

@@ -12,5 +12,6 @@ from slowapi.util import get_remote_address
 LIMIT_BOOTSTRAP = "60/minute"  # 공개 초기 로드
 LIMIT_SEARCH = "30/minute"  # YouTube 검색(할당량 보호)
 LIMIT_LLM = "20/minute"  # LLM 호출(비용 보호) — per-user 상한과 병행
+LIMIT_UPLOAD = "20/minute"  # 이미지 업로드(스토리지 남용 보호)
 
 limiter = Limiter(key_func=get_remote_address)

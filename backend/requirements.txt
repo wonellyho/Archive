@@ -12,5 +12,8 @@ anthropic==0.116.0
 # rate limit (M5 — 공개/비용 엔드포인트 남용 방지, per-IP)
 slowapi==0.1.10
 
+# 이미지 업로드 (M4 — multipart 파일 파싱)
+python-multipart==0.0.32
+
 # 테스트
 pytest==9.1.1
