@@ -13,6 +13,7 @@ from ..deps import CurrentUser, get_current_user
 from ..config import get_settings
 from ..limiter import LIMIT_LLM, limiter
 from ..llm import LLMError, LLMRateLimited, get_provider
+from ..llm.budget import current_month, get_monthly_budget
 from ..llm.ratelimit import get_rate_limiter
 from ..schemas import SuggestIn, SuggestResult
 
@@ -81,9 +82,16 @@ async def suggest(
     if not get_rate_limiter().allow(user.id):
         raise HTTPException(429, "요청이 너무 잦습니다. 잠시 후 다시 시도해 주세요.")
 
+    budget, month = get_monthly_budget(), current_month()
+    if budget.exceeded(user.id, month):
+        raise HTTPException(429, "이번 달 LLM 사용량 상한을 초과했습니다.")
+
     try:
-        return await get_provider().suggest(body)
+        result, tokens = await get_provider().suggest(body)
     except LLMRateLimited:
         raise HTTPException(429, "LLM 사용량이 많습니다. 잠시 후 다시 시도해 주세요.")
     except LLMError:
         raise HTTPException(502, "문구 추천 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.")
+
+    budget.add(user.id, month, tokens)
+    return result

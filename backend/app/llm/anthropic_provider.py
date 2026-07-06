@@ -21,7 +21,7 @@ class AnthropicProvider:
         self._model = model
         self._max_tokens = max_tokens
 
-    async def suggest(self, data: SuggestIn) -> SuggestResult:
+    async def suggest(self, data: SuggestIn) -> tuple[SuggestResult, int]:
         system, user = build_messages(data)
         try:
             message = await self._client.messages.create(
@@ -42,7 +42,11 @@ class AnthropicProvider:
             logger.warning("Anthropic API 연결/응답 오류")
             raise LLMError("LLM 요청에 실패했습니다.")
 
-        return parse_result(_extract_text(message))
+        usage = getattr(message, "usage", None)
+        tokens = (getattr(usage, "input_tokens", 0) or 0) + (
+            getattr(usage, "output_tokens", 0) or 0
+        )
+        return parse_result(_extract_text(message)), tokens
 
 
 def _extract_text(message: "anthropic.types.Message") -> str:

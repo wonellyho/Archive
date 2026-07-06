@@ -20,9 +20,12 @@ class LLMRateLimited(LLMError):
 
 
 class LLMProvider(Protocol):
-    """provider 어댑터 인터페이스. 교체 시 이 계약만 지키면 된다."""
+    """provider 어댑터 인터페이스. 교체 시 이 계약만 지키면 된다.
 
-    async def suggest(self, data: SuggestIn) -> SuggestResult: ...
+    반환: (결과, 사용 토큰 수) — 월 토큰 예산 집계에 사용.
+    """
+
+    async def suggest(self, data: SuggestIn) -> tuple[SuggestResult, int]: ...
 
 
 # ── 프롬프트 구성 (보안 4계층 중 '프롬프트 인젝션 방어') ──
