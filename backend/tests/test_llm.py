@@ -191,3 +191,25 @@ def test_parse_result_개수_길이_강제():
 def test_parse_result_불량출력은_LLMError(text):
     with pytest.raises(LLMError):
         parse_result(text)
+
+
+# ── 감성분석: keywords·tone (G5) ──
+
+
+def test_parse_result_keywords_tone_파싱():
+    r = parse_result(
+        '{"taglines": ["가"], "mood": "잔잔", '
+        '"keywords": ["새벽", "위로", ""], "tone": "담백한"}'
+    )
+    assert r.keywords == ["새벽", "위로"]  # 빈 문자열 제외
+    assert r.tone == "담백한"
+
+
+def test_parse_result_keywords_tone_없으면_기본값():
+    r = parse_result('{"taglines": ["가"], "mood": "잔잔"}')
+    assert r.keywords == [] and r.tone == ""
+
+
+def test_parse_result_keywords에도_안전성필터():
+    r = parse_result('{"taglines": ["가"], "mood": "x", "keywords": ["씨발", "위로"]}')
+    assert "씨발" not in r.keywords and "위로" in r.keywords
