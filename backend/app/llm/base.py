@@ -8,6 +8,7 @@ import re
 from typing import Protocol
 
 from ..schemas import SuggestIn, SuggestResult
+from .safety import sanitize_mood, sanitize_taglines
 
 
 class LLMError(Exception):
@@ -91,8 +92,14 @@ def parse_result(text: str) -> SuggestResult:
     if not cleaned:
         raise LLMError("유효한 taglines가 없습니다.")
 
+    # 출력 안전성(기능8 ④): PII 마스킹 + 유해 문구 제거.
+    cleaned = sanitize_taglines(cleaned)
+    if not cleaned:
+        raise LLMError("안전성 필터 후 남은 taglines가 없습니다.")
+
     mood_val = raw.get("mood")
     mood = mood_val.strip()[:_MOOD_MAXLEN] if isinstance(mood_val, str) else ""
+    mood = sanitize_mood(mood)
     return SuggestResult(taglines=cleaned, mood=mood)
 
 
