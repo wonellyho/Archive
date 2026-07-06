@@ -200,13 +200,21 @@ class SuggestIn(CamelModel):
 
 
 class SuggestResult(CamelModel):
-    """LLM 문구추천 응답 — 출력 검증(개수·길이)을 통과한 값만 담긴다."""
+    """LLM 문구추천 + 감성분석 응답 — 출력 검증·안전성 필터를 통과한 값만 담긴다."""
 
     taglines: list[str] = Field(
         description="추천 문구 후보(한국어, 각 24자 내외)",
         examples=[["밤에 스며드는 편지", "조용히 되감는 하루", "느린 위로"]],
     )
     mood: str = Field(description="분위기 한 단어", examples=["잔잔함"])
+    keywords: list[str] = Field(
+        default_factory=list,
+        description="감상/취향을 나타내는 추천 키워드(프로필 키워드 후보)",
+        examples=[["새벽", "위로", "잔잔"]],
+    )
+    tone: str = Field(
+        default="", description="감상문에 어울리는 톤 제안", examples=["담백한"]
+    )
 
 
 # ── 이미지 업로드 (M4) ──
