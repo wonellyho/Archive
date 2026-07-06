@@ -41,6 +41,8 @@ class Settings(BaseSettings):
     llm_max_tokens: int = 400
     # rate limit: 사용자당 60초 내 허용 호출 수(초과 시 429).
     llm_rate_per_min: int = 10
+    # 월 토큰 예산: 사용자당 1개월 누적 토큰 상한(초과 시 429). in-memory(프로세스 로컬).
+    llm_monthly_token_budget: int = 100_000
 
     # 이미지 업로드(M4) — Supabase Storage 공개 버킷 이름, 업로드 크기 상한(바이트).
     storage_bucket: str = "images"

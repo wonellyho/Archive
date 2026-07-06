@@ -24,18 +24,19 @@ VALID_BODY = {"type": "music", "sourceTitle": "IU - 밤편지", "sourceChannel":
 
 
 class FakeProvider:
-    """suggest 호출을 기록하는 가짜 provider."""
+    """suggest 호출을 기록하는 가짜 provider. (결과, 토큰) 반환."""
 
-    def __init__(self, result=None, exc=None):
+    def __init__(self, result=None, exc=None, tokens=100):
         self.result = result
         self.exc = exc
+        self.tokens = tokens
         self.calls = 0
 
-    async def suggest(self, data: SuggestIn) -> SuggestResult:
+    async def suggest(self, data: SuggestIn) -> tuple[SuggestResult, int]:
         self.calls += 1
         if self.exc is not None:
             raise self.exc
-        return self.result
+        return self.result, self.tokens
 
 
 @pytest.fixture

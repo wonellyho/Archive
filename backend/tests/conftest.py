@@ -9,6 +9,7 @@ import pytest
 
 from app.config import get_settings
 from app.limiter import limiter
+from app.llm.budget import get_monthly_budget
 
 
 @pytest.fixture(autouse=True)
@@ -29,3 +30,14 @@ def _disable_rate_limit():
     limiter.enabled = False
     yield
     limiter.enabled = True
+
+
+@pytest.fixture(autouse=True)
+def _reset_llm_budget():
+    """LLM 월 토큰 예산이 테스트 간 누적되지 않도록 초기화."""
+    budget = get_monthly_budget()
+    original = budget._limit
+    budget.reset()
+    yield
+    budget._limit = original
+    budget.reset()
