@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException, Request
 
 from .. import db
 from ..limiter import LIMIT_PUBLIC, limiter
-from ..schemas import Content
+from ..schemas import Content, SimilarUser
 
 router = APIRouter(prefix="/api/discover", tags=["discover"])
 
@@ -40,6 +40,55 @@ def rank_similar(
 
     scored.sort(key=lambda item: (item[0], item[1]), reverse=True)
     return [row for _, _, row in scored[:limit]]
+
+
+def rank_similar_users(
+    reference: dict, others: list[dict], limit: int = _MAX_RESULTS
+) -> list[SimilarUser]:
+    """공유 채널·키워드로 결이 비슷한 사용자를 정렬한다(점수 0은 제외).
+
+    점수 = 공유 채널 수 × 2 + 공유 키워드 수 × 2. 동점은 username 순.
+    """
+    ref_channels = set(reference.get("channels") or [])
+    ref_keywords = set(reference.get("keywords") or [])
+
+    scored: list[SimilarUser] = []
+    for other in others:
+        shared_channels = ref_channels & set(other.get("channels") or [])
+        shared_keywords = ref_keywords & set(other.get("keywords") or [])
+        score = len(shared_channels) * 2 + len(shared_keywords) * 2
+        if score > 0:
+            scored.append(
+                SimilarUser(
+                    username=other.get("username"),
+                    score=score,
+                    shared_channels=sorted(shared_channels),
+                    shared_keywords=sorted(shared_keywords),
+                )
+            )
+
+    scored.sort(key=lambda u: (u.score, u.username), reverse=True)
+    return scored[:limit]
+
+
+@router.get(
+    "/users/{username}",
+    response_model=list[SimilarUser],
+    summary="결이 비슷한 사용자 추천",
+    response_description="공유 채널·키워드 기준 유사 사용자(최대 12)",
+    responses={404: {"description": "기준 사용자를 찾을 수 없음."}},
+    description=(
+        "기준 사용자와 취향(채널·키워드 공출현)이 비슷한 사용자를 추천합니다(인증 불필요). "
+        "멀티유저 데이터가 쌓일수록 유의미해집니다."
+    ),
+)
+@limiter.limit(LIMIT_PUBLIC)
+async def similar_users(request: Request, username: str) -> list[SimilarUser]:
+    pool = await db.fetch_user_taste_pool(username.strip().lower())
+    if pool is None:
+        raise HTTPException(404, "해당 사용자를 찾을 수 없습니다.")
+    reference, others = pool
+    return rank_similar_users(reference, others)
 
 
 @router.get(

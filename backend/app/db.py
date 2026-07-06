@@ -288,6 +288,54 @@ async def fetch_similar_pool(
     return target, list(merged.values())
 
 
+# ── 유저-유저 취향 유사도 (G6) ────────────────────────────────────────
+
+
+async def fetch_user_taste_pool(
+    username: str,
+) -> tuple[dict[str, Any], list[dict[str, Any]]] | None:
+    """(기준 사용자 특징, 다른 사용자들 특징) 반환. 없으면 None.
+
+    특징 = {username, channels(set), keywords(set)}. 채널은 콘텐츠 source_channel,
+    키워드는 프로필 keywords. 랭킹은 라우터의 순수 함수에서.
+    """
+    from collections import defaultdict
+
+    base, key = _credentials()
+    profiles = await _select(
+        base,
+        key,
+        "profiles",
+        {"select": "user_id,username,keywords", "username": "not.is.null"},
+    )
+    contents = await _select(
+        base, key, "contents", {"select": "user_id,source_channel"}
+    )
+
+    channels_by_user: dict[str, set[str]] = defaultdict(set)
+    for row in contents:
+        channel = row.get("source_channel")
+        if channel:
+            channels_by_user[row.get("user_id")].add(channel)
+
+    reference: dict[str, Any] | None = None
+    others: list[dict[str, Any]] = []
+    for prof in profiles:
+        feature = {
+            "username": prof.get("username"),
+            "channels": channels_by_user.get(prof.get("user_id"), set()),
+            "keywords": set(prof.get("keywords") or []),
+        }
+        if prof.get("username") == username:
+            reference = feature
+        else:
+            others.append(feature)
+
+    if reference is None:
+        return None
+    return reference, others
+
+
 # ── 취향 타임라인 (M8-A) ──────────────────────────────────────────────
 
 

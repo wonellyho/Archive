@@ -255,3 +255,15 @@ class TimelineResponse(CamelModel):
 
     username: str
     buckets: list[TimelineBucket]
+
+
+# ── 유저-유저 취향 유사도 (M8-B 확장, G6) ──
+
+
+class SimilarUser(CamelModel):
+    """결이 비슷한 사용자 — 공유 채널·키워드와 점수."""
+
+    username: str
+    score: int = Field(description="유사도 점수(공유 채널·키워드 가중)")
+    shared_channels: list[str] = Field(default_factory=list)
+    shared_keywords: list[str] = Field(default_factory=list)
