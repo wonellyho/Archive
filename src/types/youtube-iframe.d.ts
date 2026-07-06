@@ -15,6 +15,8 @@ interface YTPlayerInstance {
   pauseVideo(): void;
   seekTo(seconds: number, allowSeekAhead?: boolean): void;
   stopVideo(): void;
+  getCurrentTime(): number;
+  getDuration(): number;
   destroy(): void;
 }
 

@@ -126,9 +126,12 @@ export function VinylTab() {
               <VinylPlayer
                 content={selected}
                 spin={player.spin}
+                currentTime={player.currentTime}
+                duration={player.duration}
                 onPlay={player.play}
                 onPause={player.pause}
                 onRestart={player.restart}
+                onSeek={player.seek}
               />
               <ContentComment content={selected} />
             </div>

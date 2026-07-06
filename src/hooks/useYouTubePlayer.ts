@@ -28,11 +28,17 @@ export interface YouTubePlayerApi {
   containerRef: RefObject<HTMLDivElement | null>;
   spin: VinylSpinState;
   currentVideoId: string | null;
+  /** Elapsed seconds of the current track (polled while playing). */
+  currentTime: number;
+  /** Total length in seconds, or 0 until the track is loaded. */
+  duration: number;
   /** Cue a track without auto-playing (sets spin to "ready"). */
   selectTrack: (videoId: string) => void;
   play: () => void;
   pause: () => void;
   restart: () => void;
+  /** Jump to a position in seconds. */
+  seek: (seconds: number) => void;
   /** Stop playback and reset to idle (used when switching modes). */
   stop: () => void;
 }
@@ -48,6 +54,8 @@ export function useYouTubePlayer(): YouTubePlayerApi {
   const pendingVideoIdRef = useRef<string | null>(null);
   const [spin, setSpin] = useState<VinylSpinState>("idle");
   const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -93,9 +101,26 @@ export function useYouTubePlayer(): YouTubePlayerApi {
     };
   }, []);
 
+  // Poll playback position while the record is spinning so the progress bar
+  // tracks the audio. The interval is torn down whenever we leave "playing".
+  useEffect(() => {
+    if (spin !== "playing") return;
+    const tick = () => {
+      const player = playerRef.current;
+      if (!player) return;
+      setCurrentTime(player.getCurrentTime());
+      setDuration(player.getDuration());
+    };
+    tick();
+    const id = window.setInterval(tick, 250);
+    return () => window.clearInterval(id);
+  }, [spin]);
+
   const selectTrack = useCallback((videoId: string) => {
     setCurrentVideoId(videoId);
     setSpin("ready");
+    setCurrentTime(0);
+    setDuration(0);
     if (playerRef.current) {
       playerRef.current.cueVideoById(videoId);
     } else {
@@ -116,20 +141,30 @@ export function useYouTubePlayer(): YouTubePlayerApi {
     playerRef.current?.playVideo();
   }, []);
 
+  const seek = useCallback((seconds: number) => {
+    playerRef.current?.seekTo(seconds, true);
+    setCurrentTime(seconds);
+  }, []);
+
   const stop = useCallback(() => {
     playerRef.current?.stopVideo();
     setSpin("idle");
     setCurrentVideoId(null);
+    setCurrentTime(0);
+    setDuration(0);
   }, []);
 
   return {
     containerRef,
     spin,
     currentVideoId,
+    currentTime,
+    duration,
     selectTrack,
     play,
     pause,
     restart,
+    seek,
     stop,
   };
 }
