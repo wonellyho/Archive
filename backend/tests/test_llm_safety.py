@@ -37,6 +37,16 @@ def test_is_harmful():
     assert not is_harmful("잔잔한 위로")
 
 
+@pytest.mark.parametrize(
+    "benign",
+    ["고양이 새끼", "촛불이 꺼져 간다", "시발점에서 출발", "죽어라 사랑했다", "자살골"],
+)
+def test_서정·일상표현_오탐하지_않는다(benign):
+    # 부분 문자열 충돌(새끼/꺼져/시발/죽어라/자살) — benign은 통과해야 함.
+    assert not is_harmful(benign)
+    assert sanitize_taglines([benign]) == [benign]
+
+
 # ── 리스트/무드 정제 ──
 
 
