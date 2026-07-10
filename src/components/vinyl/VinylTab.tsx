@@ -5,7 +5,7 @@ import { useYouTubePlayer } from "../../hooks/useYouTubePlayer";
 import type { TasteContent } from "../../types/content";
 import type { TasteFolder } from "../../types/folder";
 import { VinylPlayer } from "./VinylPlayer";
-import { ContentComment } from "../profile/ContentComment";
+import { SourceToggle } from "./SourceToggle";
 import { ContentList } from "../common/ContentList";
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { Button } from "../common/Button";
@@ -133,7 +133,7 @@ export function VinylTab() {
                 onRestart={player.restart}
                 onSeek={player.seek}
               />
-              <ContentComment content={selected} />
+              <SourceToggle content={selected} />
             </div>
           ) : null}
           <ContentList

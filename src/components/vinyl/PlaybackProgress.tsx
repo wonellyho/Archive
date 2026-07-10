@@ -79,8 +79,8 @@ export function PlaybackProgress({
   );
 
   return (
-    <div className="flex w-full max-w-sm items-center gap-3">
-      <span className="w-10 shrink-0 text-right text-xs tabular-nums text-ink-faint">
+    <div className="flex w-72 max-w-full items-center gap-3 font-serif sm:w-80 lg:w-88">
+      <span className="w-11 shrink-0 text-right text-sm tabular-nums text-ink-soft">
         {formatTime(currentTime)}
       </span>
       <div
@@ -96,12 +96,12 @@ export function PlaybackProgress({
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onKeyDown={handleKeyDown}
-        className={`group relative h-4 flex-1 cursor-pointer touch-none select-none ${
+        className={`group relative h-5 flex-1 cursor-pointer touch-none select-none ${
           disabled ? "pointer-events-none opacity-50" : ""
         }`}
       >
         {/* Track */}
-        <div className="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-cream-deep" />
+        <div className="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-cream-deep shadow-inner" />
         {/* Fill */}
         <div
           className="absolute left-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-accent"
@@ -109,11 +109,11 @@ export function PlaybackProgress({
         />
         {/* Handle */}
         <div
-          className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-accent bg-paper shadow transition-transform group-hover:scale-125"
+          className="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-accent bg-paper shadow-md transition-transform group-hover:scale-110"
           style={{ left: percent }}
         />
       </div>
-      <span className="w-10 shrink-0 text-left text-xs tabular-nums text-ink-faint">
+      <span className="w-11 shrink-0 text-left text-sm tabular-nums text-ink-soft">
         {formatTime(duration)}
       </span>
     </div>
