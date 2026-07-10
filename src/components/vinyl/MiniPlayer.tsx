@@ -24,7 +24,7 @@ export function MiniPlayer() {
   const title = content.title || content.sourceTitle;
 
   return (
-    <div className="mini-player group fixed bottom-5 right-5 z-40 w-[min(22rem,calc(100vw-2.5rem))]">
+    <div className="mini-player group w-full">
       <div className="overflow-hidden rounded-2xl border border-line bg-paper/95 shadow-xl backdrop-blur transition-colors group-hover:bg-cream/95">
         {/* Compact row — always visible */}
         <div className="flex items-center gap-3 p-2.5">

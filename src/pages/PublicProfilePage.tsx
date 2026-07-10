@@ -6,7 +6,7 @@ import { TabBar } from "../components/layout/TabBar";
 import type { TabItem } from "../components/layout/TabBar";
 import { TelevisionTab } from "../components/television/TelevisionTab";
 import { VinylTab } from "../components/vinyl/VinylTab";
-import { MiniPlayer } from "../components/vinyl/MiniPlayer";
+import { PlaybackDock } from "../components/common/PlaybackDock";
 import { PlayerProvider } from "../context/PlayerProvider";
 import { VideoProvider } from "../context/VideoProvider";
 import { OwnerControls } from "../components/auth/OwnerControls";
@@ -45,8 +45,8 @@ export function PublicProfilePage() {
           {tab === "vinyl" ? <VinylTab /> : null}
         </main>
 
-        {/* Background music status; appears when the full player isn't on screen. */}
-        <MiniPlayer />
+        {/* Background players (music + video) stacked bottom-right. */}
+        <PlaybackDock />
       </VideoProvider>
     </PlayerProvider>
   );

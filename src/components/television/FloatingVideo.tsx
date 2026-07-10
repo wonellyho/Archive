@@ -1,37 +1,29 @@
 import { useLayoutEffect, useRef } from "react";
-import type { TasteContent } from "../../types/content";
+import { useVideo } from "../../context/videoContext";
 import { youtubeEmbedUrl } from "../../utils/youtube";
 
-interface FloatingVideoProps {
-  content: TasteContent;
-  /** Inline TV screen to dock into; null → float as a bottom-right PiP. */
-  anchor: HTMLElement | null;
-  onClose: () => void;
-}
-
 /**
- * A single persistent YouTube iframe. It docks over the inline TV screen when
- * an anchor is provided, and floats as a bottom-right picture-in-picture when
- * not — the iframe never remounts, so the video keeps playing across the move.
+ * The one persistent video surface. Docks over the inline TV screen when an
+ * anchor is set, otherwise floats in the bottom-right dock. It only holds a live
+ * iframe while video is the active medium; when music takes over it shows a
+ * stopped thumbnail card (click to resume), so playback never overlaps.
  */
-export function FloatingVideo({ content, anchor, onClose }: FloatingVideoProps) {
+export function FloatingVideo() {
+  const { watching, active, anchor, watch, stop } = useVideo();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const docked = anchor !== null;
 
-  // Docked: keep the fixed wrapper glued to the inline screen (follows scroll /
-  // resize via rAF). PiP: clear inline styles and let the CSS classes place it.
+  // Docked: glue the fixed wrapper to the inline screen (follows scroll/resize).
   useLayoutEffect(() => {
     const el = wrapperRef.current;
     if (!el) return;
-
-    if (!docked) {
+    if (!docked || anchor === null) {
       el.style.top = "";
       el.style.left = "";
       el.style.width = "";
       el.style.height = "";
       return;
     }
-
     let raf = 0;
     const sync = () => {
       const r = anchor.getBoundingClientRect();
@@ -45,16 +37,15 @@ export function FloatingVideo({ content, anchor, onClose }: FloatingVideoProps) 
     return () => cancelAnimationFrame(raf);
   }, [docked, anchor]);
 
-  const title = content.title || content.sourceTitle;
+  if (watching === null) return null;
+
+  const playing = active === "video";
+  const title = watching.title || watching.sourceTitle;
 
   return (
     <div
       ref={wrapperRef}
-      className={
-        docked
-          ? "fixed z-30"
-          : "group fixed bottom-5 right-5 z-30 w-[min(26rem,calc(100vw-2.5rem))]"
-      }
+      className={docked ? "fixed z-30" : "mini-player group w-full"}
     >
       <div
         className={
@@ -68,19 +59,39 @@ export function FloatingVideo({ content, anchor, onClose }: FloatingVideoProps) 
             docked ? "h-full" : "aspect-video"
           }`}
         >
-          <iframe
-            key={content.id}
-            className="absolute inset-0 h-full w-full"
-            src={youtubeEmbedUrl(content.youtubeVideoId, { autoplay: 1 })}
-            title={title}
-            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-            allowFullScreen
-          />
+          {playing ? (
+            <iframe
+              key={watching.id}
+              className="absolute inset-0 h-full w-full"
+              src={youtubeEmbedUrl(watching.youtubeVideoId, { autoplay: 1 })}
+              title={title}
+              allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+              allowFullScreen
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => watch(watching)}
+              aria-label="영상 이어서 재생"
+              className="group/play absolute inset-0"
+            >
+              <img
+                src={watching.thumbnailUrl}
+                alt=""
+                className="size-full object-cover opacity-80 transition-opacity group-hover/play:opacity-100"
+              />
+              <span className="absolute inset-0 flex items-center justify-center">
+                <span className="flex size-12 items-center justify-center rounded-full bg-ink/60 text-lg text-paper transition-transform group-hover/play:scale-110">
+                  ►
+                </span>
+              </span>
+            </button>
+          )}
 
           {!docked ? (
             <button
               type="button"
-              onClick={onClose}
+              onClick={stop}
               aria-label="영상 닫기"
               className="absolute right-2 top-2 z-10 flex size-7 items-center justify-center rounded-full bg-ink/60 text-sm text-paper opacity-0 transition-opacity hover:bg-ink/80 group-hover:opacity-100"
             >
@@ -93,16 +104,16 @@ export function FloatingVideo({ content, anchor, onClose }: FloatingVideoProps) 
         {!docked ? (
           <div className="px-3 py-2 font-serif">
             <p className="truncate text-base font-medium text-ink">{title}</p>
-            {content.subtitle ? (
+            {watching.subtitle ? (
               <p className="truncate text-sm text-ink-faint">
-                {content.subtitle}
+                {watching.subtitle}
               </p>
             ) : null}
-            {content.body ? (
+            {watching.body ? (
               <div className="grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-out group-hover:grid-rows-[1fr] group-focus-within:grid-rows-[1fr]">
                 <div className="overflow-hidden">
                   <p className="mt-1 max-h-28 overflow-y-auto whitespace-pre-line text-sm leading-relaxed text-ink-soft opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100">
-                    {content.body}
+                    {watching.body}
                   </p>
                 </div>
               </div>
