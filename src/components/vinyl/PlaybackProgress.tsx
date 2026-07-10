@@ -9,6 +9,8 @@ interface PlaybackProgressProps {
   duration: number;
   disabled: boolean;
   onSeek: (seconds: number) => void;
+  /** Width utility for the outer row (overridden by the mini player). */
+  widthClass?: string;
 }
 
 function formatTime(seconds: number): string {
@@ -29,6 +31,7 @@ export function PlaybackProgress({
   duration,
   disabled,
   onSeek,
+  widthClass = "w-72 max-w-full sm:w-80 lg:w-88",
 }: PlaybackProgressProps) {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const ratio = duration > 0 ? Math.min(currentTime / duration, 1) : 0;
@@ -79,7 +82,7 @@ export function PlaybackProgress({
   );
 
   return (
-    <div className="flex w-72 max-w-full items-center gap-3 font-serif sm:w-80 lg:w-88">
+    <div className={`flex items-center gap-3 font-serif ${widthClass}`}>
       <span className="w-11 shrink-0 text-right text-sm tabular-nums text-ink-soft">
         {formatTime(currentTime)}
       </span>

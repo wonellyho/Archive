@@ -1,18 +1,32 @@
+import { useLayoutEffect, useRef } from "react";
 import type { TasteContent } from "../../types/content";
-import { TelevisionPlayer } from "./TelevisionPlayer";
+import { useVideo } from "../../context/videoContext";
 
 interface TelevisionProps {
   content: TasteContent | null;
 }
 
-/** The TV object: a framed 16:9 screen that holds the player or an idle card. */
+/**
+ * The TV object: a framed 16:9 screen. The actual player is the shared
+ * FloatingVideo, which docks onto this screen while it's on-screen — so leaving
+ * the tab lets the video float on as a PiP instead of stopping.
+ */
 export function Television({ content }: TelevisionProps) {
+  const { setAnchor } = useVideo();
+  const screenRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    setAnchor(content ? screenRef.current : null);
+    return () => setAnchor(null);
+  }, [content, setAnchor]);
+
   return (
     <div className="rounded-4xl border border-line bg-cream p-3 shadow-md sm:p-5">
-      <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-black">
-        {content ? (
-          <TelevisionPlayer content={content} />
-        ) : (
+      <div
+        ref={screenRef}
+        className="relative aspect-video w-full overflow-hidden rounded-2xl bg-black"
+      >
+        {content ? null : (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[radial-gradient(circle_at_center,#26242b,#0a090d)] text-center">
             <span className="text-4xl" aria-hidden="true">
               📺

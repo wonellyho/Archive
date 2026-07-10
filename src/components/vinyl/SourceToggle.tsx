@@ -6,9 +6,9 @@ interface SourceToggleProps {
 }
 
 /**
- * Slim "출처" box kept at the position where the editorial card used to sit.
- * The user-authored fields now live beside the record; only the YouTube
- * attribution remains here, tucked behind a toggle.
+ * "출처" toggle shown under the record. No box of its own — it sits inline so
+ * opening it reads as part of the player, and the attribution slides open
+ * smoothly instead of popping in.
  */
 export function SourceToggle({ content }: SourceToggleProps) {
   const [showSource, setShowSource] = useState(false);
@@ -18,7 +18,7 @@ export function SourceToggle({ content }: SourceToggleProps) {
   const url = `https://www.youtube.com/watch?v=${content.youtubeVideoId}`;
 
   return (
-    <div className="rounded-3xl border border-line bg-paper/70 px-6 py-4 font-serif shadow-sm">
+    <div className="font-serif">
       <div className="text-right">
         <button
           type="button"
@@ -29,20 +29,27 @@ export function SourceToggle({ content }: SourceToggleProps) {
           출처 {showSource ? "▴" : "▾"}
         </button>
       </div>
-      {showSource ? (
-        <div className="mt-2 flex flex-col gap-0.5 text-xs text-ink-faint">
-          <span>{content.sourceTitle}</span>
-          {content.sourceChannel ? <span>{content.sourceChannel}</span> : null}
-          <a
-            href={url}
-            target="_blank"
-            rel="noreferrer"
-            className="break-all text-accent hover:underline"
-          >
-            {url}
-          </a>
+
+      <div
+        className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+          showSource ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div className="mt-1 flex flex-col gap-0.5 text-right text-xs text-ink-faint">
+            <span>{content.sourceTitle}</span>
+            {content.sourceChannel ? <span>{content.sourceChannel}</span> : null}
+            <a
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className="break-all text-accent hover:underline"
+            >
+              {url}
+            </a>
+          </div>
         </div>
-      ) : null}
+      </div>
     </div>
   );
 }

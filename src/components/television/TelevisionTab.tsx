@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTasteData } from "../../context/tasteDataContext";
 import { useAuth } from "../../context/authContext";
+import { useVideo } from "../../context/videoContext";
 import type { TasteContent } from "../../types/content";
 import type { TasteFolder } from "../../types/folder";
 import { Television } from "./Television";
@@ -30,9 +31,11 @@ export function TelevisionTab() {
     addContent,
     updateContent,
     deleteContent,
+    reorderContent,
     hasContent,
   } = useTasteData();
   const { isOwner } = useAuth();
+  const { watching, watch, stop } = useVideo();
 
   const [openFolderId, setOpenFolderId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -40,18 +43,31 @@ export function TelevisionTab() {
   const [folderForm, setFolderForm] = useState<FolderForm | null>(null);
   const [editingContent, setEditingContent] = useState<TasteContent | null>(null);
   const [pending, setPending] = useState<Pending | null>(null);
+  const playerRef = useRef<HTMLDivElement>(null);
 
   const countOf = (folderId: string) =>
     videoContents.filter((c) => c.folderId === folderId).length;
   const openFolder = videoFolders.find((f) => f.id === openFolderId) ?? null;
   const selected = videoContents.find((c) => c.id === selectedId) ?? null;
+
+  // Center the revealed player in the viewport whenever a card is picked.
+  useEffect(() => {
+    if (selectedId === null) return;
+    playerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [selectedId]);
   const items = videoContents
     .filter((c) => c.folderId === openFolderId)
     .sort((a, b) => a.sortOrder - b.sortOrder);
 
   function selectFolder(id: string) {
+    // Open the folder fresh; the current video keeps playing as a PiP.
     setSelectedId(null);
     setOpenFolderId((current) => (current === id ? null : id));
+  }
+
+  function selectVideo(content: TasteContent) {
+    setSelectedId(content.id);
+    watch(content);
   }
 
   function confirmDelete() {
@@ -62,7 +78,9 @@ export function TelevisionTab() {
         setOpenFolderId(null);
         setSelectedId(null);
       }
+      if (watching && watching.folderId === pending.folder.id) stop();
     } else {
+      if (watching && watching.id === pending.content.id) stop();
       deleteContent("video", pending.content.id);
       if (selectedId === pending.content.id) setSelectedId(null);
     }
@@ -109,6 +127,7 @@ export function TelevisionTab() {
           {selected ? (
             <div
               key={selected.id}
+              ref={playerRef}
               className="player-reveal flex flex-col gap-5"
             >
               <Television content={selected} />
@@ -120,10 +139,10 @@ export function TelevisionTab() {
             emptyTitle="이 폴더는 비어 있어요."
             contents={items}
             selectedContentId={selectedId}
-            playingContentId={selectedId}
-            onSelect={(content) => setSelectedId(content.id)}
+            onSelect={selectVideo}
             onEdit={setEditingContent}
             onDelete={(content) => setPending({ kind: "content", content })}
+            onReorder={(ids) => reorderContent("video", ids)}
             open
             canEdit={isOwner}
           />

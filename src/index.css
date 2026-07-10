@@ -119,6 +119,22 @@ body {
   animation: player-in 320ms ease both;
 }
 
+/* --- Background mini player --- */
+@keyframes mini-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mini-player {
+  animation: mini-in 260ms ease both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cascade > *,
   .cascade[data-open="true"] > * {
@@ -126,6 +142,9 @@ body {
     opacity: 1;
   }
   .player-reveal {
+    animation: none;
+  }
+  .mini-player {
     animation: none;
   }
 }
