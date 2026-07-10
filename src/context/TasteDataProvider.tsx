@@ -158,6 +158,41 @@ export function TasteDataProvider({ children }: { children: ReactNode }) {
     persist(repo.current.deleteContent(type, contentId));
   }, []);
 
+  const reorderContent = useCallback(
+    (type: ContentType, orderedIds: string[]) => {
+      const current =
+        type === "music"
+          ? snapshot.current.musicContents
+          : snapshot.current.videoContents;
+      // Reuse the folder's own sortOrder values (ascending) so other folders and
+      // the global ordering stay untouched — only these cards swap positions.
+      const pool = orderedIds
+        .map((id) => current.find((c) => c.id === id)?.sortOrder)
+        .filter((n): n is number => n !== undefined)
+        .sort((a, b) => a - b);
+      const nextSort = new Map<string, number>();
+      orderedIds.forEach((id, i) => {
+        if (pool[i] !== undefined) nextSort.set(id, pool[i]);
+      });
+
+      setContents(type)((prev) =>
+        prev.map((c) => {
+          const s = nextSort.get(c.id);
+          return s !== undefined ? { ...c, sortOrder: s } : c;
+        }),
+      );
+
+      orderedIds.forEach((id) => {
+        const c = current.find((x) => x.id === id);
+        const s = nextSort.get(id);
+        if (c && s !== undefined && c.sortOrder !== s) {
+          persist(repo.current.updateContent(type, id, { sortOrder: s }));
+        }
+      });
+    },
+    [],
+  );
+
   const hasContent = useCallback(
     (type: ContentType, youtubeVideoId: string) => {
       const list = type === "music" ? musicContents : videoContents;
@@ -181,6 +216,7 @@ export function TasteDataProvider({ children }: { children: ReactNode }) {
       addContent,
       updateContent,
       deleteContent,
+      reorderContent,
       hasContent,
     }),
     [
@@ -197,6 +233,7 @@ export function TasteDataProvider({ children }: { children: ReactNode }) {
       addContent,
       updateContent,
       deleteContent,
+      reorderContent,
       hasContent,
     ],
   );

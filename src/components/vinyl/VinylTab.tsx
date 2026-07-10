@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTasteData } from "../../context/tasteDataContext";
 import { useAuth } from "../../context/authContext";
-import { useYouTubePlayer } from "../../hooks/useYouTubePlayer";
+import { usePlayer } from "../../context/playerContext";
 import type { TasteContent } from "../../types/content";
 import type { TasteFolder } from "../../types/folder";
 import { VinylPlayer } from "./VinylPlayer";
-import { ContentComment } from "../profile/ContentComment";
+import { SourceToggle } from "./SourceToggle";
 import { ContentList } from "../common/ContentList";
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { Button } from "../common/Button";
@@ -34,10 +34,12 @@ export function VinylTab() {
     addContent,
     updateContent,
     deleteContent,
+    reorderContent,
     hasContent,
   } = useTasteData();
   const { isOwner } = useAuth();
-  const player = useYouTubePlayer();
+  const player = usePlayer();
+  const { setExpandedId } = player;
 
   const [openFolderId, setOpenFolderId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -45,18 +47,33 @@ export function VinylTab() {
   const [folderForm, setFolderForm] = useState<FolderForm | null>(null);
   const [editingContent, setEditingContent] = useState<TasteContent | null>(null);
   const [pending, setPending] = useState<Pending | null>(null);
+  const playerRef = useRef<HTMLDivElement>(null);
 
   const countOf = (folderId: string) =>
     musicContents.filter((c) => c.folderId === folderId).length;
   const openFolder = musicFolders.find((f) => f.id === openFolderId) ?? null;
   const selected = musicContents.find((c) => c.id === selectedId) ?? null;
+
+  // Center the revealed player in the viewport whenever a card is picked.
+  useEffect(() => {
+    if (selectedId === null) return;
+    playerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [selectedId]);
+
+  // Tell the mini player whether the full player is currently on screen, so it
+  // knows to appear (background) or step aside (foreground).
+  useEffect(() => {
+    setExpandedId(selectedId);
+    return () => setExpandedId(null);
+  }, [selectedId, setExpandedId]);
   const items = musicContents
     .filter((c) => c.folderId === openFolderId)
     .sort((a, b) => a.sortOrder - b.sortOrder);
 
   function selectFolder(id: string) {
+    // Open the folder fresh (cards cascade in). The current track keeps playing
+    // in the background — it moves to the bottom-right mini player, not here.
     setSelectedId(null);
-    player.stop();
     setOpenFolderId((current) => (current === id ? null : id));
   }
 
@@ -122,15 +139,22 @@ export function VinylTab() {
         <div key={openFolder.id} className="flex flex-col gap-5">
           <h3 className="font-serif text-xl text-ink">📁 {openFolder.name}</h3>
           {selected ? (
-            <div key={selected.id} className="player-reveal flex flex-col gap-5">
+            <div
+              key={selected.id}
+              ref={playerRef}
+              className="player-reveal flex flex-col gap-5"
+            >
               <VinylPlayer
                 content={selected}
                 spin={player.spin}
+                currentTime={player.currentTime}
+                duration={player.duration}
                 onPlay={player.play}
                 onPause={player.pause}
                 onRestart={player.restart}
+                onSeek={player.seek}
               />
-              <ContentComment content={selected} />
+              <SourceToggle content={selected} />
             </div>
           ) : null}
           <ContentList
@@ -138,22 +162,15 @@ export function VinylTab() {
             emptyTitle="이 폴더는 비어 있어요."
             contents={items}
             selectedContentId={selectedId}
-            playingContentId={player.spin === "playing" ? selectedId : null}
             onSelect={selectMusic}
             onEdit={setEditingContent}
             onDelete={(content) => setPending({ kind: "content", content })}
+            onReorder={(ids) => reorderContent("music", ids)}
             open
             canEdit={isOwner}
           />
         </div>
       ) : null}
-
-      {/* Hidden audio host — stays mounted so the player survives folder changes. */}
-      <div
-        ref={player.containerRef}
-        className="pointer-events-none absolute size-px overflow-hidden opacity-0"
-        aria-hidden="true"
-      />
 
       {folderForm ? (
         <FolderFormModal

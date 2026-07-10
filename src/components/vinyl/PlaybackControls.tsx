@@ -29,23 +29,24 @@ export function PlaybackControls({
   const isPlaying = spin === "playing";
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="text-center">
-        <p className="text-lg font-medium text-ink">
-          {content ? content.title || content.sourceTitle : "—"}
-        </p>
-        <p className="text-base text-ink-faint">
-          {content ? content.sourceChannel : "트랙을 선택해 주세요"}
-        </p>
-      </div>
-
+    <div className="flex flex-col items-center gap-4 font-serif">
       <div className="flex items-center gap-3">
         {isPlaying ? (
-          <Button onClick={onPause} disabled={disabled} aria-label="일시 정지">
+          <Button
+            onClick={onPause}
+            disabled={disabled}
+            aria-label="일시 정지"
+            className="font-serif"
+          >
             ❚❚ 일시정지
           </Button>
         ) : (
-          <Button onClick={onPlay} disabled={disabled} aria-label="재생">
+          <Button
+            onClick={onPlay}
+            disabled={disabled}
+            aria-label="재생"
+            className="font-serif"
+          >
             ► 재생
           </Button>
         )}
@@ -54,6 +55,7 @@ export function PlaybackControls({
           onClick={onRestart}
           disabled={disabled}
           aria-label="처음부터 다시 재생"
+          className="font-serif"
         >
           ↺ 처음부터
         </Button>

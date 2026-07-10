@@ -194,6 +194,7 @@ export const supabaseRepository: TasteRepository = {
     if (patch.title !== undefined) row.title = patch.title;
     if (patch.subtitle !== undefined) row.subtitle = patch.subtitle;
     if (patch.body !== undefined) row.body = patch.body;
+    if (patch.sortOrder !== undefined) row.sort_order = patch.sortOrder;
     const { error } = await client().from("contents").update(row).eq("id", id);
     if (error) throw new Error(error.message);
   },

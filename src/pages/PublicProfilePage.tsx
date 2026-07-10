@@ -6,6 +6,9 @@ import { TabBar } from "../components/layout/TabBar";
 import type { TabItem } from "../components/layout/TabBar";
 import { TelevisionTab } from "../components/television/TelevisionTab";
 import { VinylTab } from "../components/vinyl/VinylTab";
+import { PlaybackDock } from "../components/common/PlaybackDock";
+import { PlayerProvider } from "../context/PlayerProvider";
+import { VideoProvider } from "../context/VideoProvider";
 import { OwnerControls } from "../components/auth/OwnerControls";
 
 type TabId = "about" | "tv" | "vinyl";
@@ -29,15 +32,22 @@ export function PublicProfilePage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-18 px-5 py-12 sm:px-8 sm:py-16">
-      <OwnerControls />
-      <ProfileHeader profile={profile} />
-      <TabBar tabs={TABS} activeId={tab} onChange={setTab} />
+    <PlayerProvider>
+      <VideoProvider>
+        <main className="mx-auto flex w-full max-w-5xl flex-col gap-18 px-5 py-12 sm:px-8 sm:py-16">
+          <OwnerControls />
+          <ProfileHeader profile={profile} />
+          <TabBar tabs={TABS} activeId={tab} onChange={setTab} />
 
-      {/* Each tab unmounts the others, which stops any TV video or vinyl audio. */}
-      {tab === "about" ? <ProfilePanel /> : null}
-      {tab === "tv" ? <TelevisionTab /> : null}
-      {tab === "vinyl" ? <VinylTab /> : null}
-    </main>
+          {/* Music & video keep playing across tabs (providers own the players). */}
+          {tab === "about" ? <ProfilePanel /> : null}
+          {tab === "tv" ? <TelevisionTab /> : null}
+          {tab === "vinyl" ? <VinylTab /> : null}
+        </main>
+
+        {/* Background players (music + video) stacked bottom-right. */}
+        <PlaybackDock />
+      </VideoProvider>
+    </PlayerProvider>
   );
 }

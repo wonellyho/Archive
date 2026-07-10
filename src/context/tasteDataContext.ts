@@ -18,7 +18,7 @@ export interface NewContentInput {
 
 export type FolderPatch = Partial<Pick<TasteFolder, "name" | "coverImageUrl">>;
 export type ContentPatch = Partial<
-  Pick<TasteContent, "title" | "subtitle" | "body">
+  Pick<TasteContent, "title" | "subtitle" | "body" | "sortOrder">
 >;
 
 export interface TasteDataValue {
@@ -51,6 +51,11 @@ export interface TasteDataValue {
   ) => void;
   /** Delete a single piece of content. */
   deleteContent: (type: ContentType, contentId: string) => void;
+  /**
+   * Reorder content within a folder. `orderedIds` is the new sequence; the
+   * folder's existing sortOrder values are reassigned to match and persisted.
+   */
+  reorderContent: (type: ContentType, orderedIds: string[]) => void;
   /** True if the same YouTube id is already saved for that content type. */
   hasContent: (type: ContentType, youtubeVideoId: string) => boolean;
 }

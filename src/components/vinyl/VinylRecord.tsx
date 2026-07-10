@@ -13,13 +13,13 @@ interface VinylRecordProps {
  */
 export function VinylRecord({ spin, thumbnailUrl, title }: VinylRecordProps) {
   return (
-    <div className="relative mx-auto aspect-square w-56 max-w-full sm:w-64">
+    <div className="relative mx-auto aspect-square w-64 max-w-full sm:w-72 lg:w-80">
       <div
         data-spin={spin}
-        className="vinyl-disc absolute inset-0 rounded-full bg-[radial-gradient(circle_at_center,#2a2730_0_28%,#0a090d_28%_30%,#1a1820_30%_70%,#0a090d_70%_72%,#1a1820_72%)] shadow-2xl"
+        className="vinyl-disc absolute inset-0 rounded-full bg-[radial-gradient(circle_at_center,#2a2730_0_20%,#0a090d_20%_22%,#1a1820_22%_78%,#0a090d_78%_80%,#1a1820_80%)] shadow-2xl"
       >
-        {/* Center label / album art */}
-        <div className="absolute left-1/2 top-1/2 size-[38%] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full border border-black/40 bg-ink-soft">
+        {/* Center label / album art — enlarged so the thumbnail reads clearly */}
+        <div className="absolute left-1/2 top-1/2 size-[52%] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full border border-black/40 bg-ink-soft shadow-inner">
           {thumbnailUrl ? (
             <img
               src={thumbnailUrl}
