@@ -277,3 +277,38 @@ class UserSearchResult(CamelModel):
 
     username: str
     name: str = ""
+
+
+# ── 콘텐츠 태그 (M13) ──
+
+
+class Tag(CamelModel):
+    """태그 마스터 행 — 자동(LLM)·수동 태깅이 공유."""
+
+    id: str
+    name: str
+    created_at: str
+
+
+class TagIn(CamelModel):
+    """태그 추가 요청 — 마스터에 없으면 새로 생성 후 연결."""
+
+    name: str = Field(min_length=1, max_length=40, description="태그 이름")
+
+    @field_validator("name")
+    @classmethod
+    def _strip_and_require_nonblank(cls, v: str) -> str:
+        """앞뒤 공백 제거 후 재검증 — 공백만 있는 이름(예: '   ')은 거부."""
+        v = v.strip()
+        if not v:
+            raise ValueError("태그 이름은 공백만으로 채울 수 없습니다.")
+        return v
+
+
+class TagSuggestResult(CamelModel):
+    """LLM 자동 태깅 후보 — 저장되지 않은 후보 문자열만 반환."""
+
+    tags: list[str] = Field(
+        description="추천 태그 후보(한국어, 각 12자 내외)",
+        examples=[["록", "밴드사운드", "라이브"]],
+    )

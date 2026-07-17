@@ -23,6 +23,7 @@ from .routers import (
     public,
     saves,
     search,
+    tags,
     timeline,
     uploads,
     youtube,
@@ -101,6 +102,10 @@ TAGS_METADATA = [
         "name": "account",
         "description": "회원 탈퇴 — 계정 영구 삭제. 🔒 로그인 필요, 되돌릴 수 없습니다.",
     },
+    {
+        "name": "tags",
+        "description": "콘텐츠 태그 — 자동(LLM)·수동 태깅. 읽기는 공개, 쓰기는 콘텐츠 소유자만 🔒.",
+    },
 ]
 
 app = FastAPI(
@@ -174,6 +179,7 @@ app.include_router(search.router)
 app.include_router(timeline.router)
 app.include_router(discover.router)
 app.include_router(account.router)
+app.include_router(tags.router)
 
 
 @app.exception_handler(RateLimitExceeded)
