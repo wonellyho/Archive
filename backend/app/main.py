@@ -12,6 +12,7 @@ from .config import get_settings
 from .http import close_client
 from .limiter import limiter
 from .routers import (
+    account,
     bootstrap,
     contents,
     discover,
@@ -91,6 +92,10 @@ TAGS_METADATA = [
         "name": "discover",
         "description": "유사 콘텐츠 추천 — 결이 비슷한 콘텐츠 발견(같은 채널·타입, 인증 불필요).",
     },
+    {
+        "name": "account",
+        "description": "회원 탈퇴 — 계정 영구 삭제. 🔒 로그인 필요, 되돌릴 수 없습니다.",
+    },
 ]
 
 app = FastAPI(
@@ -162,6 +167,7 @@ app.include_router(saves.router)
 app.include_router(public.router)
 app.include_router(timeline.router)
 app.include_router(discover.router)
+app.include_router(account.router)
 
 
 @app.exception_handler(RateLimitExceeded)

@@ -359,6 +359,56 @@ async def fetch_timeline_rows(username: str) -> list[dict[str, Any]] | None:
     )
 
 
+# ── 회원 탈퇴 (M14, #59) ──────────────────────────────────────────────
+
+
+async def delete_all_owned_rows(user_id: str) -> None:
+    """탈퇴 유저가 소유한 앱 데이터를 전부 삭제(profiles·folders·contents·saves).
+
+    `content_tags`는 contents(id) FK가 on delete cascade라 contents 삭제 시
+    자동 정리됨(별도 호출 불필요). auth.users 삭제(`delete_auth_user`)보다
+    반드시 먼저 호출해야 한다(계정이 없어지면 이 함수가 사용하는 user_id로
+    더 이상 스코프할 수 없음).
+
+    4개 테이블은 서로 의존관계가 없어(각자 user_id로만 스코프) `fetch_bootstrap`과
+    동일하게 `asyncio.gather`로 병렬 실행한다. `return_exceptions=True`로 하나가
+    실패해도 나머지는 계속 시도한다 — 각 DELETE는 멱등(이미 없는 행 삭제는 무해)이라,
+    실패 후 이 함수를 다시 호출하면 남은 테이블만 마저 정리되고 이미 지워진
+    테이블은 그대로 스킵된다(자연스러운 재시도 안전성).
+    """
+    results = await asyncio.gather(
+        _write("DELETE", "contents", params={"user_id": f"eq.{user_id}"}),
+        _write("DELETE", "folders", params={"user_id": f"eq.{user_id}"}),
+        _write("DELETE", "saves", params={"user_id": f"eq.{user_id}"}),
+        _write("DELETE", "profiles", params={"user_id": f"eq.{user_id}"}),
+        return_exceptions=True,
+    )
+    for result in results:
+        if isinstance(result, BaseException):
+            raise result
+
+
+async def delete_auth_user(user_id: str) -> None:
+    """GoTrue Admin API로 Supabase Auth 계정 자체를 삭제한다(service_role 필수).
+
+    `/rest/v1`이 아니라 `/auth/v1/admin`이라 `_write_credentials()`의 REST 기준
+    base URL에서 접미사만 떼어 재사용한다(키 존재 검증 로직 중복 방지).
+    """
+    rest_base, key = _write_credentials()
+    base = rest_base.removesuffix("/rest/v1")
+    try:
+        resp = await get_client().delete(
+            f"{base}/auth/v1/admin/users/{user_id}",
+            headers={"apikey": key, "Authorization": f"Bearer {key}"},
+        )
+    except httpx.HTTPError:
+        raise HTTPException(502, "계정 삭제 요청에 실패했습니다.")
+    # 404 = 이미 삭제된 계정(응답 유실 후 재시도 등) — 목표 상태에 도달했으므로
+    # 성공으로 간주한다(멱등). 그 외 비정상 상태 코드만 실패로 처리.
+    if resp.status_code not in (200, 204, 404):
+        raise HTTPException(502, f"계정 삭제 오류 (HTTP {resp.status_code}).")
+
+
 async def fetch_bootstrap() -> tuple[dict[str, Any] | None, list[dict], list[dict]]:
     """프로필(단일)·폴더·콘텐츠를 병렬 조회한다.
 
