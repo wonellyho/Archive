@@ -4,13 +4,19 @@
 + 매직바이트 판별 단위 테스트.
 """
 
+import asyncio
+
+import httpx
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from app import storage
 from app.config import get_settings
 from app.deps import CurrentUser, get_current_user
 from app.main import app
+
+from ._http_fakes import FakeAsyncClient, FakeResponse
 
 client = TestClient(app)
 
@@ -108,3 +114,66 @@ def test_oversized_file_returns_413(authed, monkeypatch):
 )
 def test_sniff_image(data, expected):
     assert storage.sniff_image(data) == expected
+
+
+# ── storage.upload_image 자체 (httpx 모킹, 라우터 우회) ──
+# 위 라우터 테스트들은 storage.upload_image를 통째로 모킹해서 쓰기 때문에,
+# 실제 업로드 함수(경로 생성·httpx 호출·에러 매핑)는 여기서 직접 검증한다.
+
+
+@pytest.fixture
+def storage_configured():
+    settings = get_settings()
+    orig = (settings.supabase_url, settings.supabase_service_role_key)
+    settings.supabase_url = "https://fake.supabase.co"
+    settings.supabase_service_role_key = "fake-service-role-key"
+    yield
+    settings.supabase_url, settings.supabase_service_role_key = orig
+
+
+def test_upload_image_missing_config_returns_503(monkeypatch):
+    settings = get_settings()
+    orig_url = settings.supabase_url
+    settings.supabase_url = ""
+    try:
+        with pytest.raises(HTTPException) as exc:
+            asyncio.run(storage.upload_image("u1", PNG, "image/png", "png"))
+        assert exc.value.status_code == 503
+    finally:
+        settings.supabase_url = orig_url
+
+
+def test_upload_image_success_uses_server_generated_path(storage_configured, monkeypatch):
+    captured = {}
+
+    def responder(method, url, **kwargs):
+        captured.update(method=method, url=url, headers=kwargs.get("headers"))
+        return FakeResponse(200)
+
+    monkeypatch.setattr(storage, "get_client", lambda: FakeAsyncClient(responder))
+    url = asyncio.run(storage.upload_image("u1", PNG, "image/png", "png"))
+
+    assert captured["method"] == "POST"
+    # 경로가 {user_id}/{uuid}.{ext} 형태로 서버에서 생성되어야 한다(클라 파일명 미사용).
+    assert "/storage/v1/object/images/u1/" in captured["url"]
+    assert captured["url"].endswith(".png")
+    assert url.startswith("https://fake.supabase.co/storage/v1/object/public/images/u1/")
+
+
+def test_upload_image_upstream_error_returns_502(storage_configured, monkeypatch):
+    monkeypatch.setattr(
+        storage, "get_client", lambda: FakeAsyncClient(lambda m, u, **kw: FakeResponse(500))
+    )
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(storage.upload_image("u1", PNG, "image/png", "png"))
+    assert exc.value.status_code == 502
+
+
+def test_upload_image_network_error_returns_502(storage_configured, monkeypatch):
+    def responder(method, url, **kwargs):
+        return httpx.ConnectError("boom")
+
+    monkeypatch.setattr(storage, "get_client", lambda: FakeAsyncClient(responder))
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(storage.upload_image("u1", PNG, "image/png", "png"))
+    assert exc.value.status_code == 502

@@ -229,3 +229,36 @@ def test_content_body_too_long_returns_422(authed):
         },
     )
     assert resp.status_code == 422
+
+
+def test_content_patch_forwards_only_sent_fields(authed, monkeypatch):
+    calls = []
+
+    async def fake_patch(table, row_id, fields, user_id):
+        calls.append((table, row_id, fields, user_id))
+
+    monkeypatch.setattr(db, "patch_row", fake_patch)
+    resp = client.patch(f"/api/contents/{VALID_UUID}", json={"title": "새 제목"})
+    assert resp.status_code == 204
+    assert calls == [("contents", VALID_UUID, {"title": "새 제목"}, "test-user")]
+
+
+def test_content_patch_empty_body_skips_db(authed, monkeypatch):
+    async def fail_patch(*a):
+        raise AssertionError("호출되면 안 됨")
+
+    monkeypatch.setattr(db, "patch_row", fail_patch)
+    resp = client.patch(f"/api/contents/{VALID_UUID}", json={})
+    assert resp.status_code == 204
+
+
+def test_content_delete_scoped_to_owner(authed, monkeypatch):
+    calls = []
+
+    async def fake_delete(table, column, value, user_id):
+        calls.append((table, column, value, user_id))
+
+    monkeypatch.setattr(db, "delete_rows", fake_delete)
+    resp = client.delete(f"/api/contents/{VALID_UUID}")
+    assert resp.status_code == 204
+    assert calls == [("contents", "id", VALID_UUID, "test-user")]

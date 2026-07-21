@@ -7,7 +7,9 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from app import db
+from app import db, http
+from app.config import get_settings
+from app.deps import get_current_user
 from app.limiter import LIMIT_BOOTSTRAP, limiter
 from app.main import app
 
@@ -63,3 +65,47 @@ def test_no_hsts_outside_production(mock_bootstrap):
     # 개발 기본값(ENVIRONMENT!=production)에서는 HSTS를 붙이지 않는다.
     resp = client.get("/api/bootstrap")
     assert "strict-transport-security" not in resp.headers
+
+
+def test_hsts_present_in_production(mock_bootstrap):
+    settings = get_settings()
+    orig = settings.environment
+    settings.environment = "production"
+    try:
+        resp = client.get("/api/bootstrap")
+        assert "max-age" in resp.headers["strict-transport-security"]
+    finally:
+        settings.environment = orig
+
+
+# ── 미처리 예외 → 표준 500 (내부 정보 비노출) ──
+
+
+def test_unhandled_exception_returns_generic_500(monkeypatch):
+    def boom():
+        raise RuntimeError("db password is hunter2")
+
+    app.dependency_overrides[get_current_user] = boom
+    # 기본 TestClient(raise_server_exceptions=True)는 500 응답 대신 원본 예외를
+    # 다시 던져서 디버깅을 돕는다 — 실제 응답을 확인하려면 꺼야 한다.
+    no_raise_client = TestClient(app, raise_server_exceptions=False)
+    try:
+        resp = no_raise_client.get("/api/me")
+        assert resp.status_code == 500
+        assert resp.json() == {"detail": "서버 내부 오류가 발생했습니다."}
+        assert "hunter2" not in resp.text  # 내부 예외 메시지 비노출
+    finally:
+        app.dependency_overrides.clear()
+
+
+# ── lifespan ──
+
+
+def test_lifespan_shutdown_closes_shared_http_client():
+    # 먼저 실제 클라이언트를 하나 만들어서(get_client) 종료 대상이 존재하게 한다.
+    http.get_client()
+    # TestClient를 컨텍스트 매니저로 쓰면 startup/shutdown(lifespan)이 실제로 실행된다.
+    with TestClient(app) as ctx_client:
+        assert ctx_client.get("/health").status_code == 200
+    # shutdown에서 close_client()가 실행돼 전역 싱글턴이 None으로 정리되어야 한다.
+    assert http._client is None

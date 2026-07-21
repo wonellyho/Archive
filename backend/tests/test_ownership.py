@@ -90,3 +90,10 @@ def test_own_username_saves_successfully(authed, monkeypatch):
 def test_invalid_username_returns_422(authed, username):
     resp = client.put("/api/profile", json={"name": "x", "username": username})
     assert resp.status_code == 422
+
+
+@pytest.mark.parametrize("username", [None, "   "])
+def test_blank_or_null_username_normalizes_to_none(username):
+    from app.schemas import ProfileIn
+
+    assert ProfileIn(name="x", username=username).username is None

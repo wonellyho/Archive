@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 
+# 테스트 커버리지 산출물
+.coverage
+htmlcov/
+
 # 가상환경
 .venv/
 venv/

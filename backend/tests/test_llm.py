@@ -7,7 +7,9 @@
 import pytest
 from fastapi.testclient import TestClient
 
+import app.llm as llm_module
 from app.deps import CurrentUser, get_current_user
+from app.llm.anthropic_provider import AnthropicProvider
 from app.llm.base import (
     LLMError,
     LLMRateLimited,
@@ -214,3 +216,23 @@ def test_parse_result_defaults_keywords_and_tone():
 def test_parse_result_filters_keywords():
     r = parse_result('{"taglines": ["가"], "mood": "x", "keywords": ["씨발", "위로"]}')
     assert "씨발" not in r.keywords and "위로" in r.keywords
+
+
+# ── get_provider (provider 교체 지점) ──
+
+
+def test_get_provider_returns_configured_anthropic_provider(monkeypatch):
+    class _S:
+        anthropic_api_key = "fake-key"
+        llm_model = "claude-haiku-4-5"
+        llm_max_tokens = 400
+
+    monkeypatch.setattr("app.config.get_settings", lambda: _S())
+    llm_module.get_provider.cache_clear()  # 다른 테스트가 캐시해둔 인스턴스와 섞이지 않도록
+    try:
+        provider = llm_module.get_provider()
+        assert isinstance(provider, AnthropicProvider)
+        assert provider._model == "claude-haiku-4-5"
+        assert provider._max_tokens == 400
+    finally:
+        llm_module.get_provider.cache_clear()
