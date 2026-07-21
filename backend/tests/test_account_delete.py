@@ -30,14 +30,14 @@ def authed():
 # ── 인증 게이트 ──
 
 
-def test_delete_without_token_returns_401():
+def test_requires_auth():
     assert client.delete("/api/me").status_code == 401
 
 
 # ── 정상 흐름 ──
 
 
-def test_delete_calls_owned_data_deletion_before_auth_deletion(authed, monkeypatch):
+def test_deletes_data_before_account(authed, monkeypatch):
     calls = []
 
     async def fake_delete_rows(user_id):
@@ -59,7 +59,7 @@ def test_delete_calls_owned_data_deletion_before_auth_deletion(authed, monkeypat
 # ── 에러 전파 ──
 
 
-def test_auth_deletion_failure_returns_502(authed, monkeypatch):
+def test_502_on_auth_failure(authed, monkeypatch):
     async def fake_delete_rows(user_id):
         return None
 
@@ -73,7 +73,7 @@ def test_auth_deletion_failure_returns_502(authed, monkeypatch):
     assert resp.status_code == 502
 
 
-def test_missing_service_role_returns_503(authed, monkeypatch):
+def test_503_without_service_role(authed, monkeypatch):
     async def fake_delete_rows(user_id):
         return None
 
@@ -90,7 +90,7 @@ def test_missing_service_role_returns_503(authed, monkeypatch):
 # ── rate limit ──
 
 
-def test_rate_limit_exceeded_returns_429(authed, monkeypatch):
+def test_429_over_limit(authed, monkeypatch):
     async def fake_delete_rows(user_id):
         return None
 
@@ -153,9 +153,7 @@ def _service_role_configured():
     settings.supabase_url, settings.supabase_service_role_key = orig_url, orig_key
 
 
-def test_delete_all_owned_rows_attempts_all_tables_even_if_one_fails(
-    _service_role_configured, monkeypatch
-):
+def test_continues_after_one_table_fails(_service_role_configured, monkeypatch):
     """asyncio.gather(return_exceptions=True) 적용 확인 — 코드리뷰 CONFIRMED #1 재발 방지."""
     called_tables = []
 
@@ -175,18 +173,18 @@ def test_delete_all_owned_rows_attempts_all_tables_even_if_one_fails(
     assert set(called_tables) == {"contents", "folders", "saves", "profiles"}
 
 
-def test_delete_auth_user_succeeds_without_exception(_service_role_configured, monkeypatch):
+def test_auth_delete_success(_service_role_configured, monkeypatch):
     monkeypatch.setattr(db, "get_client", lambda: _FakeClient(lambda m, u: _FakeResponse(204)))
     asyncio.run(db.delete_auth_user("test-user"))  # 예외 없이 통과하면 성공
 
 
-def test_delete_auth_user_treats_404_as_already_deleted(_service_role_configured, monkeypatch):
+def test_auth_delete_404_is_ok(_service_role_configured, monkeypatch):
     """재시도 시 GoTrue가 404를 주는 경우(멱등) — 코드리뷰 CONFIRMED #2 재발 방지."""
     monkeypatch.setattr(db, "get_client", lambda: _FakeClient(lambda m, u: _FakeResponse(404)))
     asyncio.run(db.delete_auth_user("test-user"))  # 예외 없이 통과하면 성공
 
 
-def test_delete_auth_user_other_status_codes_return_502(_service_role_configured, monkeypatch):
+def test_auth_delete_502_on_error(_service_role_configured, monkeypatch):
     monkeypatch.setattr(db, "get_client", lambda: _FakeClient(lambda m, u: _FakeResponse(500)))
     with pytest.raises(HTTPException) as exc:
         asyncio.run(db.delete_auth_user("test-user"))
