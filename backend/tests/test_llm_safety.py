@@ -18,13 +18,13 @@ from app.llm.safety import is_harmful, mask_pii, sanitize_mood, sanitize_tagline
         ("카드 1234567890123456 노출", "1234567890123456"),
     ],
 )
-def test_mask_pii_원문_제거(text, leaked):
+def test_mask_pii_removes_original(text, leaked):
     out = mask_pii(text)
     assert leaked not in out
     assert "▇" in out
 
 
-def test_mask_pii_일반텍스트는_그대로():
+def test_mask_pii_leaves_normal_text():
     assert mask_pii("밤에 스며드는 편지") == "밤에 스며드는 편지"
 
 
@@ -41,7 +41,7 @@ def test_is_harmful():
     "benign",
     ["고양이 새끼", "촛불이 꺼져 간다", "시발점에서 출발", "죽어라 사랑했다", "자살골"],
 )
-def test_서정·일상표현_오탐하지_않는다(benign):
+def test_benign_phrases_not_flagged(benign):
     # 부분 문자열 충돌(새끼/꺼져/시발/죽어라/자살) — benign은 통과해야 함.
     assert not is_harmful(benign)
     assert sanitize_taglines([benign]) == [benign]
@@ -50,7 +50,7 @@ def test_서정·일상표현_오탐하지_않는다(benign):
 # ── 리스트/무드 정제 ──
 
 
-def test_sanitize_taglines_유해제거_PII마스킹():
+def test_sanitize_taglines_removes_harmful_and_masks_pii():
     out = sanitize_taglines(["잔잔한 밤", "씨발 최고", "메일 a@b.com 봐"])
     assert "씨발 최고" not in out  # 유해 제거
     assert out[0] == "잔잔한 밤"
@@ -58,7 +58,7 @@ def test_sanitize_taglines_유해제거_PII마스킹():
     assert len(out) == 2
 
 
-def test_sanitize_mood_유해면_빈문자():
+def test_sanitize_mood_blank_when_harmful():
     assert sanitize_mood("병신") == ""
     assert sanitize_mood("잔잔함") == "잔잔함"
 
@@ -66,11 +66,11 @@ def test_sanitize_mood_유해면_빈문자():
 # ── parse_result 통합 ──
 
 
-def test_parse_result_PII는_마스킹되어_반환():
+def test_parse_result_masks_pii():
     r = parse_result('{"taglines": ["문의 test@x.com 로"], "mood": "잔잔"}')
     assert "test@x.com" not in r.taglines[0] and "▇" in r.taglines[0]
 
 
-def test_parse_result_전부_유해면_502용_LLMError():
+def test_parse_result_all_harmful_raises():
     with pytest.raises(LLMError):
         parse_result('{"taglines": ["씨발", "병신"], "mood": "x"}')

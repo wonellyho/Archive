@@ -27,7 +27,7 @@ def mock_bootstrap(monkeypatch):
 # ── rate limit ──
 
 
-def test_bootstrap_상한_초과하면_429_표준detail(mock_bootstrap):
+def test_bootstrap_limit_returns_429(mock_bootstrap):
     limiter.enabled = True  # 이 테스트만 켠다(conftest는 기본 off)
     n = int(LIMIT_BOOTSTRAP.split("/")[0])
 
@@ -42,7 +42,7 @@ def test_bootstrap_상한_초과하면_429_표준detail(mock_bootstrap):
 # ── 보안 헤더 ──
 
 
-def test_보안헤더가_API_응답에_설정된다(mock_bootstrap):
+def test_security_headers_present(mock_bootstrap):
     resp = client.get("/api/bootstrap")
     assert resp.status_code == 200
     assert resp.headers["x-content-type-options"] == "nosniff"
@@ -52,14 +52,14 @@ def test_보안헤더가_API_응답에_설정된다(mock_bootstrap):
     assert "default-src 'none'" in resp.headers["content-security-policy"]
 
 
-def test_docs는_CSP_제외되고_정상_동작한다():
+def test_docs_excluded_from_csp():
     resp = client.get("/docs")
     assert resp.status_code == 200  # Swagger UI 정상
     assert "content-security-policy" not in resp.headers  # CSP 제외
     assert resp.headers["x-content-type-options"] == "nosniff"  # 다른 헤더는 유지
 
 
-def test_production이_아니면_HSTS_없음(mock_bootstrap):
+def test_no_hsts_outside_production(mock_bootstrap):
     # 개발 기본값(ENVIRONMENT!=production)에서는 HSTS를 붙이지 않는다.
     resp = client.get("/api/bootstrap")
     assert "strict-transport-security" not in resp.headers

@@ -1,7 +1,7 @@
 """회원 탈퇴 DELETE /api/me(M14, #59) 테스트 — db 계층 모킹, 네트워크 없음.
 
 커버: 인증(401)·정상 삭제 순서(데이터→계정)·계정 삭제 실패 시 502 전파·rate limit
-+ db.delete_all_owned_rows·db.delete_auth_user 자체의 httpx 응답 처리(코드리뷰 지적 반영).
++ db.delete_all_owned_rows·db.delete_auth_user 자체의 httpx 응답 처리.
 """
 
 import asyncio
@@ -59,7 +59,7 @@ def test_deletes_data_before_account(authed, monkeypatch):
 # ── 에러 전파 ──
 
 
-def test_502_on_auth_failure(authed, monkeypatch):
+def test_auth_failure_returns_502(authed, monkeypatch):
     async def fake_delete_rows(user_id):
         return None
 
@@ -73,7 +73,7 @@ def test_502_on_auth_failure(authed, monkeypatch):
     assert resp.status_code == 502
 
 
-def test_503_without_service_role(authed, monkeypatch):
+def test_missing_service_role_returns_503(authed, monkeypatch):
     async def fake_delete_rows(user_id):
         return None
 
@@ -90,7 +90,7 @@ def test_503_without_service_role(authed, monkeypatch):
 # ── rate limit ──
 
 
-def test_429_over_limit(authed, monkeypatch):
+def test_rate_limit_returns_429(authed, monkeypatch):
     async def fake_delete_rows(user_id):
         return None
 
@@ -154,7 +154,7 @@ def _service_role_configured():
 
 
 def test_continues_after_one_table_fails(_service_role_configured, monkeypatch):
-    """asyncio.gather(return_exceptions=True) 적용 확인 — 코드리뷰 CONFIRMED #1 재발 방지."""
+    """테이블 하나가 실패해도 나머지는 계속 삭제를 시도한다(순차 중단 방지)."""
     called_tables = []
 
     def responder(method, url):
@@ -179,7 +179,7 @@ def test_auth_delete_success(_service_role_configured, monkeypatch):
 
 
 def test_auth_delete_404_is_ok(_service_role_configured, monkeypatch):
-    """재시도 시 GoTrue가 404를 주는 경우(멱등) — 코드리뷰 CONFIRMED #2 재발 방지."""
+    """GoTrue가 404(이미 삭제된 계정)를 반환해도 예외 없이 성공 처리한다(멱등)."""
     monkeypatch.setattr(db, "get_client", lambda: _FakeClient(lambda m, u: _FakeResponse(404)))
     asyncio.run(db.delete_auth_user("test-user"))  # 예외 없이 통과하면 성공
 

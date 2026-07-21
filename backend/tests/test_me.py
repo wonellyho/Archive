@@ -17,11 +17,11 @@ def authed():
     app.dependency_overrides.clear()
 
 
-def test_me_토큰없이_401():
+def test_requires_auth():
     assert client.get("/api/me").status_code == 401
 
 
-def test_me_본인_프로필_반환(authed, monkeypatch):
+def test_returns_own_profile(authed, monkeypatch):
     async def fake(user_id):
         assert user_id == "test-user"  # 토큰 sub 기준 조회
         return {
@@ -45,7 +45,7 @@ def test_me_본인_프로필_반환(authed, monkeypatch):
     assert "userId" not in data  # user_id는 응답에 노출 안 됨
 
 
-def test_me_프로필_없으면_기본값(authed, monkeypatch):
+def test_returns_default_when_missing(authed, monkeypatch):
     async def fake(user_id):
         return None  # 신규 사용자
 

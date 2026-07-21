@@ -31,7 +31,7 @@ def _files(data: bytes, name="x.png", ctype="image/png"):
 # ── 인증 게이트 ──
 
 
-def test_업로드는_토큰_없이_401():
+def test_requires_auth():
     resp = client.post("/api/uploads", files=_files(PNG))
     assert resp.status_code == 401
 
@@ -39,7 +39,7 @@ def test_업로드는_토큰_없이_401():
 # ── 성공(모킹) ──
 
 
-def test_성공하면_공개_URL을_반환한다(authed, monkeypatch):
+def test_success_returns_public_url(authed, monkeypatch):
     captured = {}
 
     async def fake_upload(user_id, data, content_type, ext):
@@ -59,7 +59,7 @@ def test_성공하면_공개_URL을_반환한다(authed, monkeypatch):
     }
 
 
-def test_클라이언트_content_type_스푸핑은_매직바이트로_교정된다(authed, monkeypatch):
+def test_content_type_spoof_corrected_by_magic_bytes(authed, monkeypatch):
     seen = {}
 
     async def fake_upload(user_id, data, content_type, ext):
@@ -76,17 +76,17 @@ def test_클라이언트_content_type_스푸핑은_매직바이트로_교정된�
 # ── 검증 ──
 
 
-def test_이미지가_아니면_400(authed):
+def test_non_image_returns_400(authed):
     resp = client.post("/api/uploads", files=_files(b"this is not an image"))
     assert resp.status_code == 400
 
 
-def test_빈_파일은_400(authed):
+def test_empty_file_returns_400(authed):
     resp = client.post("/api/uploads", files=_files(b""))
     assert resp.status_code == 400
 
 
-def test_용량_초과는_413(authed, monkeypatch):
+def test_oversized_file_returns_413(authed, monkeypatch):
     monkeypatch.setattr(get_settings(), "max_upload_bytes", 10)
     resp = client.post("/api/uploads", files=_files(PNG))  # 40바이트 > 10
     assert resp.status_code == 413

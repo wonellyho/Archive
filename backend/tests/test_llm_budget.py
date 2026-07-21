@@ -36,7 +36,7 @@ def _use_provider(monkeypatch, provider):
 # ── 단위 ──
 
 
-def test_budget_누적과_초과판정():
+def test_budget_accumulates_and_detects_exceeded():
     b = MonthlyTokenBudget(limit=100)
     m = "2026-07"
     assert not b.exceeded("u", m)
@@ -52,7 +52,7 @@ def test_budget_누적과_초과판정():
 # ── 라우터 ──
 
 
-def test_월예산_초과하면_429_이후_provider_미호출(authed, monkeypatch):
+def test_monthly_budget_exceeded_returns_429(authed, monkeypatch):
     fake = FakeProv(tokens=100)
     _use_provider(monkeypatch, fake)
     get_monthly_budget()._limit = 100  # 1회(100) 통과 후 누적 100 → 다음은 초과

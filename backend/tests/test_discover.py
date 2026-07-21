@@ -12,7 +12,7 @@ client = TestClient(app)
 # ── 랭킹 로직(단위) ──
 
 
-def test_rank_similar_채널가중_타입가중_자기제외():
+def test_rank_similar_weights_channel_and_type():
     target = {"id": "t", "type": "music", "source_channel": "A"}
     candidates = [
         {"id": "t", "type": "music", "source_channel": "A"},   # 자기 자신 → 제외
@@ -25,7 +25,7 @@ def test_rank_similar_채널가중_타입가중_자기제외():
     assert [r["id"] for r in ranked] == ["c1", "c3", "c2"]  # 3 > 2 > 1, 0은 빠짐
 
 
-def test_rank_similar_동점은_최신순():
+def test_rank_similar_ties_break_by_recency():
     target = {"id": "t", "type": "music", "source_channel": "A"}
     candidates = [
         {"id": "old", "type": "music", "source_channel": "B", "created_at": "2026-06-01"},
@@ -35,7 +35,7 @@ def test_rank_similar_동점은_최신순():
     assert [r["id"] for r in ranked] == ["new", "old"]  # 동점(타입=1) → 최신 우선
 
 
-def test_rank_similar_limit():
+def test_rank_similar_respects_limit():
     target = {"id": "t", "type": "music", "source_channel": "A"}
     candidates = [
         {"id": f"c{i}", "type": "music", "source_channel": "A", "created_at": f"2026-07-{i:02d}"}
@@ -63,7 +63,7 @@ _C = {
 }
 
 
-def test_유사추천_200(monkeypatch):
+def test_similar_returns_200(monkeypatch):
     target = {"id": "t", "type": "music", "source_channel": "A"}
 
     async def fake(content_id):
@@ -78,7 +78,7 @@ def test_유사추천_200(monkeypatch):
     assert "userId" not in data[0]  # 응답에 user_id 비노출
 
 
-def test_없는_콘텐츠는_404(monkeypatch):
+def test_missing_content_returns_404(monkeypatch):
     async def fake(content_id):
         return None
 

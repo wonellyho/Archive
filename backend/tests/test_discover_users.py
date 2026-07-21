@@ -12,7 +12,7 @@ client = TestClient(app)
 # ── 랭킹 로직(단위) ──
 
 
-def test_rank_similar_users_공유_채널_키워드_점수():
+def test_rank_similar_users_scores_shared_channels_and_keywords():
     ref = {"channels": ["A", "B"], "keywords": ["k1", "k2"]}
     others = [
         {"username": "alice", "channels": ["A"], "keywords": ["k1"]},   # 2+2=4
@@ -26,7 +26,7 @@ def test_rank_similar_users_공유_채널_키워드_점수():
     assert alice.shared_channels == ["A"] and alice.shared_keywords == ["k1"]
 
 
-def test_rank_similar_users_공유없으면_빈리스트():
+def test_rank_similar_users_empty_when_no_overlap():
     ref = {"channels": ["A"], "keywords": ["k"]}
     others = [{"username": "x", "channels": ["Z"], "keywords": ["y"]}]
     assert rank_similar_users(ref, others) == []
@@ -35,7 +35,7 @@ def test_rank_similar_users_공유없으면_빈리스트():
 # ── 라우터 ──
 
 
-def test_유사유저_200(monkeypatch):
+def test_similar_users_returns_200(monkeypatch):
     ref = {"username": "me", "channels": ["A"], "keywords": ["k"]}
     others = [{"username": "friend", "channels": ["A"], "keywords": ["k"]}]
 
@@ -51,7 +51,7 @@ def test_유사유저_200(monkeypatch):
     assert data[0]["sharedChannels"] == ["A"] and data[0]["sharedKeywords"] == ["k"]
 
 
-def test_없는_유저는_404(monkeypatch):
+def test_missing_user_returns_404(monkeypatch):
     async def fake(username):
         return None
 
