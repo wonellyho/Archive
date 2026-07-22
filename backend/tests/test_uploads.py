@@ -132,6 +132,7 @@ def storage_configured():
 
 
 def test_upload_image_missing_config_returns_503(monkeypatch):
+    """Storage 접속 정보가 없으면 503."""
     settings = get_settings()
     orig_url = settings.supabase_url
     settings.supabase_url = ""
@@ -144,6 +145,7 @@ def test_upload_image_missing_config_returns_503(monkeypatch):
 
 
 def test_upload_image_success_uses_server_generated_path(storage_configured, monkeypatch):
+    """저장 경로를 서버가 생성한다({user_id}/{uuid}.{ext}) — 클라 파일명을 쓰지 않아 경로 조작을 막는다."""
     captured = {}
 
     def responder(method, url, **kwargs):
@@ -161,6 +163,7 @@ def test_upload_image_success_uses_server_generated_path(storage_configured, mon
 
 
 def test_upload_image_upstream_error_returns_502(storage_configured, monkeypatch):
+    """Storage 업로드 응답이 실패면 502."""
     monkeypatch.setattr(
         storage, "get_client", lambda: FakeAsyncClient(lambda m, u, **kw: FakeResponse(500))
     )
@@ -170,6 +173,7 @@ def test_upload_image_upstream_error_returns_502(storage_configured, monkeypatch
 
 
 def test_upload_image_network_error_returns_502(storage_configured, monkeypatch):
+    """업로드 요청 자체가 네트워크 오류로 실패해도 502."""
     def responder(method, url, **kwargs):
         return httpx.ConnectError("boom")
 

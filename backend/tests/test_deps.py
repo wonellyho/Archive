@@ -30,6 +30,7 @@ def settings():
 
 
 def test_dev_user_when_auth_optional_and_no_token(settings):
+    """AUTH_OPTIONAL=true + 토큰 없음 + 개발 환경 → 가짜 개발 사용자로 통과시킨다."""
     settings.auth_optional = True
     settings.environment = "development"
     user = deps.get_current_user(cred=None)
@@ -37,6 +38,7 @@ def test_dev_user_when_auth_optional_and_no_token(settings):
 
 
 def test_401_when_no_token_and_auth_optional_off(settings):
+    """AUTH_OPTIONAL이 꺼져 있으면 토큰 없는 요청은 그냥 401."""
     settings.auth_optional = False
     with pytest.raises(HTTPException) as exc:
         deps.get_current_user(cred=None)
@@ -44,6 +46,7 @@ def test_401_when_no_token_and_auth_optional_off(settings):
 
 
 def test_401_when_no_token_even_if_auth_optional_in_production(settings):
+    """production에서는 AUTH_OPTIONAL=true여도 무시되고 토큰이 없으면 401."""
     # production에서는 AUTH_OPTIONAL이 무시되어야 한다(§config 규칙).
     settings.auth_optional = True
     settings.environment = "production"
@@ -56,12 +59,14 @@ def test_401_when_no_token_even_if_auth_optional_in_production(settings):
 
 
 def test_returns_user_for_valid_token(monkeypatch):
+    """_decode_token이 정상 payload를 돌려주면 sub·email로 CurrentUser를 만든다."""
     monkeypatch.setattr(deps, "_decode_token", lambda token: {"sub": "u1", "email": "a@b.com"})
     user = deps.get_current_user(cred=_cred())
     assert user.id == "u1" and user.email == "a@b.com"
 
 
 def test_401_when_token_invalid(monkeypatch):
+    """_decode_token이 PyJWTError를 던지면 401로 변환된다."""
     def fake_decode(token):
         raise jwt.InvalidTokenError("bad token")
 
@@ -72,6 +77,7 @@ def test_401_when_token_invalid(monkeypatch):
 
 
 def test_401_when_sub_missing(monkeypatch):
+    """payload에 sub 클레임이 없으면 불완전한 토큰으로 보고 401."""
     monkeypatch.setattr(deps, "_decode_token", lambda token: {"email": "a@b.com"})
     with pytest.raises(HTTPException) as exc:
         deps.get_current_user(cred=_cred())
@@ -82,6 +88,7 @@ def test_401_when_sub_missing(monkeypatch):
 
 
 def test_decode_token_uses_hs256_when_secret_configured(settings, monkeypatch):
+    """SUPABASE_JWT_SECRET이 설정돼 있으면 JWKS 대신 HS256 공유 시크릿으로 검증한다(레거시 폴백)."""
     settings.supabase_jwt_secret = "shared-secret"
     captured = {}
 
@@ -96,6 +103,7 @@ def test_decode_token_uses_hs256_when_secret_configured(settings, monkeypatch):
 
 
 def test_decode_token_missing_url_returns_503(settings):
+    """HS256 시크릿도 SUPABASE_URL도 없으면 검증할 방법이 없어 503."""
     settings.supabase_jwt_secret = ""
     settings.supabase_url = ""
     with pytest.raises(HTTPException) as exc:
@@ -104,6 +112,7 @@ def test_decode_token_missing_url_returns_503(settings):
 
 
 def test_decode_token_jwks_success(settings, monkeypatch):
+    """기본 경로: JWKS에서 공개키를 가져와 ES256/RS256으로 검증한다."""
     settings.supabase_jwt_secret = ""
     settings.supabase_url = "https://project.supabase.co"
 
@@ -118,6 +127,7 @@ def test_decode_token_jwks_success(settings, monkeypatch):
 
 
 def test_decode_token_jwks_lookup_failure_returns_503(settings, monkeypatch):
+    """JWKS 조회가 네트워크 오류 등으로 실패하면 토큰 문제(401)가 아니라 서버 문제(503)로 구분한다."""
     settings.supabase_jwt_secret = ""
     settings.supabase_url = "https://project.supabase.co"
 
@@ -131,6 +141,7 @@ def test_decode_token_jwks_lookup_failure_returns_503(settings, monkeypatch):
 
 
 def test_decode_token_jwks_invalid_signature_reraises_pyjwt_error(settings, monkeypatch):
+    """JWKS 조회 중 PyJWTError(서명 불일치 등)는 503으로 감추지 않고 그대로 올려 get_current_user가 401로 처리하게 한다."""
     settings.supabase_jwt_secret = ""
     settings.supabase_url = "https://project.supabase.co"
 

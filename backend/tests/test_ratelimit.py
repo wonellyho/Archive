@@ -68,6 +68,7 @@ def test_no_hsts_outside_production(mock_bootstrap):
 
 
 def test_hsts_present_in_production(mock_bootstrap):
+    """production 환경이면 HSTS 헤더가 붙는다(개발 환경에서는 안 붙음, 위 테스트와 대응)."""
     settings = get_settings()
     orig = settings.environment
     settings.environment = "production"
@@ -82,6 +83,7 @@ def test_hsts_present_in_production(mock_bootstrap):
 
 
 def test_unhandled_exception_returns_generic_500(monkeypatch):
+    """처리되지 않은 일반 예외는 500 + 표준 메시지로만 응답하고 내부 사유는 노출하지 않는다."""
     def boom():
         raise RuntimeError("db password is hunter2")
 
@@ -102,6 +104,7 @@ def test_unhandled_exception_returns_generic_500(monkeypatch):
 
 
 def test_lifespan_shutdown_closes_shared_http_client():
+    """앱 종료(lifespan shutdown) 시 공유 HTTP 클라이언트가 실제로 정리된다."""
     # 먼저 실제 클라이언트를 하나 만들어서(get_client) 종료 대상이 존재하게 한다.
     http.get_client()
     # TestClient를 컨텍스트 매니저로 쓰면 startup/shutdown(lifespan)이 실제로 실행된다.

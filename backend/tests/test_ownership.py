@@ -94,6 +94,7 @@ def test_invalid_username_returns_422(authed, username):
 
 @pytest.mark.parametrize("username", [None, "   "])
 def test_blank_or_null_username_normalizes_to_none(username):
+    """username이 None이거나 공백만 있으면 '미설정'으로 간주해 None으로 정규화된다."""
     from app.schemas import ProfileIn
 
     assert ProfileIn(name="x", username=username).username is None

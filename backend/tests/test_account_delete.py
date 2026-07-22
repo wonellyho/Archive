@@ -33,6 +33,7 @@ def authed():
 
 
 def test_requires_auth():
+    """토큰 없이 탈퇴 요청하면 401."""
     assert client.delete("/api/me").status_code == 401
 
 
@@ -40,6 +41,7 @@ def test_requires_auth():
 
 
 def test_deletes_data_before_account(authed, monkeypatch):
+    """계정 자체를 지우기 전에 소유 데이터부터 삭제한다(순서 보장)."""
     calls = []
 
     async def fake_delete_rows(user_id):
@@ -62,6 +64,7 @@ def test_deletes_data_before_account(authed, monkeypatch):
 
 
 def test_auth_failure_returns_502(authed, monkeypatch):
+    """계정 삭제(GoTrue) 단계가 실패하면 502가 그대로 전파된다."""
     async def fake_delete_rows(user_id):
         return None
 
@@ -76,6 +79,7 @@ def test_auth_failure_returns_502(authed, monkeypatch):
 
 
 def test_missing_service_role_returns_503(authed, monkeypatch):
+    """service_role 키 미설정으로 인한 503도 그대로 전파된다."""
     async def fake_delete_rows(user_id):
         return None
 
@@ -93,6 +97,7 @@ def test_missing_service_role_returns_503(authed, monkeypatch):
 
 
 def test_rate_limit_returns_429(authed, monkeypatch):
+    """탈퇴 요청도 분당 상한을 넘기면 429."""
     async def fake_delete_rows(user_id):
         return None
 
@@ -147,6 +152,7 @@ def test_continues_after_one_table_fails(_service_role_configured, monkeypatch):
 
 
 def test_auth_delete_success(_service_role_configured, monkeypatch):
+    """GoTrue가 200/204를 주면 예외 없이 성공."""
     monkeypatch.setattr(db, "get_client", lambda: FakeAsyncClient(lambda m, u, **kw: FakeResponse(204)))
     asyncio.run(db.delete_auth_user("test-user"))  # 예외 없이 통과하면 성공
 
@@ -158,6 +164,7 @@ def test_auth_delete_404_is_ok(_service_role_configured, monkeypatch):
 
 
 def test_auth_delete_502_on_error(_service_role_configured, monkeypatch):
+    """GoTrue가 그 외 비정상 상태코드를 주면 502."""
     monkeypatch.setattr(db, "get_client", lambda: FakeAsyncClient(lambda m, u, **kw: FakeResponse(500)))
     with pytest.raises(HTTPException) as exc:
         asyncio.run(db.delete_auth_user("test-user"))

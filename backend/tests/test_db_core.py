@@ -42,6 +42,7 @@ def configured():
 
 
 def test_credentials_missing_url_returns_503(configured):
+    """SUPABASE_URL이 없으면 읽기용 접속 정보도 만들 수 없어 503."""
     settings = get_settings()
     settings.supabase_url = ""
     with pytest.raises(HTTPException) as exc:
@@ -50,12 +51,14 @@ def test_credentials_missing_url_returns_503(configured):
 
 
 def test_credentials_prefers_service_role_over_anon(configured):
+    """service_role 키가 있으면 anon 키보다 우선 사용한다."""
     base, key = db._credentials()
     assert base == "https://fake.supabase.co/rest/v1"
     assert key == "fake-service-role-key"
 
 
 def test_write_credentials_missing_key_returns_503(configured):
+    """service_role 키가 없으면 쓰기 자체가 불가능하므로 503."""
     settings = get_settings()
     settings.supabase_service_role_key = ""
     with pytest.raises(HTTPException) as exc:
@@ -67,6 +70,7 @@ def test_write_credentials_missing_key_returns_503(configured):
 
 
 def test_select_success_returns_json(configured, monkeypatch):
+    """정상 응답(200)이면 JSON 바디를 그대로 반환한다."""
     rows = [{"id": "1"}]
     monkeypatch.setattr(
         db, "get_client", lambda: FakeAsyncClient(lambda m, u, **kw: FakeResponse(200, rows))
@@ -76,6 +80,7 @@ def test_select_success_returns_json(configured, monkeypatch):
 
 
 def test_select_network_error_returns_502(configured, monkeypatch):
+    """요청 자체가 네트워크 오류로 실패하면 502로 변환한다."""
     def responder(method, url, **kwargs):
         return httpx.ConnectError("boom")
 
@@ -86,6 +91,7 @@ def test_select_network_error_returns_502(configured, monkeypatch):
 
 
 def test_select_non_200_returns_502(configured, monkeypatch):
+    """200이 아닌 응답(예: 500)은 조회 오류로 502 처리한다."""
     monkeypatch.setattr(
         db, "get_client", lambda: FakeAsyncClient(lambda m, u, **kw: FakeResponse(500))
     )
@@ -98,6 +104,7 @@ def test_select_non_200_returns_502(configured, monkeypatch):
 
 
 def test_write_success_returns_json(configured, monkeypatch):
+    """성공 응답의 바디를 그대로 반환한다."""
     monkeypatch.setattr(
         db,
         "get_client",
@@ -117,6 +124,7 @@ def test_write_empty_response_returns_none(configured, monkeypatch):
 
 
 def test_write_conflict_returns_409(configured, monkeypatch):
+    """PostgREST가 409(중복 PK·FK 위반)를 주면 그대로 409로 변환한다."""
     monkeypatch.setattr(
         db, "get_client", lambda: FakeAsyncClient(lambda m, u, **kw: FakeResponse(409))
     )
@@ -126,6 +134,7 @@ def test_write_conflict_returns_409(configured, monkeypatch):
 
 
 def test_write_server_error_returns_502(configured, monkeypatch):
+    """그 외 비정상 상태코드는 502(데이터베이스 쓰기 오류)로 처리한다."""
     monkeypatch.setattr(
         db, "get_client", lambda: FakeAsyncClient(lambda m, u, **kw: FakeResponse(500))
     )
@@ -135,6 +144,7 @@ def test_write_server_error_returns_502(configured, monkeypatch):
 
 
 def test_write_network_error_returns_502(configured, monkeypatch):
+    """쓰기 요청 자체가 네트워크 오류로 실패해도 502로 변환한다."""
     def responder(method, url, **kwargs):
         return httpx.ConnectError("boom")
 

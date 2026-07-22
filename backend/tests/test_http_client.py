@@ -22,6 +22,7 @@ def _reset_client():
 
 
 def test_get_client_returns_same_instance_on_reuse():
+    """get_client()를 여러 번 불러도 같은 인스턴스를 재사용한다(매번 새로 안 만듦)."""
     first = http.get_client()
     second = http.get_client()
     assert first is second
@@ -29,6 +30,7 @@ def test_get_client_returns_same_instance_on_reuse():
 
 
 def test_close_client_allows_fresh_instance_afterward():
+    """close_client() 후에는 다음 get_client() 호출이 새 인스턴스를 만든다."""
     first = http.get_client()
     asyncio.run(http.close_client())
     second = http.get_client()
@@ -36,6 +38,7 @@ def test_close_client_allows_fresh_instance_afterward():
 
 
 def test_close_client_twice_is_safe():
+    """이미 닫힌 상태에서 다시 닫아도 에러 없이 무해하다."""
     http.get_client()
     asyncio.run(http.close_client())
     asyncio.run(http.close_client())  # 이미 닫힌 상태에서 다시 호출해도 에러 없어야 함

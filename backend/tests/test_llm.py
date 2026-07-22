@@ -222,6 +222,7 @@ def test_parse_result_filters_keywords():
 
 
 def test_get_provider_returns_configured_anthropic_provider(monkeypatch):
+    """설정값(모델·토큰 상한)을 반영한 AnthropicProvider 인스턴스를 반환한다."""
     class _S:
         anthropic_api_key = "fake-key"
         llm_model = "claude-haiku-4-5"

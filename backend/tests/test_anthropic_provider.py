@@ -47,6 +47,7 @@ def _fake_response(status_code):
 
 
 def test_suggest_returns_parsed_result_and_token_count(monkeypatch):
+    """정상 응답이면 파싱된 SuggestResult와 (input+output) 토큰 합계를 반환한다."""
     provider = _provider()
     _mock_create(monkeypatch, provider, _fake_message('{"taglines": ["a"], "mood": "b"}'))
 
@@ -59,6 +60,7 @@ def test_suggest_returns_parsed_result_and_token_count(monkeypatch):
 
 
 def test_rate_limit_error_raises_llm_rate_limited(monkeypatch):
+    """SDK의 RateLimitError는 LLMRateLimited로 변환된다."""
     provider = _provider()
     error = anthropic.RateLimitError("rate limited", response=_fake_response(429), body=None)
     _mock_create(monkeypatch, provider, error)
@@ -67,6 +69,7 @@ def test_rate_limit_error_raises_llm_rate_limited(monkeypatch):
 
 
 def test_status_429_raises_llm_rate_limited(monkeypatch):
+    """RateLimitError가 아니어도 상태코드가 429면 동일하게 LLMRateLimited로 처리한다."""
     provider = _provider()
     error = anthropic.APIStatusError("busy", response=_fake_response(429), body=None)
     _mock_create(monkeypatch, provider, error)
@@ -75,6 +78,7 @@ def test_status_429_raises_llm_rate_limited(monkeypatch):
 
 
 def test_other_status_error_raises_llm_error(monkeypatch):
+    """429가 아닌 업스트림 상태 오류는 일반 LLMError로 변환한다(상세 사유는 로그에만 남김)."""
     provider = _provider()
     error = anthropic.APIStatusError("boom", response=_fake_response(500), body=None)
     _mock_create(monkeypatch, provider, error)
@@ -83,6 +87,7 @@ def test_other_status_error_raises_llm_error(monkeypatch):
 
 
 def test_connection_error_raises_llm_error(monkeypatch):
+    """연결 자체가 실패(APIConnectionError)해도 LLMError로 변환한다."""
     provider = _provider()
     error = anthropic.APIConnectionError(request=httpx.Request("POST", "https://api.anthropic.com"))
     _mock_create(monkeypatch, provider, error)

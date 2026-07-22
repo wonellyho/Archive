@@ -64,6 +64,7 @@ def youtube_key_configured():
 
 
 def test_missing_key_returns_503(authed):
+    """YOUTUBE_API_KEY가 없으면 503."""
     settings = config.get_settings()
     orig = settings.youtube_api_key
     settings.youtube_api_key = ""
@@ -75,6 +76,7 @@ def test_missing_key_returns_503(authed):
 
 
 def test_search_maps_snippet_to_result_fields(authed, youtube_key_configured, monkeypatch):
+    """YouTube 응답 snippet을 프론트 타입 필드로 매핑하고, videoId 없는 항목은 건너뛴다."""
     monkeypatch.setattr(
         youtube,
         "get_client",
@@ -89,6 +91,7 @@ def test_search_maps_snippet_to_result_fields(authed, youtube_key_configured, mo
 
 
 def test_search_forwards_music_category_filter(authed, youtube_key_configured, monkeypatch):
+    """type=music이면 videoCategoryId=10을 업스트림 요청에 실어 보낸다."""
     captured = {}
 
     def responder(method, url, **kwargs):
@@ -101,6 +104,7 @@ def test_search_forwards_music_category_filter(authed, youtube_key_configured, m
 
 
 def test_search_upstream_403_returns_429(authed, youtube_key_configured, monkeypatch):
+    """YouTube가 403(할당량 초과 등)을 주면 429로 변환한다."""
     monkeypatch.setattr(
         youtube, "get_client", lambda: FakeAsyncClient(lambda m, u, **kw: FakeResponse(403))
     )
@@ -109,6 +113,7 @@ def test_search_upstream_403_returns_429(authed, youtube_key_configured, monkeyp
 
 
 def test_search_upstream_error_returns_502(authed, youtube_key_configured, monkeypatch):
+    """그 외 비정상 상태코드는 502로 처리한다."""
     monkeypatch.setattr(
         youtube, "get_client", lambda: FakeAsyncClient(lambda m, u, **kw: FakeResponse(500))
     )
@@ -117,6 +122,7 @@ def test_search_upstream_error_returns_502(authed, youtube_key_configured, monke
 
 
 def test_search_network_error_returns_502(authed, youtube_key_configured, monkeypatch):
+    """요청 자체가 네트워크 오류로 실패해도 502."""
     def responder(method, url, **kwargs):
         return httpx.ConnectError("boom")
 

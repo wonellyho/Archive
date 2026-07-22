@@ -232,6 +232,7 @@ def test_content_body_too_long_returns_422(authed):
 
 
 def test_content_patch_forwards_only_sent_fields(authed, monkeypatch):
+    """PATCH로 보낸 필드만 그대로 db.patch_row에 전달된다."""
     calls = []
 
     async def fake_patch(table, row_id, fields, user_id):
@@ -244,6 +245,7 @@ def test_content_patch_forwards_only_sent_fields(authed, monkeypatch):
 
 
 def test_content_patch_empty_body_skips_db(authed, monkeypatch):
+    """빈 본문으로 PATCH하면 DB 호출 없이 204만 반환한다."""
     async def fail_patch(*a):
         raise AssertionError("호출되면 안 됨")
 
@@ -253,6 +255,7 @@ def test_content_patch_empty_body_skips_db(authed, monkeypatch):
 
 
 def test_content_delete_scoped_to_owner(authed, monkeypatch):
+    """콘텐츠 삭제는 본인 소유로 스코프해서 db.delete_rows를 호출한다."""
     calls = []
 
     async def fake_delete(table, column, value, user_id):
