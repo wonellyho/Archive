@@ -359,6 +359,27 @@ async def fetch_timeline_rows(username: str) -> list[dict[str, Any]] | None:
     )
 
 
+# ── 사용자 검색 (M10, #54) ────────────────────────────────────────────
+
+
+async def fetch_searchable_users() -> list[dict[str, Any]]:
+    """검색 대상 후보(username이 있는 유저만) 조회. username·name만 select.
+
+    부분 일치 로직은 라우터의 순수 함수(rank_users)에서 수행한다. PostgREST
+    ilike는 `%`·`_`·`*`를 사용자 입력에서 그대로 받으면 와일드카드 주입 위험이
+    있어, 패턴 매칭 대신 전체 후보를 가져와 앱에서 비교한다.
+
+    `_select`와 동일하게 PostgREST 기본 응답 상한(1000행) 이내를 가정한다 —
+    가입자가 그 이상으로 늘면 이 함수도 truncate되어 뒤쪽 사용자가 검색에서
+    누락될 수 있다(소규모 사용자 기준으로 채택한 트레이드오프, 대규모가 되면
+    전용 검색 인덱스/페이지네이션으로 전환 필요).
+    """
+    base, key = _credentials()
+    return await _select(
+        base, key, "profiles", {"select": "username,name", "username": "not.is.null"}
+    )
+
+
 # ── 회원 탈퇴 (M14, #59) ──────────────────────────────────────────────
 
 

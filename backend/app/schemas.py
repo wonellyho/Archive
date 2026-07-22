@@ -267,3 +267,13 @@ class SimilarUser(CamelModel):
     score: int = Field(description="유사도 점수(공유 채널·키워드 가중)")
     shared_channels: list[str] = Field(default_factory=list)
     shared_keywords: list[str] = Field(default_factory=list)
+
+
+# ── 사용자 검색 (M10) ──
+
+
+class UserSearchResult(CamelModel):
+    """사용자 검색 후보 — 검색창 타이핑용 가벼운 목록(username·name만)."""
+
+    username: str
+    name: str = ""
