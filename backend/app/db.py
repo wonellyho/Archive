@@ -502,6 +502,9 @@ async def _find_or_create_tag(name: str) -> dict[str, Any]:
             existing = await _lookup()
             if existing:
                 return existing
+            # 재조회로도 못 찾은 미해결 경합 — _write()의 일반 409 메시지는
+            # 폴더 참조 위반 문구라 태그 맥락에 안 맞으므로 태그용 메시지로 교체.
+            raise HTTPException(409, "태그 이름이 방금 다른 요청으로 등록됐습니다. 다시 시도해 주세요.")
         raise
 
 

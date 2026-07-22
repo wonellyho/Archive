@@ -4,6 +4,8 @@
 수동 추가/제거·출력 검증(개수·길이·안전성 필터)·프롬프트 인젝션 격리.
 """
 
+import asyncio
+
 import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
@@ -160,6 +162,63 @@ def test_tag_name_trimmed_before_use(authed, monkeypatch):
     resp = client.post(f"/api/contents/{VALID_UUID}/tags", json={"name": "  록  "})
     assert resp.status_code == 201
     assert captured["tag_name"] == "록"
+
+
+def test_whitespace_padded_short_name_is_accepted(authed, monkeypatch):
+    """공백을 먼저 제거한 뒤 40자 제한을 적용해야 한다 — strip 전 길이로 먼저
+    거부하면 실제로는 짧은 이름이 잘못 422가 난다."""
+    captured = {}
+
+    async def fake_add(content_id, tag_name, user_id):
+        captured["tag_name"] = tag_name
+        return TAG_ROW
+
+    monkeypatch.setattr(db, "add_content_tag", fake_add)
+    padded = " " * 45 + "락"  # strip 전 46자(>40), strip 후 1자
+    resp = client.post(f"/api/contents/{VALID_UUID}/tags", json={"name": padded})
+    assert resp.status_code == 201
+    assert captured["tag_name"] == "락"
+
+
+def test_harmful_tag_name_returns_422(authed):
+    """LLM 추천 태그와 달리 수동 입력 태그는 필터를 안 거치던 문제 — 유해어는 거부."""
+    resp = client.post(f"/api/contents/{VALID_UUID}/tags", json={"name": "씨발"})
+    assert resp.status_code == 422
+
+
+def test_tag_name_pii_is_masked(authed, monkeypatch):
+    """태그 이름에 이메일 등 PII가 들어가면 저장 전에 마스킹된다."""
+    captured = {}
+
+    async def fake_add(content_id, tag_name, user_id):
+        captured["tag_name"] = tag_name
+        return TAG_ROW
+
+    monkeypatch.setattr(db, "add_content_tag", fake_add)
+    resp = client.post(f"/api/contents/{VALID_UUID}/tags", json={"name": "test@example.com"})
+    assert resp.status_code == 201
+    assert "test@example.com" not in captured["tag_name"]
+    assert "▇" in captured["tag_name"]
+
+
+def test_find_or_create_tag_unresolved_race_gets_tag_specific_message(monkeypatch):
+    """동시 생성 경합이 재조회로도 안 풀리면(예: 정말 존재하지 않는 상태에서 계속
+    409), _write()의 폴더용 일반 메시지 대신 태그 맥락에 맞는 메시지로 바뀐다."""
+
+    async def fake_select(base, key, table, params):
+        return []  # 재조회해도 못 찾음(미해결 경합)
+
+    async def fake_write(method, table, **kwargs):
+        raise HTTPException(409, "중복 ID이거나 참조(폴더)가 유효하지 않습니다.")
+
+    monkeypatch.setattr(db, "_credentials", lambda: ("base", "key"))
+    monkeypatch.setattr(db, "_select", fake_select)
+    monkeypatch.setattr(db, "_write", fake_write)
+
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(db._find_or_create_tag("록"))
+    assert exc.value.status_code == 409
+    assert "폴더" not in exc.value.detail
 
 
 def test_remove_tag_scoped_to_owner(authed, monkeypatch):
