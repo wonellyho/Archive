@@ -22,6 +22,7 @@ from .routers import (
     profile,
     public,
     saves,
+    search,
     timeline,
     uploads,
     youtube,
@@ -83,6 +84,10 @@ TAGS_METADATA = [
     {
         "name": "public",
         "description": "공개 아카이브 — /u/{username}로 특정 사용자의 아카이브 조회(인증 불필요).",
+    },
+    {
+        "name": "search",
+        "description": "사용자 검색 — username·name 부분 일치(인증 불필요).",
     },
     {
         "name": "timeline",
@@ -165,6 +170,7 @@ app.include_router(llm.router)
 app.include_router(uploads.router)
 app.include_router(saves.router)
 app.include_router(public.router)
+app.include_router(search.router)
 app.include_router(timeline.router)
 app.include_router(discover.router)
 app.include_router(account.router)

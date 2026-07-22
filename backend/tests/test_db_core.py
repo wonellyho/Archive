@@ -152,3 +152,22 @@ def test_write_network_error_returns_502(configured, monkeypatch):
     with pytest.raises(HTTPException) as exc:
         asyncio.run(db._write("POST", "folders", json={}))
     assert exc.value.status_code == 502
+
+
+# ── fetch_searchable_users (M10, #54) ──
+
+
+def test_fetch_searchable_users_filters_null_username(configured, monkeypatch):
+    """PostgREST 쿼리에 username not.is.null 필터를 실어 보낸다."""
+    captured = {}
+
+    def responder(method, url, **kwargs):
+        captured.update(params=kwargs.get("params"))
+        return FakeResponse(200, [{"username": "wonho", "name": "최원호"}])
+
+    monkeypatch.setattr(db, "get_client", lambda: FakeAsyncClient(responder))
+    result = asyncio.run(db.fetch_searchable_users())
+
+    assert result == [{"username": "wonho", "name": "최원호"}]
+    assert captured["params"]["username"] == "not.is.null"
+    assert captured["params"]["select"] == "username,name"
