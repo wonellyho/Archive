@@ -27,7 +27,7 @@ def _fake_creds(monkeypatch):
     monkeypatch.setattr(db, "_credentials", lambda: ("http://db", "key"))
 
 
-def test_프로필_저장은_user_id로_upsert하고_id는_안보낸다(authed, monkeypatch):
+def test_save_upserts_by_user_id_without_id(authed, monkeypatch):
     calls = {"select": 0}
     captured = {}
 
@@ -49,7 +49,7 @@ def test_프로필_저장은_user_id로_upsert하고_id는_안보낸다(authed, 
     assert calls["select"] == 0  # username 없으면 중복확인 select 생략
 
 
-def test_username_중복이면_409_쓰기없음(authed, monkeypatch):
+def test_duplicate_username_returns_409_without_write(authed, monkeypatch):
     async def fake_select(base, key, table, params):
         return [{"user_id": "someone-else"}]  # 다른 유저가 사용 중
 
@@ -66,7 +66,7 @@ def test_username_중복이면_409_쓰기없음(authed, monkeypatch):
     assert called["write"] is False
 
 
-def test_username_본인것이면_통과하고_저장된다(authed, monkeypatch):
+def test_own_username_saves_successfully(authed, monkeypatch):
     async def fake_select(base, key, table, params):
         return [{"user_id": "test-user"}]  # 본인 소유
 
@@ -87,6 +87,14 @@ def test_username_본인것이면_통과하고_저장된다(authed, monkeypatch)
     "username",
     ["me", "ab", "has space", "UPPER!", "a" * 31, "admin", "u"],
 )
-def test_username_형식·예약어_위반은_422(authed, username):
+def test_invalid_username_returns_422(authed, username):
     resp = client.put("/api/profile", json={"name": "x", "username": username})
     assert resp.status_code == 422
+
+
+@pytest.mark.parametrize("username", [None, "   "])
+def test_blank_or_null_username_normalizes_to_none(username):
+    """username이 None이거나 공백만 있으면 '미설정'으로 간주해 None으로 정규화된다."""
+    from app.schemas import ProfileIn
+
+    assert ProfileIn(name="x", username=username).username is None

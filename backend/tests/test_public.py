@@ -37,7 +37,7 @@ CONTENT_ROW = {
 }
 
 
-def test_공개아카이브_200_bootstrap형태(monkeypatch):
+def test_public_archive_returns_200_bootstrap_shape(monkeypatch):
     async def fake(username):
         assert username == "wonho"  # 대문자 입력이 소문자로 조회됨
         return (PROFILE_ROW, [FOLDER_ROW], [CONTENT_ROW])
@@ -52,7 +52,7 @@ def test_공개아카이브_200_bootstrap형태(monkeypatch):
     assert data["musicContents"][0]["youtubeVideoId"] == "abc"
 
 
-def test_없는_username은_404(monkeypatch):
+def test_missing_username_returns_404(monkeypatch):
     async def fake(username):
         return None
 
@@ -60,7 +60,7 @@ def test_없는_username은_404(monkeypatch):
     assert client.get("/api/u/nobody").status_code == 404
 
 
-def test_공개라_토큰_없이_접근된다(monkeypatch):
+def test_public_endpoint_needs_no_auth(monkeypatch):
     async def fake(username):
         return None
 

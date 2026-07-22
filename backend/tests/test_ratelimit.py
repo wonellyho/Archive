@@ -7,7 +7,9 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from app import db
+from app import db, http
+from app.config import get_settings
+from app.deps import get_current_user
 from app.limiter import LIMIT_BOOTSTRAP, limiter
 from app.main import app
 
@@ -27,7 +29,7 @@ def mock_bootstrap(monkeypatch):
 # ── rate limit ──
 
 
-def test_bootstrap_상한_초과하면_429_표준detail(mock_bootstrap):
+def test_bootstrap_limit_returns_429(mock_bootstrap):
     limiter.enabled = True  # 이 테스트만 켠다(conftest는 기본 off)
     n = int(LIMIT_BOOTSTRAP.split("/")[0])
 
@@ -42,7 +44,7 @@ def test_bootstrap_상한_초과하면_429_표준detail(mock_bootstrap):
 # ── 보안 헤더 ──
 
 
-def test_보안헤더가_API_응답에_설정된다(mock_bootstrap):
+def test_security_headers_present(mock_bootstrap):
     resp = client.get("/api/bootstrap")
     assert resp.status_code == 200
     assert resp.headers["x-content-type-options"] == "nosniff"
@@ -52,14 +54,61 @@ def test_보안헤더가_API_응답에_설정된다(mock_bootstrap):
     assert "default-src 'none'" in resp.headers["content-security-policy"]
 
 
-def test_docs는_CSP_제외되고_정상_동작한다():
+def test_docs_excluded_from_csp():
     resp = client.get("/docs")
     assert resp.status_code == 200  # Swagger UI 정상
     assert "content-security-policy" not in resp.headers  # CSP 제외
     assert resp.headers["x-content-type-options"] == "nosniff"  # 다른 헤더는 유지
 
 
-def test_production이_아니면_HSTS_없음(mock_bootstrap):
+def test_no_hsts_outside_production(mock_bootstrap):
     # 개발 기본값(ENVIRONMENT!=production)에서는 HSTS를 붙이지 않는다.
     resp = client.get("/api/bootstrap")
     assert "strict-transport-security" not in resp.headers
+
+
+def test_hsts_present_in_production(mock_bootstrap):
+    """production 환경이면 HSTS 헤더가 붙는다(개발 환경에서는 안 붙음, 위 테스트와 대응)."""
+    settings = get_settings()
+    orig = settings.environment
+    settings.environment = "production"
+    try:
+        resp = client.get("/api/bootstrap")
+        assert "max-age" in resp.headers["strict-transport-security"]
+    finally:
+        settings.environment = orig
+
+
+# ── 미처리 예외 → 표준 500 (내부 정보 비노출) ──
+
+
+def test_unhandled_exception_returns_generic_500(monkeypatch):
+    """처리되지 않은 일반 예외는 500 + 표준 메시지로만 응답하고 내부 사유는 노출하지 않는다."""
+    def boom():
+        raise RuntimeError("db password is hunter2")
+
+    app.dependency_overrides[get_current_user] = boom
+    # 기본 TestClient(raise_server_exceptions=True)는 500 응답 대신 원본 예외를
+    # 다시 던져서 디버깅을 돕는다 — 실제 응답을 확인하려면 꺼야 한다.
+    no_raise_client = TestClient(app, raise_server_exceptions=False)
+    try:
+        resp = no_raise_client.get("/api/me")
+        assert resp.status_code == 500
+        assert resp.json() == {"detail": "서버 내부 오류가 발생했습니다."}
+        assert "hunter2" not in resp.text  # 내부 예외 메시지 비노출
+    finally:
+        app.dependency_overrides.clear()
+
+
+# ── lifespan ──
+
+
+def test_lifespan_shutdown_closes_shared_http_client():
+    """앱 종료(lifespan shutdown) 시 공유 HTTP 클라이언트가 실제로 정리된다."""
+    # 먼저 실제 클라이언트를 하나 만들어서(get_client) 종료 대상이 존재하게 한다.
+    http.get_client()
+    # TestClient를 컨텍스트 매니저로 쓰면 startup/shutdown(lifespan)이 실제로 실행된다.
+    with TestClient(app) as ctx_client:
+        assert ctx_client.get("/health").status_code == 200
+    # shutdown에서 close_client()가 실행돼 전역 싱글턴이 None으로 정리되어야 한다.
+    assert http._client is None

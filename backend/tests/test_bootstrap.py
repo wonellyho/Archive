@@ -38,7 +38,7 @@ def _mock_fetch(profile_row, folder_rows, content_rows):
     return fake
 
 
-def test_bootstrap_은_camelCase_RepoData_형태로_응답한다(monkeypatch):
+def test_returns_camel_case_repo_data(monkeypatch):
     profile_row = {
         "id": "me",
         "name": "개발중",
@@ -77,7 +77,7 @@ def test_bootstrap_은_camelCase_RepoData_형태로_응답한다(monkeypatch):
     assert content["folderId"] is None
 
 
-def test_bootstrap_은_프로필_행이_없으면_기본_프로필을_준다(monkeypatch):
+def test_returns_default_profile_when_missing(monkeypatch):
     monkeypatch.setattr(db, "fetch_bootstrap", _mock_fetch(None, [], []))
 
     resp = client.get("/api/bootstrap")
@@ -89,6 +89,6 @@ def test_bootstrap_은_프로필_행이_없으면_기본_프로필을_준다(mon
     assert profile["keywords"] == []
 
 
-def test_youtube_검색은_토큰_없이_401(monkeypatch):
+def test_youtube_search_requires_auth(monkeypatch):
     resp = client.get("/api/youtube/search", params={"q": "테스트", "type": "music"})
     assert resp.status_code == 401

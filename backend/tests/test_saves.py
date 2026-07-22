@@ -49,14 +49,14 @@ def authed():
         ("DELETE", f"/api/saves/{VALID_UUID}"),
     ],
 )
-def test_찜은_토큰_없이_401(method, path):
+def test_requires_auth(method, path):
     assert client.request(method, path, json={}).status_code == 401
 
 
 # ── 목록 ──
 
 
-def test_찜_목록은_콘텐츠_배열을_반환(authed, monkeypatch):
+def test_list_returns_contents(authed, monkeypatch):
     async def fake_list(user_id):
         assert user_id == "test-user"
         return [CONTENT_ROW]
@@ -72,7 +72,7 @@ def test_찜_목록은_콘텐츠_배열을_반환(authed, monkeypatch):
 # ── 추가 ──
 
 
-def test_찜_추가는_소유자와_콘텐츠id를_전달(authed, monkeypatch):
+def test_add_passes_owner_and_content_id(authed, monkeypatch):
     captured = {}
 
     async def fake_add(user_id, content_id):
@@ -84,7 +84,7 @@ def test_찜_추가는_소유자와_콘텐츠id를_전달(authed, monkeypatch):
     assert captured == {"user_id": "test-user", "content_id": VALID_UUID}
 
 
-def test_없는_콘텐츠_찜은_404(authed, monkeypatch):
+def test_add_missing_content_returns_404(authed, monkeypatch):
     async def fake_add(user_id, content_id):
         raise HTTPException(404, "콘텐츠를 찾을 수 없습니다.")
 
@@ -93,7 +93,7 @@ def test_없는_콘텐츠_찜은_404(authed, monkeypatch):
     assert resp.status_code == 404
 
 
-def test_찜_추가_contentId_형식오류는_422(authed):
+def test_add_invalid_content_id_returns_422(authed):
     resp = client.post("/api/saves", json={"contentId": "not-a-uuid"})
     assert resp.status_code == 422
 
@@ -101,7 +101,7 @@ def test_찜_추가_contentId_형식오류는_422(authed):
 # ── 해제 ──
 
 
-def test_찜_해제는_소유자로_스코프(authed, monkeypatch):
+def test_remove_scoped_to_owner(authed, monkeypatch):
     captured = {}
 
     async def fake_remove(user_id, content_id):

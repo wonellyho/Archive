@@ -1,7 +1,7 @@
 """회원 탈퇴 DELETE /api/me(M14, #59) 테스트 — db 계층 모킹, 네트워크 없음.
 
 커버: 인증(401)·정상 삭제 순서(데이터→계정)·계정 삭제 실패 시 502 전파·rate limit
-+ db.delete_all_owned_rows·db.delete_auth_user 자체의 httpx 응답 처리(코드리뷰 지적 반영).
++ db.delete_all_owned_rows·db.delete_auth_user 자체의 httpx 응답 처리.
 """
 
 import asyncio
@@ -17,6 +17,8 @@ from app.deps import CurrentUser, get_current_user
 from app.limiter import LIMIT_ACCOUNT_DELETE, limiter
 from app.main import app
 
+from ._http_fakes import FakeAsyncClient, FakeResponse
+
 client = TestClient(app)
 
 
@@ -31,6 +33,7 @@ def authed():
 
 
 def test_requires_auth():
+    """토큰 없이 탈퇴 요청하면 401."""
     assert client.delete("/api/me").status_code == 401
 
 
@@ -38,6 +41,7 @@ def test_requires_auth():
 
 
 def test_deletes_data_before_account(authed, monkeypatch):
+    """계정 자체를 지우기 전에 소유 데이터부터 삭제한다(순서 보장)."""
     calls = []
 
     async def fake_delete_rows(user_id):
@@ -59,7 +63,8 @@ def test_deletes_data_before_account(authed, monkeypatch):
 # ── 에러 전파 ──
 
 
-def test_502_on_auth_failure(authed, monkeypatch):
+def test_auth_failure_returns_502(authed, monkeypatch):
+    """계정 삭제(GoTrue) 단계가 실패하면 502가 그대로 전파된다."""
     async def fake_delete_rows(user_id):
         return None
 
@@ -73,7 +78,8 @@ def test_502_on_auth_failure(authed, monkeypatch):
     assert resp.status_code == 502
 
 
-def test_503_without_service_role(authed, monkeypatch):
+def test_missing_service_role_returns_503(authed, monkeypatch):
+    """service_role 키 미설정으로 인한 503도 그대로 전파된다."""
     async def fake_delete_rows(user_id):
         return None
 
@@ -90,7 +96,8 @@ def test_503_without_service_role(authed, monkeypatch):
 # ── rate limit ──
 
 
-def test_429_over_limit(authed, monkeypatch):
+def test_rate_limit_returns_429(authed, monkeypatch):
+    """탈퇴 요청도 분당 상한을 넘기면 429."""
     async def fake_delete_rows(user_id):
         return None
 
@@ -113,35 +120,6 @@ def test_429_over_limit(authed, monkeypatch):
 # ── db.delete_all_owned_rows / db.delete_auth_user 자체 (httpx 모킹) ──
 
 
-class _FakeResponse:
-    def __init__(self, status_code: int, body: object = None):
-        self.status_code = status_code
-        self.content = b"{}" if body is not None else b""
-
-    def json(self):
-        return {}
-
-
-class _FakeClient:
-    """`get_client()`가 반환하는 httpx.AsyncClient를 대체하는 최소 이중.
-
-    `_write`는 `.request(method, url, params=, json=, headers=)`를,
-    `delete_auth_user`는 `.delete(url, headers=)`를 호출한다.
-    """
-
-    def __init__(self, responder):
-        self._responder = responder  # (method, url) -> _FakeResponse | Exception
-
-    async def request(self, method, url, **_kwargs):
-        result = self._responder(method, url)
-        if isinstance(result, Exception):
-            raise result
-        return result
-
-    async def delete(self, url, **_kwargs):
-        return self._responder("DELETE", url)
-
-
 @pytest.fixture
 def _service_role_configured():
     """service_role 키 존재 체크를 통과시키기 위한 더미 설정(실 네트워크는 안 감)."""
@@ -154,17 +132,17 @@ def _service_role_configured():
 
 
 def test_continues_after_one_table_fails(_service_role_configured, monkeypatch):
-    """asyncio.gather(return_exceptions=True) 적용 확인 — 코드리뷰 CONFIRMED #1 재발 방지."""
+    """테이블 하나가 실패해도 나머지는 계속 삭제를 시도한다(순차 중단 방지)."""
     called_tables = []
 
-    def responder(method, url):
+    def responder(method, url, **kwargs):
         table = url.rsplit("/", 1)[-1]
         called_tables.append(table)
         if table == "folders":
             return httpx.ConnectError("boom")
-        return _FakeResponse(200, {})
+        return FakeResponse(200, {})
 
-    monkeypatch.setattr(db, "get_client", lambda: _FakeClient(responder))
+    monkeypatch.setattr(db, "get_client", lambda: FakeAsyncClient(responder))
 
     with pytest.raises(HTTPException) as exc:
         asyncio.run(db.delete_all_owned_rows("test-user"))
@@ -174,18 +152,20 @@ def test_continues_after_one_table_fails(_service_role_configured, monkeypatch):
 
 
 def test_auth_delete_success(_service_role_configured, monkeypatch):
-    monkeypatch.setattr(db, "get_client", lambda: _FakeClient(lambda m, u: _FakeResponse(204)))
+    """GoTrue가 200/204를 주면 예외 없이 성공."""
+    monkeypatch.setattr(db, "get_client", lambda: FakeAsyncClient(lambda m, u, **kw: FakeResponse(204)))
     asyncio.run(db.delete_auth_user("test-user"))  # 예외 없이 통과하면 성공
 
 
 def test_auth_delete_404_is_ok(_service_role_configured, monkeypatch):
-    """재시도 시 GoTrue가 404를 주는 경우(멱등) — 코드리뷰 CONFIRMED #2 재발 방지."""
-    monkeypatch.setattr(db, "get_client", lambda: _FakeClient(lambda m, u: _FakeResponse(404)))
+    """GoTrue가 404(이미 삭제된 계정)를 반환해도 예외 없이 성공 처리한다(멱등)."""
+    monkeypatch.setattr(db, "get_client", lambda: FakeAsyncClient(lambda m, u, **kw: FakeResponse(404)))
     asyncio.run(db.delete_auth_user("test-user"))  # 예외 없이 통과하면 성공
 
 
 def test_auth_delete_502_on_error(_service_role_configured, monkeypatch):
-    monkeypatch.setattr(db, "get_client", lambda: _FakeClient(lambda m, u: _FakeResponse(500)))
+    """GoTrue가 그 외 비정상 상태코드를 주면 502."""
+    monkeypatch.setattr(db, "get_client", lambda: FakeAsyncClient(lambda m, u, **kw: FakeResponse(500)))
     with pytest.raises(HTTPException) as exc:
         asyncio.run(db.delete_auth_user("test-user"))
     assert exc.value.status_code == 502
