@@ -221,6 +221,82 @@ def test_find_or_create_tag_unresolved_race_gets_tag_specific_message(monkeypatc
     assert "폴더" not in exc.value.detail
 
 
+def test_find_or_create_tag_lookup_uses_filters_not_full_scan(monkeypatch):
+    """조회가 name 필터(eq→ilike)로 좁혀져야 한다 — 전체 테이블 조회는
+    PostgREST 기본 1000행 상한에 걸려 기존 태그를 놓치고 영구 409가 된다."""
+    captured = []
+
+    async def fake_select(base, key, table, params):
+        captured.append(params)
+        return []
+
+    async def fake_write(method, table, **kwargs):
+        return [TAG_ROW]
+
+    monkeypatch.setattr(db, "_credentials", lambda: ("base", "key"))
+    monkeypatch.setattr(db, "_select", fake_select)
+    monkeypatch.setattr(db, "_write", fake_write)
+
+    asyncio.run(db._find_or_create_tag("록"))
+    assert captured[0]["name"] == "eq.록"
+    assert captured[1]["name"] == "ilike.록"
+
+
+def test_find_or_create_tag_finds_case_variant_via_ilike(monkeypatch):
+    """유니크 인덱스가 lower(name) 기준이므로, 대소문자만 다른 기존 태그를
+    ilike 단계에서 찾아 재사용해야 한다(못 찾으면 INSERT→409 영구 실패)."""
+    existing = {"id": TAG_UUID, "name": "jazz", "created_at": "2026-07-17T00:00:00+00:00"}
+
+    async def fake_select(base, key, table, params):
+        return [existing] if params["name"].startswith("ilike.") else []
+
+    monkeypatch.setattr(db, "_credentials", lambda: ("base", "key"))
+    monkeypatch.setattr(db, "_select", fake_select)
+
+    result = asyncio.run(db._find_or_create_tag("Jazz"))
+    assert result == existing
+
+
+def test_find_or_create_tag_escapes_like_metacharacters(monkeypatch):
+    """%·_ 가 든 이름은 이스케이프되어 리터럴로 매치돼야 한다(주입 차단)."""
+    captured = []
+
+    async def fake_select(base, key, table, params):
+        captured.append(params)
+        return []
+
+    async def fake_write(method, table, **kwargs):
+        return [TAG_ROW]
+
+    monkeypatch.setattr(db, "_credentials", lambda: ("base", "key"))
+    monkeypatch.setattr(db, "_select", fake_select)
+    monkeypatch.setattr(db, "_write", fake_write)
+
+    asyncio.run(db._find_or_create_tag("50%_할인"))
+    assert captured[1]["name"] == "ilike.50\\%\\_할인"
+
+
+def test_find_or_create_tag_star_name_filters_false_positives(monkeypatch):
+    """`*`는 PostgREST가 %로 바꿔 와일드카드로 남는다 — ilike가 다른 이름을
+    돌려줘도 정확 비교로 걸러내고 새로 생성해야 한다."""
+    wrong = {"id": TAG_UUID, "name": "abc", "created_at": "2026-07-17T00:00:00+00:00"}
+    created = {"id": "new-id", "name": "a*c", "created_at": "2026-07-17T00:00:00+00:00"}
+
+    async def fake_select(base, key, table, params):
+        return [wrong] if params["name"].startswith("ilike.") else []
+
+    async def fake_write(method, table, **kwargs):
+        assert kwargs["json"] == {"name": "a*c"}
+        return [created]
+
+    monkeypatch.setattr(db, "_credentials", lambda: ("base", "key"))
+    monkeypatch.setattr(db, "_select", fake_select)
+    monkeypatch.setattr(db, "_write", fake_write)
+
+    result = asyncio.run(db._find_or_create_tag("a*c"))
+    assert result == created
+
+
 def test_remove_tag_scoped_to_owner(authed, monkeypatch):
     captured = {}
 

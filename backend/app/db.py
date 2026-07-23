@@ -471,30 +471,50 @@ async def require_content_owner(content_id: str, user_id: str) -> dict[str, Any]
     return content
 
 
+def _ilike_escape(value: str) -> str:
+    """LIKE 패턴 메타문자(%·_·\\)를 이스케이프해 리터럴 매치 패턴을 만든다.
+
+    PostgREST는 like/ilike 값의 `*`를 `%`로 치환하므로 `*`만은 이스케이프가
+    불가능하다(와일드카드로 남음) — 호출부가 앱 레벨 정확 비교로 오탐을 거른다.
+    """
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
 async def _find_or_create_tag(name: str) -> dict[str, Any]:
     """이름(대소문자·공백 무시)으로 태그를 찾고, 없으면 새로 만든다.
 
-    ilike 와일드카드(%·_·PostgREST의 * 대체문자) 주입을 원천 차단하기 위해
-    패턴 매칭 대신 전체 태그를 가져와 앱에서 비교한다(소규모 마스터 목록 기준
-    — 대규모가 되면 전용 조회 뷰/RPC로 전환). 동시 생성 경합 시(유일 인덱스
-    위반 409) 재조회로 자체 복구한다(락 대신 재시도).
+    조회는 두 단계 — ① eq 정확 일치(와일드카드 해석이 없어 주입 위험 없음)
+    ② 이스케이프한 ilike로 대소문자만 다른 기존 행 탐색(유니크 인덱스가
+    lower(name) 기준이라 eq만으로는 "Jazz"↔"jazz"를 놓쳐 영구 409가 됨).
+    전체 테이블을 가져오지 않으므로 PostgREST 기본 1000행 상한에 걸려
+    기존 태그를 놓치는 일이 없다. 동시 생성 경합 시(유일 인덱스 위반 409)
+    재조회로 자체 복구한다(락 대신 재시도).
     """
-    normalized = name.strip().lower()
+    stripped = name.strip()
+    normalized = stripped.lower()
     base, key = _credentials()
 
     async def _lookup() -> dict[str, Any] | None:
-        all_tags = await _select(base, key, "tags", {"select": "*"})
-        for row in all_tags:
-            if (row.get("name") or "").strip().lower() == normalized:
-                return row
-        return None
+        rows = await _select(base, key, "tags", {"select": "*", "name": f"eq.{stripped}"})
+        if rows:
+            return rows[0]
+        rows = await _select(
+            base, key, "tags", {"select": "*", "name": f"ilike.{_ilike_escape(stripped)}"}
+        )
+        if "*" in stripped:
+            # `*`가 %로 남아 와일드카드 매치됐을 수 있음 — 정확 비교로 오탐 제거.
+            for row in rows:
+                if (row.get("name") or "").strip().lower() == normalized:
+                    return row
+            return None
+        return rows[0] if rows else None
 
     existing = await _lookup()
     if existing:
         return existing
     try:
         created = await _write(
-            "POST", "tags", json={"name": name.strip()}, prefer="return=representation"
+            "POST", "tags", json={"name": stripped}, prefer="return=representation"
         )
         return created[0]
     except HTTPException as exc:
