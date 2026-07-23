@@ -277,3 +277,41 @@ class UserSearchResult(CamelModel):
 
     username: str
     name: str = ""
+
+
+# ── 하이라이트 (M12, #56) ──
+
+
+class Highlight(CamelModel):
+    """하이라이트 응답 — 콘텐츠의 특정 시점에 남긴 타임스탬프+코멘트."""
+
+    id: str
+    content_id: str
+    timestamp_seconds: int
+    comment: str
+    created_at: str
+
+
+class HighlightIn(CamelModel):
+    """하이라이트 등록 요청."""
+
+    timestamp_seconds: int = Field(ge=0, description="타임스탬프(초)")
+    comment: str = Field(min_length=1, max_length=500)
+
+
+class HighlightPatch(CamelModel):
+    """하이라이트 수정 요청 — 보낸 필드만 반영(exclude_unset).
+
+    두 컬럼 모두 DB에서 not null이라 null로 지울 수 없다(필드를 생략하면 변경 안 함,
+    명시적 null은 422로 거부 — FolderPatch.coverImageUrl의 "null=제거" 관례와는 다름).
+    """
+
+    timestamp_seconds: Optional[int] = Field(default=None, ge=0)
+    comment: Optional[str] = Field(default=None, min_length=1, max_length=500)
+
+    @field_validator("timestamp_seconds", "comment")
+    @classmethod
+    def _reject_explicit_null(cls, v: object) -> object:
+        if v is None:
+            raise ValueError("null로 지울 수 없는 필드입니다(생략하면 변경하지 않습니다).")
+        return v
