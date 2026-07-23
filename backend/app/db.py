@@ -178,24 +178,37 @@ async def insert_row(table: str, row: dict[str, Any]) -> dict[str, Any]:
 
 
 async def patch_row(
-    table: str, row_id: str, fields: dict[str, Any], user_id: str
+    table: str,
+    row_id: str,
+    fields: dict[str, Any],
+    user_id: str,
+    *,
+    extra: dict[str, str] | None = None,
 ) -> None:
-    """소유자 행만 수정 — id와 user_id로 스코프(타인 행이면 0행 영향)."""
-    await _write(
-        "PATCH",
-        table,
-        params={"id": f"eq.{row_id}", "user_id": f"eq.{user_id}"},
-        json=fields,
-    )
+    """소유자 행만 수정 — id와 user_id로 스코프(타인 행이면 0행 영향).
+
+    extra: id·user_id 외 추가로 걸 스코프 필터({컬럼: "eq.값"}) — 중첩 리소스에서
+    부모 id까지 함께 스코프하고 싶을 때 사용(예: 하이라이트의 content_id).
+    """
+    params = {"id": f"eq.{row_id}", "user_id": f"eq.{user_id}"}
+    if extra:
+        params.update(extra)
+    await _write("PATCH", table, params=params, json=fields)
 
 
-async def delete_rows(table: str, column: str, value: str, user_id: str) -> None:
-    """소유자 행만 삭제 — 필터 컬럼과 user_id로 스코프."""
-    await _write(
-        "DELETE",
-        table,
-        params={column: f"eq.{value}", "user_id": f"eq.{user_id}"},
-    )
+async def delete_rows(
+    table: str,
+    column: str,
+    value: str,
+    user_id: str,
+    *,
+    extra: dict[str, str] | None = None,
+) -> None:
+    """소유자 행만 삭제 — 필터 컬럼과 user_id로 스코프. extra는 patch_row와 동일."""
+    params = {column: f"eq.{value}", "user_id": f"eq.{user_id}"}
+    if extra:
+        params.update(extra)
+    await _write("DELETE", table, params=params)
 
 
 # ── 찜(saves) — M7-A ──────────────────────────────────────────────────
@@ -428,6 +441,29 @@ async def delete_auth_user(user_id: str) -> None:
     # 성공으로 간주한다(멱등). 그 외 비정상 상태 코드만 실패로 처리.
     if resp.status_code not in (200, 204, 404):
         raise HTTPException(502, f"계정 삭제 오류 (HTTP {resp.status_code}).")
+
+
+# ── 하이라이트 (M12, #56) ──────────────────────────────────────────────
+
+
+async def content_owner_id(content_id: str) -> str | None:
+    """콘텐츠 소유자 user_id를 조회. 콘텐츠가 없으면 None(하이라이트 등록 전 소유권 확인용)."""
+    base, key = _credentials()
+    rows = await _select(
+        base, key, "contents", {"id": f"eq.{content_id}", "select": "user_id"}
+    )
+    return rows[0].get("user_id") if rows else None
+
+
+async def list_highlights(content_id: str) -> list[dict[str, Any]]:
+    """콘텐츠의 하이라이트 목록(공개 읽기, 등록순). 개수 제한 확인에도 재사용."""
+    base, key = _credentials()
+    return await _select(
+        base,
+        key,
+        "highlights",
+        {"content_id": f"eq.{content_id}", "select": "*", "order": "created_at.asc"},
+    )
 
 
 async def fetch_bootstrap() -> tuple[dict[str, Any] | None, list[dict], list[dict]]:
