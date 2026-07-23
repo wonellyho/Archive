@@ -277,3 +277,56 @@ class UserSearchResult(CamelModel):
 
     username: str
     name: str = ""
+
+
+# ── 콘텐츠 태그 (M13) ──
+
+
+class Tag(CamelModel):
+    """태그 마스터 행 — 자동(LLM)·수동 태깅이 공유."""
+
+    id: str
+    name: str
+    created_at: str
+
+
+class TagIn(CamelModel):
+    """태그 추가 요청 — 마스터에 없으면 새로 생성 후 연결."""
+
+    name: str = Field(min_length=1, max_length=40, description="태그 이름")
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def _normalize_name(cls, v: object) -> object:
+        """공백 제거 → 빈 값 거부 → 유해어 거부 → PII 마스킹, 이 순서로 정규화한다.
+
+        mode="before"인 이유: Field(max_length=40)이 원본(strip 전) 문자열
+        길이부터 검사하면, 앞뒤 공백이 많이 붙은 짧은 이름이 엉뚱하게 422로
+        거부된다 — strip을 먼저 실행해야 길이 제한이 실제 의미대로 동작한다.
+        LLM 자동 태깅 결과(parse_tag_result)는 sanitize_taglines로 유해어·PII를
+        걸러내는데, 수동 입력 태그는 이 필터를 거치지 않아 별도로 여기서 적용한다.
+
+        모듈 top-level에서 `app.llm.safety`를 import하면 `app.llm.__init__` →
+        `llm/base.py` → `..schemas`로 되돌아오는 순환 임포트가 생겨서
+        (llm/base.py가 SuggestIn·SuggestResult를 이 파일에서 가져다 씀),
+        함수 안에서 지연 import한다.
+        """
+        if not isinstance(v, str):
+            return v  # 문자열이 아니면 pydantic 기본 타입 오류로 위임
+
+        from .llm.safety import is_harmful, mask_pii
+        v = v.strip()
+        if not v:
+            raise ValueError("태그 이름은 공백만으로 채울 수 없습니다.")
+        if is_harmful(v):
+            raise ValueError("부적절한 표현이 포함된 태그 이름입니다.")
+        return mask_pii(v)
+
+
+class TagSuggestResult(CamelModel):
+    """LLM 자동 태깅 후보 — 저장되지 않은 후보 문자열만 반환."""
+
+    tags: list[str] = Field(
+        description="추천 태그 후보(한국어, 각 12자 내외)",
+        examples=[["록", "밴드사운드", "라이브"]],
+    )

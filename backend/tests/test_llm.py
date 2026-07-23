@@ -78,7 +78,7 @@ def test_missing_key_returns_503(authed, monkeypatch):
     class _S:
         anthropic_api_key = ""
 
-    monkeypatch.setattr("app.routers.llm.get_settings", lambda: _S())
+    monkeypatch.setattr("app.llm.guard.get_settings", lambda: _S())
     resp = client.post("/api/llm/suggest", json=VALID_BODY)
     assert resp.status_code == 503
 
