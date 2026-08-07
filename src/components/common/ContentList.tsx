@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import type { DragEvent } from "react";
 import type { TasteContent } from "../../types/content";
 import { EmptyState } from "./EmptyState";
+import { PencilIcon, TrashIcon } from "./icons";
 
 interface ContentListProps {
   contents: TasteContent[];
@@ -18,9 +19,6 @@ interface ContentListProps {
   /** When false, edit/delete controls are hidden (visitors). */
   canEdit: boolean;
 }
-
-const iconButton =
-  "rounded-full bg-paper/90 p-2 text-sm shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
 function moveId(list: string[], fromId: string, toId: string): string[] {
   const from = list.indexOf(fromId);
@@ -204,22 +202,22 @@ export function ContentList({
             </button>
 
             {canEdit ? (
-              <div className="absolute right-2 top-2 z-10 flex gap-1">
+              <div className="absolute right-2 top-2 z-10 flex items-center gap-0.5 rounded-full bg-paper/85 p-1 shadow-md backdrop-blur">
                 <button
                   type="button"
                   onClick={() => onEdit(content)}
                   aria-label={`${content.title || content.sourceTitle} 편집`}
-                  className={`${iconButton} text-ink-soft hover:bg-paper hover:text-ink`}
+                  className="grid size-7 place-items-center rounded-full text-[0.95rem] text-ink-soft transition-colors hover:bg-cream-deep hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
                 >
-                  ✎
+                  <PencilIcon />
                 </button>
                 <button
                   type="button"
                   onClick={() => onDelete(content)}
                   aria-label={`${content.title || content.sourceTitle} 삭제`}
-                  className={`${iconButton} text-ink-faint hover:bg-accent-soft hover:text-accent`}
+                  className="grid size-7 place-items-center rounded-full text-[0.95rem] text-ink-faint transition-colors hover:bg-accent-soft hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
                 >
-                  🗑
+                  <TrashIcon />
                 </button>
               </div>
             ) : null}

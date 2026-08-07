@@ -16,7 +16,9 @@ export interface NewContentInput {
   body: string;
 }
 
-export type FolderPatch = Partial<Pick<TasteFolder, "name" | "coverImageUrl">>;
+export type FolderPatch = Partial<
+  Pick<TasteFolder, "name" | "coverImageUrl" | "sortOrder">
+>;
 export type ContentPatch = Partial<
   Pick<TasteContent, "title" | "subtitle" | "body" | "sortOrder">
 >;
@@ -29,8 +31,12 @@ export interface TasteDataValue {
   videoFolders: TasteFolder[];
   musicContents: TasteContent[];
   videoContents: TasteContent[];
-  /** Replace the whole profile and persist it. */
-  updateProfile: (profile: Profile) => void;
+  /**
+   * Replace the whole profile and persist it. Awaits the backend so callers can
+   * surface validation errors (e.g. username taken/invalid); state only updates
+   * on success.
+   */
+  updateProfile: (profile: Profile) => Promise<void>;
   /** Create a folder and persist it. Returns the created folder. */
   addFolder: (
     type: ContentType,
@@ -41,6 +47,11 @@ export interface TasteDataValue {
   updateFolder: (type: ContentType, folderId: string, patch: FolderPatch) => void;
   /** Delete a folder and every piece of content inside it. */
   deleteFolder: (type: ContentType, folderId: string) => void;
+  /**
+   * Reorder folders of a type. `orderedIds` is the new sequence; the existing
+   * sortOrder values are reassigned to match and persisted.
+   */
+  reorderFolder: (type: ContentType, orderedIds: string[]) => void;
   /** Register new content and persist it. Returns the created content. */
   addContent: (input: NewContentInput) => TasteContent;
   /** Update a content's user-authored fields. */

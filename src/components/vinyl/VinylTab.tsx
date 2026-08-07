@@ -9,7 +9,7 @@ import { SourceToggle } from "./SourceToggle";
 import { ContentList } from "../common/ContentList";
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { Button } from "../common/Button";
-import { FolderGrid } from "../folders/FolderGrid";
+import { FolderShelf } from "../folders/FolderShelf";
 import { FolderFormModal } from "../folders/FolderFormModal";
 import { AddContentPanel } from "../youtube/AddContentPanel";
 import { ContentEditModal } from "../youtube/ContentEditModal";
@@ -21,8 +21,8 @@ type Pending =
 type FolderForm = { mode: "create" } | { mode: "edit"; folder: TasteFolder };
 
 /**
- * "바이닐" tab. Folder tiles on top; open one to reveal the record + cards. The
- * YouTube player lives here, so leaving the tab unmounts it and stops the music.
+ * "바이닐" tab. Folder sleeves on a shelf; open one to reveal the record + cards.
+ * The YouTube player lives here, so leaving the tab unmounts it and stops music.
  */
 export function VinylTab() {
   const {
@@ -31,6 +31,7 @@ export function VinylTab() {
     addFolder,
     updateFolder,
     deleteFolder,
+    reorderFolder,
     addContent,
     updateContent,
     deleteContent,
@@ -48,6 +49,7 @@ export function VinylTab() {
   const [editingContent, setEditingContent] = useState<TasteContent | null>(null);
   const [pending, setPending] = useState<Pending | null>(null);
   const playerRef = useRef<HTMLDivElement>(null);
+  const folderSectionRef = useRef<HTMLDivElement>(null);
 
   const countOf = (folderId: string) =>
     musicContents.filter((c) => c.folderId === folderId).length;
@@ -59,6 +61,15 @@ export function VinylTab() {
     if (selectedId === null) return;
     playerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [selectedId]);
+
+  // Scroll down to the opened folder's cards when a sleeve is selected.
+  useEffect(() => {
+    if (openFolderId === null) return;
+    folderSectionRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, [openFolderId]);
 
   // Tell the mini player whether the full player is currently on screen, so it
   // knows to appear (background) or step aside (foreground).
@@ -122,7 +133,7 @@ export function VinylTab() {
         />
       ) : null}
 
-      <FolderGrid
+      <FolderShelf
         folders={musicFolders}
         selectedFolderId={openFolderId}
         onSelect={selectFolder}
@@ -131,12 +142,20 @@ export function VinylTab() {
           setPending({ kind: "folder", folder, count: countOf(folder.id) })
         }
         onAddFolder={() => setFolderForm({ mode: "create" })}
+        onReorder={(ids) => reorderFolder("music", ids)}
         countOf={countOf}
         canEdit={isOwner}
+        typeIcon="🎵"
+        typeLabel="음악"
+        showDisc
       />
 
       {openFolder ? (
-        <div key={openFolder.id} className="flex flex-col gap-5">
+        <div
+          key={openFolder.id}
+          ref={folderSectionRef}
+          className="flex scroll-mt-24 flex-col gap-5"
+        >
           <h3 className="font-serif text-xl text-ink">📁 {openFolder.name}</h3>
           {selected ? (
             <div

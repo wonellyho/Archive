@@ -158,6 +158,8 @@ class FolderPatch(CamelModel):
 
     name: Optional[str] = Field(default=None, min_length=1, max_length=100)
     cover_image_url: Optional[str] = None
+    # 선반에서 드래그로 폴더 순서를 바꿀 때 전송(reorderFolder). 보낸 필드만 반영.
+    sort_order: Optional[int] = Field(default=None, ge=0)
 
 
 class ContentIn(CamelModel):

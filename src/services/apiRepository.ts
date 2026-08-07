@@ -43,6 +43,8 @@ export const apiRepository: TasteRepository = {
         ...profile,
         // undefined는 JSON에서 사라지므로 명시적으로 null 전송(이미지 제거 반영)
         profileImageUrl: profile.profileImageUrl ?? null,
+        // 빈 문자열/undefined는 null로 보내 username 미설정을 명시(서버가 정규화·중복검사).
+        username: profile.username?.trim() || null,
       }),
     });
   },
@@ -66,6 +68,7 @@ export const apiRepository: TasteRepository = {
     const body: Record<string, unknown> = {};
     if (patch.name !== undefined) body.name = patch.name;
     if ("coverImageUrl" in patch) body.coverImageUrl = patch.coverImageUrl ?? null;
+    if (patch.sortOrder !== undefined) body.sortOrder = patch.sortOrder;
     return api<void>(`/api/folders/${id}`, {
       method: "PATCH",
       body: JSON.stringify(body),

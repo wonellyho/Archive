@@ -9,7 +9,7 @@ import { ContentComment } from "../profile/ContentComment";
 import { ContentList } from "../common/ContentList";
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { Button } from "../common/Button";
-import { FolderGrid } from "../folders/FolderGrid";
+import { FolderShelf } from "../folders/FolderShelf";
 import { FolderFormModal } from "../folders/FolderFormModal";
 import { AddContentPanel } from "../youtube/AddContentPanel";
 import { ContentEditModal } from "../youtube/ContentEditModal";
@@ -20,7 +20,7 @@ type Pending =
 
 type FolderForm = { mode: "create" } | { mode: "edit"; folder: TasteFolder };
 
-/** "비디오" tab. Folder tiles on top; open one to reveal cards + inline player. */
+/** "비디오" tab. Folder sleeves on a shelf; open one to reveal cards + player. */
 export function TelevisionTab() {
   const {
     videoFolders,
@@ -28,6 +28,7 @@ export function TelevisionTab() {
     addFolder,
     updateFolder,
     deleteFolder,
+    reorderFolder,
     addContent,
     updateContent,
     deleteContent,
@@ -44,6 +45,7 @@ export function TelevisionTab() {
   const [editingContent, setEditingContent] = useState<TasteContent | null>(null);
   const [pending, setPending] = useState<Pending | null>(null);
   const playerRef = useRef<HTMLDivElement>(null);
+  const folderSectionRef = useRef<HTMLDivElement>(null);
 
   const countOf = (folderId: string) =>
     videoContents.filter((c) => c.folderId === folderId).length;
@@ -55,6 +57,15 @@ export function TelevisionTab() {
     if (selectedId === null) return;
     playerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [selectedId]);
+
+  // Scroll down to the opened folder's cards when a sleeve is selected.
+  useEffect(() => {
+    if (openFolderId === null) return;
+    folderSectionRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, [openFolderId]);
   const items = videoContents
     .filter((c) => c.folderId === openFolderId)
     .sort((a, b) => a.sortOrder - b.sortOrder);
@@ -108,7 +119,7 @@ export function TelevisionTab() {
         />
       ) : null}
 
-      <FolderGrid
+      <FolderShelf
         folders={videoFolders}
         selectedFolderId={openFolderId}
         onSelect={selectFolder}
@@ -117,12 +128,19 @@ export function TelevisionTab() {
           setPending({ kind: "folder", folder, count: countOf(folder.id) })
         }
         onAddFolder={() => setFolderForm({ mode: "create" })}
+        onReorder={(ids) => reorderFolder("video", ids)}
         countOf={countOf}
         canEdit={isOwner}
+        typeIcon="📺"
+        typeLabel="영상"
       />
 
       {openFolder ? (
-        <div key={openFolder.id} className="flex flex-col gap-5">
+        <div
+          key={openFolder.id}
+          ref={folderSectionRef}
+          className="flex scroll-mt-24 flex-col gap-5"
+        >
           <h3 className="font-serif text-xl text-ink">📁 {openFolder.name}</h3>
           {selected ? (
             <div
