@@ -42,3 +42,34 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   }
   return res.status === 204 ? (undefined as T) : ((await res.json()) as T);
 }
+
+/**
+ * 이미지를 POST /api/uploads(multipart)로 올리고 공개 URL을 돌려준다.
+ * multipart는 boundary 때문에 Content-Type을 브라우저가 정해야 하므로
+ * (JSON을 붙이는 authHeaders 대신) Authorization만 직접 첨부한다.
+ */
+export async function uploadImage(
+  file: Blob,
+  filename = "cover.jpg",
+): Promise<string> {
+  const form = new FormData();
+  form.append("file", file, filename);
+
+  const headers: Record<string, string> = {};
+  if (supabase) {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (token) headers.Authorization = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_URL}/api/uploads`, {
+    method: "POST",
+    headers,
+    body: form,
+  });
+  if (!res.ok) {
+    throw new ApiError(res.status, `이미지 업로드 실패 (HTTP ${res.status})`);
+  }
+  const { url } = (await res.json()) as { url: string };
+  return url;
+}

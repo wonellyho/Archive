@@ -38,8 +38,22 @@ body,
 }
 
 body {
-  background: linear-gradient(180deg, #ffffff 0%, #faf7f1 100%);
-  background-attachment: fixed;
+  /* A plastered wall: an opaque grain layer blended (soft-light) onto a warm
+     light-grey gradient, so the whole screen reads as one tactile surface.
+     soft-light keeps the grain gentle while staying clearly visible. */
+  background-color: #e6e2da;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0' intercept='1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    radial-gradient(125% 90% at 50% -8%, #f4f1ea 0%, #e6e2da 48%, #d3cdc2 100%);
+  background-repeat: repeat, no-repeat;
+  background-size:
+    180px 180px,
+    cover;
+  background-position:
+    0 0,
+    center;
+  background-blend-mode: soft-light, normal;
+  background-attachment: fixed, fixed;
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -145,6 +159,483 @@ body {
     animation: none;
   }
   .mini-player {
+    animation: none;
+  }
+}
+
+/* --- Folder shelf: 3D album-sleeve showcase --- */
+/* A wall of mounted shelves. Each folder cover is a record sleeve resting on a
+   plank; on hover the sleeve tilts toward you and the disc slides out and spins.
+   Structure inspired by an editions-style showcase — palette/copy are our own. */
+.shelf-showcase {
+  position: relative;
+  padding: 1.5rem 0 0.5rem;
+}
+
+.shelf-rows {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(3rem, 5.5vw, 4.5rem);
+}
+
+.shelf-shelf {
+  position: relative;
+}
+
+/* Light mounted behind the shelf's edge: a warm halo centred on the plank line
+   that glows outward across the wall, so the shelf lifts off with depth. */
+.shelf-backlight {
+  position: absolute;
+  z-index: 0;
+  left: 50%;
+  bottom: -28px;
+  width: 96%;
+  height: 104%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background: radial-gradient(
+    60% 62% at 50% 84%,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(255, 251, 244, 0.82) 26%,
+    rgba(255, 251, 244, 0.4) 48%,
+    rgba(255, 251, 244, 0) 72%
+  );
+  filter: blur(9px);
+}
+
+/* A tighter, brighter core right at the plank line reads as the light strip. */
+.shelf-backlight::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 20px;
+  width: 84%;
+  height: 46px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 255, 255, 0) 72%
+  );
+  filter: blur(6px);
+}
+
+.shelf-track {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: clamp(1.25rem, 4vw, 3.5rem);
+}
+
+.shelf-slot {
+  position: relative;
+  flex: 0 0 auto;
+  width: clamp(9.5rem, 18vw, 14rem);
+  perspective: 1300px;
+}
+
+/* Contact shadow cast onto the plank; stays put while the sleeve lifts. */
+.shelf-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: -9px;
+  width: 78%;
+  height: 22px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    rgba(27, 25, 22, 0.42),
+    rgba(27, 25, 22, 0) 72%
+  );
+  filter: blur(3px);
+  opacity: 0.9;
+  transition:
+    width 0.45s ease,
+    height 0.45s ease,
+    opacity 0.45s ease;
+  z-index: 0;
+}
+
+.shelf-slot:hover .shelf-shadow,
+.shelf-slot:focus-within .shelf-shadow {
+  width: 98%;
+  height: 32px;
+  opacity: 0.6;
+}
+
+/* The card = disc behind + sleeve cover; the whole thing tilts in 3D. */
+.shelf-card {
+  position: relative;
+  z-index: 1;
+  transform-origin: center bottom;
+  transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+  will-change: transform;
+}
+
+.shelf-slot:hover .shelf-card,
+.shelf-slot:focus-within .shelf-card {
+  transform: translateY(-16px) rotateX(7deg) rotateY(-14deg) scale(1.04);
+}
+
+/* One-shot "unfold" pop when a sleeve is clicked — starts/ends at the hover
+   pose so a hovered click doesn't jump, and swings face-on in the middle. */
+.shelf-card.is-opening {
+  animation: shelf-open 540ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@keyframes shelf-open {
+  0% {
+    transform: translateY(-16px) rotateX(7deg) rotateY(-14deg) scale(1.04);
+  }
+  45% {
+    transform: translateY(-26px) rotateX(2deg) rotateY(0deg) scale(1.12);
+  }
+  100% {
+    transform: translateY(-16px) rotateX(7deg) rotateY(-14deg) scale(1.04);
+  }
+}
+
+/* Vinyl disc sliding out from the sleeve on hover. */
+.shelf-disc-wrap {
+  position: absolute;
+  top: 6%;
+  left: 0;
+  width: 88%;
+  aspect-ratio: 1;
+  transform: translateX(8%);
+  transition: transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
+  z-index: 0;
+}
+
+.shelf-slot:hover .shelf-disc-wrap,
+.shelf-slot:focus-within .shelf-disc-wrap {
+  transform: translateX(48%);
+}
+
+.shelf-disc {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    #3a3a3e 0 15%,
+    #0c0c0e 15% 16%,
+    #18181b 16% 30%,
+    #0c0c0e 30% 31%,
+    #1c1c1f 31% 46%,
+    #0c0c0e 46% 47%,
+    #161619 47% 100%
+  );
+  box-shadow:
+    0 12px 22px -8px rgba(0, 0, 0, 0.6),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.shelf-disc::after {
+  content: "";
+  position: absolute;
+  inset: 38%;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.4);
+}
+
+.shelf-slot:hover .shelf-disc,
+.shelf-slot:focus-within .shelf-disc {
+  animation: disc-spin 4s linear infinite;
+}
+
+@keyframes disc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* The record sleeve — a real cover image or a labelled gradient. */
+.shelf-cover {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: var(--color-cream-deep);
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow:
+    0 16px 26px -14px rgba(24, 22, 18, 0.55),
+    0 3px 8px rgba(0, 0, 0, 0.14),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.5s ease;
+}
+
+.shelf-slot:hover .shelf-cover,
+.shelf-slot:focus-within .shelf-cover {
+  box-shadow:
+    0 44px 55px -18px rgba(24, 22, 18, 0.62),
+    0 18px 30px rgba(0, 0, 0, 0.26),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.shelf-cover:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+/* Selected folder: a flat accent ring only — it should not read as "lifted". */
+.shelf-cover[data-active="true"] {
+  box-shadow:
+    0 16px 26px -14px rgba(24, 22, 18, 0.55),
+    0 3px 8px rgba(0, 0, 0, 0.14),
+    inset 0 0 0 3px var(--color-accent);
+}
+
+/* Sleeve gloss — a diagonal sheen sold as printed cardboard. */
+.shelf-cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 6px;
+  background: linear-gradient(
+    125deg,
+    rgba(255, 255, 255, 0.24) 0%,
+    rgba(255, 255, 255, 0) 34%,
+    rgba(0, 0, 0, 0) 66%,
+    rgba(0, 0, 0, 0.16) 100%
+  );
+}
+
+.shelf-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.shelf-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.97);
+}
+
+.shelf-fallback-emoji {
+  font-size: clamp(1.9rem, 4.5vw, 2.6rem);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.shelf-fallback-name {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.3;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.shelf-badge {
+  position: absolute;
+  top: 0.55rem;
+  left: 0.55rem;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--color-ink-soft);
+  font-size: 0.7rem;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+/* Title overlay — hidden until hover/focus, then rises from the base. */
+.shelf-overlay {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  padding: 1.6rem 0.85rem 0.85rem;
+  text-align: left;
+  color: #fff;
+  background: linear-gradient(
+    to top,
+    rgba(18, 16, 13, 0.9) 0%,
+    rgba(18, 16, 13, 0.4) 55%,
+    rgba(18, 16, 13, 0) 100%
+  );
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+
+.shelf-slot:hover .shelf-overlay,
+.shelf-cover:focus-visible .shelf-overlay {
+  opacity: 1;
+  transform: none;
+}
+
+.shelf-overlay-title {
+  font-family: var(--font-serif);
+  font-size: 1.02rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.shelf-overlay-open {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Owner-only edit/delete controls — rise with the sleeve on hover (same easing
+   and lift as the card) so they read as part of the same motion. */
+.shelf-actions {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 4;
+  opacity: 0;
+  transform: translateY(6px) scale(0.9);
+  transform-origin: top right;
+  transition:
+    transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1),
+    opacity 0.3s ease;
+}
+
+.shelf-slot:hover .shelf-actions,
+.shelf-slot:focus-within .shelf-actions {
+  opacity: 1;
+  transform: translateY(-16px) scale(1);
+}
+
+/* The plank the sleeves rest on — a bright top face over a darker front edge
+   gives it real thickness, and a soft drop shadow floats it off the wall. */
+.shelf-plank {
+  position: relative;
+  z-index: 1;
+  margin-top: -2px;
+  height: 18px;
+  border-radius: 3px 3px 4px 4px;
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #f6f4ef 38%,
+    #e6e2da 70%,
+    #cfcabf 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.07),
+    0 28px 30px -20px rgba(40, 36, 30, 0.5),
+    0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Ghost "add folder" tile that lives at the end of the shelf. */
+.shelf-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 6px;
+  border: 2px dashed var(--color-line);
+  background: rgba(255, 255, 255, 0.45);
+  color: var(--color-ink-faint);
+  cursor: pointer;
+  transition:
+    border-color 0.25s ease,
+    color 0.25s ease,
+    transform 0.25s ease;
+}
+
+.shelf-add:hover,
+.shelf-add:focus-visible {
+  border-color: rgba(27, 25, 22, 0.35);
+  color: var(--color-ink);
+  transform: translateY(-6px);
+  outline: none;
+}
+
+.shelf-add:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+/* Mobile: shelves become horizontally scrolling tracks; no hover, so the title
+   overlay stays visible. */
+@media (max-width: 640px) {
+  .shelf-stage {
+    border-radius: 18px;
+  }
+  .shelf-track {
+    justify-content: flex-start;
+    gap: 1.1rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .shelf-track::-webkit-scrollbar {
+    display: none;
+  }
+  .shelf-slot {
+    width: 9rem;
+    scroll-snap-align: center;
+    perspective: 900px;
+  }
+  .shelf-overlay {
+    opacity: 1;
+    transform: none;
+    padding-top: 1.2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shelf-card,
+  .shelf-disc-wrap,
+  .shelf-shadow,
+  .shelf-cover,
+  .shelf-overlay,
+  .shelf-actions {
+    transition: none;
+  }
+  .shelf-slot:hover .shelf-card,
+  .shelf-slot:focus-within .shelf-card {
+    transform: translateY(-8px);
+  }
+  .shelf-card.is-opening {
+    animation: none;
+  }
+  .shelf-slot:hover .shelf-disc,
+  .shelf-slot:focus-within .shelf-disc {
     animation: none;
   }
 }

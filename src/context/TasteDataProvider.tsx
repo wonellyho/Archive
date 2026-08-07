@@ -80,9 +80,11 @@ export function TasteDataProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const updateProfile = useCallback((next: Profile) => {
+  const updateProfile = useCallback(async (next: Profile) => {
+    // Non-optimistic: await first so a rejected save (username 409/422) leaves
+    // local state untouched and the caller can show the error.
+    await repo.current.saveProfile(next);
     setProfile(next);
-    persist(repo.current.saveProfile(next));
   }, []);
 
   const setFolders = (type: ContentType) =>
@@ -126,6 +128,43 @@ export function TasteDataProvider({ children }: { children: ReactNode }) {
     setContents(type)((prev) => prev.filter((c) => c.folderId !== folderId));
     persist(repo.current.deleteFolder(type, folderId));
   }, []);
+
+  const reorderFolder = useCallback(
+    (type: ContentType, orderedIds: string[]) => {
+      const current =
+        type === "music"
+          ? snapshot.current.musicFolders
+          : snapshot.current.videoFolders;
+      // Reuse the existing sortOrder values (ascending) so the folders simply
+      // swap positions; other data is untouched.
+      const pool = orderedIds
+        .map((id) => current.find((f) => f.id === id)?.sortOrder)
+        .filter((n): n is number => n !== undefined)
+        .sort((a, b) => a - b);
+      const nextSort = new Map<string, number>();
+      orderedIds.forEach((id, i) => {
+        if (pool[i] !== undefined) nextSort.set(id, pool[i]);
+      });
+
+      setFolders(type)((prev) =>
+        prev
+          .map((f) => {
+            const s = nextSort.get(f.id);
+            return s !== undefined ? { ...f, sortOrder: s } : f;
+          })
+          .sort((a, b) => a.sortOrder - b.sortOrder),
+      );
+
+      orderedIds.forEach((id) => {
+        const f = current.find((x) => x.id === id);
+        const s = nextSort.get(id);
+        if (f && s !== undefined && f.sortOrder !== s) {
+          persist(repo.current.updateFolder(type, id, { sortOrder: s }));
+        }
+      });
+    },
+    [],
+  );
 
   const addContent = useCallback((input: NewContentInput) => {
     const current =
@@ -213,6 +252,7 @@ export function TasteDataProvider({ children }: { children: ReactNode }) {
       addFolder,
       updateFolder,
       deleteFolder,
+      reorderFolder,
       addContent,
       updateContent,
       deleteContent,
@@ -230,6 +270,7 @@ export function TasteDataProvider({ children }: { children: ReactNode }) {
       addFolder,
       updateFolder,
       deleteFolder,
+      reorderFolder,
       addContent,
       updateContent,
       deleteContent,

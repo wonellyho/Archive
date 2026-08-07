@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import type { ReactNode } from "react";
 
 interface ModalProps {
@@ -21,7 +22,10 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
 
   if (!open) return null;
 
-  return (
+  // Portal to <body> so a `position: fixed` overlay escapes any ancestor that
+  // creates a containing block (e.g. the nav's backdrop-blur), staying truly
+  // full-screen instead of being trapped inside that ancestor.
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-ink/40 p-4 backdrop-blur-sm"
       onClick={onClose}
@@ -46,6 +50,7 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

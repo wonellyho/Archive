@@ -14,14 +14,22 @@ export function ProfilePanel() {
   return (
     <section
       aria-label="인사말"
-      className="mx-auto flex w-full max-w-2xl flex-col items-center gap-8 rounded-3xl border border-line bg-paper/70 px-6 py-12 text-center shadow-sm sm:px-12"
+      className="mx-auto flex w-full max-w-2xl flex-col items-center gap-10 text-center"
     >
       {profile.bio ? (
-        <p className="max-w-prose whitespace-pre-line font-serif text-2xl leading-relaxed text-ink sm:text-3xl">
-          {profile.bio}
-        </p>
+        <blockquote className="relative max-w-prose px-4">
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute -left-1 -top-8 select-none font-serif text-7xl leading-none text-ink/10 sm:-left-4"
+          >
+            &ldquo;
+          </span>
+          <p className="whitespace-pre-line font-serif text-2xl leading-relaxed text-ink sm:text-[1.9rem]">
+            {profile.bio}
+          </p>
+        </blockquote>
       ) : (
-        <p className="font-serif text-xl text-ink-faint">
+        <p className="font-serif text-xl italic text-ink-faint">
           {isOwner
             ? "아직 인사말이 없어요. ‘인사말 쓰기’로 적어보세요."
             : "아직 인사말이 없어요."}
@@ -29,8 +37,8 @@ export function ProfilePanel() {
       )}
 
       {profile.keywords.length > 0 ? (
-        <div className="flex flex-col items-center gap-3">
-          <span className="text-sm uppercase tracking-[0.25em] text-ink-faint">
+        <div className="flex flex-col items-center gap-4">
+          <span className="text-xs uppercase tracking-[0.35em] text-ink-faint">
             Taste
           </span>
           <TasteKeywords keywords={profile.keywords} />
@@ -38,7 +46,7 @@ export function ProfilePanel() {
       ) : null}
 
       {isOwner ? (
-        <Button variant="outline" onClick={() => setEditing(true)}>
+        <Button variant="ghost" onClick={() => setEditing(true)}>
           ✎ 인사말 쓰기
         </Button>
       ) : null}
@@ -46,11 +54,8 @@ export function ProfilePanel() {
       {editing ? (
         <ProfileEditModal
           profile={profile}
-          onSave={(next) => {
-            updateProfile(next);
-            setEditing(false);
-          }}
-          onCancel={() => setEditing(false)}
+          onSave={updateProfile}
+          onClose={() => setEditing(false)}
         />
       ) : null}
     </section>
