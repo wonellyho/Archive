@@ -114,3 +114,29 @@ export const apiRepository: TasteRepository = {
     return api<void>(`/api/contents/${id}`, { method: "DELETE" });
   },
 };
+
+/** 쓰기 메서드는 절대 호출되지 않는다(isOwner=false가 편집 UI를 전부 가림) — 방어적으로 거부. */
+async function readOnly(): Promise<void> {
+  throw new Error("공개 아카이브는 읽기 전용입니다.");
+}
+
+/**
+ * `/u/{username}` 공개 아카이브용 읽기 전용 저장소 — #66.
+ * 인증 없이(또는 남의 계정으로 로그인해도) 해당 유저의 공개 데이터만 읽는다.
+ * loadAll()은 유저를 못 찾으면 ApiError(404)로 reject — TasteDataProvider의
+ * error 상태로 이어져 "사용자를 찾을 수 없습니다" 화면을 띄운다.
+ */
+export function publicRepository(username: string): TasteRepository {
+  return {
+    async loadAll(): Promise<RepoData> {
+      return normalize(await api<RepoData>(`/api/u/${encodeURIComponent(username)}`));
+    },
+    saveProfile: readOnly,
+    addFolder: readOnly,
+    updateFolder: readOnly,
+    deleteFolder: readOnly,
+    addContent: readOnly,
+    updateContent: readOnly,
+    deleteContent: readOnly,
+  };
+}

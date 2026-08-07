@@ -5,6 +5,8 @@ import type { TasteFolder } from "../types/folder";
 import type { TasteContent, ContentType } from "../types/content";
 import { defaultProfile } from "../services/storageService";
 import { getRepository } from "../services/repository";
+import type { TasteRepository } from "../services/repository";
+import { ApiError } from "../services/apiClient";
 import { TasteDataContext } from "./tasteDataContext";
 import type {
   ContentPatch,
@@ -31,14 +33,26 @@ function persist(promise: Promise<void>): void {
   });
 }
 
+interface TasteDataProviderProps {
+  children: ReactNode;
+  /**
+   * Overrides which repository to load/save through. Defaults to
+   * `getRepository()` (my own data — Supabase/API/localStorage per config).
+   * `/u/:username` passes `publicRepository(username)` instead so the same
+   * provider can serve a read-only view of someone else's archive.
+   */
+  repository?: TasteRepository;
+}
+
 /**
  * Loads taste data from the active repository (Supabase or localStorage) on
  * mount. Mutations update local state immediately (optimistic) and persist in
  * the background, so the UI stays snappy and the call sites stay synchronous.
  */
-export function TasteDataProvider({ children }: { children: ReactNode }) {
-  const repo = useRef(getRepository());
+export function TasteDataProvider({ children, repository }: TasteDataProviderProps) {
+  const repo = useRef(repository ?? getRepository());
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile>(defaultProfile);
   const [musicFolders, setMusicFolders] = useState<TasteFolder[]>([]);
   const [videoFolders, setVideoFolders] = useState<TasteFolder[]>([]);
@@ -61,7 +75,15 @@ export function TasteDataProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // Re-point the ref whenever the `repository` prop changes (e.g. `/u/:username`
+    // navigating to a different username) so the useCallbacks below — which read
+    // `repo.current` fresh despite empty deps — always persist through the right
+    // backend. For the default ("mine") case `repository` is always undefined, so
+    // this runs once on mount exactly like before.
+    repo.current = repository ?? getRepository();
     let cancelled = false;
+    setLoading(true);
+    setError(null);
     repo.current
       .loadAll()
       .then((data) => {
@@ -72,13 +94,21 @@ export function TasteDataProvider({ children }: { children: ReactNode }) {
         setMusicContents(data.musicContents);
         setVideoContents(data.videoContents);
       })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setError(
+          err instanceof ApiError && err.status === 404
+            ? "사용자를 찾을 수 없습니다."
+            : "데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
+        );
+      })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [repository]);
 
   const updateProfile = useCallback(async (next: Profile) => {
     // Non-optimistic: await first so a rejected save (username 409/422) leaves
@@ -243,6 +273,7 @@ export function TasteDataProvider({ children }: { children: ReactNode }) {
   const value = useMemo<TasteDataValue>(
     () => ({
       loading,
+      error,
       profile,
       musicFolders,
       videoFolders,
@@ -261,6 +292,7 @@ export function TasteDataProvider({ children }: { children: ReactNode }) {
     }),
     [
       loading,
+      error,
       profile,
       musicFolders,
       videoFolders,

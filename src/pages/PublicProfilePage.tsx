@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useTasteData } from "../context/tasteDataContext";
 import { ProfileHeader } from "../components/profile/ProfileHeader";
 import { ProfilePanel } from "../components/profile/ProfilePanel";
@@ -21,14 +22,36 @@ const TABS: TabItem<TabId>[] = [
   { id: "timeline", label: "축적", icon: "📈" },
 ];
 
-export function PublicProfilePage() {
-  const { profile, loading } = useTasteData();
+interface PublicProfilePageProps {
+  /**
+   * True on `/u/:username` (#66) — someone else's shared archive. Swaps the
+   * owner login/edit chip for a growth CTA back to `/`, since editing only
+   * ever happens on your own home (isOwner is already forced false upstream
+   * by AuthProvider's forceReadOnly, so no owner-only buttons render either
+   * way — this just replaces the nav slot with something useful instead).
+   */
+  readOnly?: boolean;
+}
+
+export function PublicProfilePage({ readOnly = false }: PublicProfilePageProps) {
+  const { profile, loading, error } = useTasteData();
   const [tab, setTab] = useState<TabId>("about");
 
   if (loading) {
     return (
       <main className="flex min-h-svh items-center justify-center">
         <p className="text-base text-ink-faint">불러오는 중…</p>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="flex min-h-svh flex-col items-center justify-center gap-4">
+        <p className="text-base text-ink-soft">{error}</p>
+        <Link to="/" className="text-sm text-accent hover:underline">
+          ← 홈으로
+        </Link>
       </main>
     );
   }
@@ -42,7 +65,18 @@ export function PublicProfilePage() {
             tabs={TABS}
             activeId={tab}
             onChange={setTab}
-            actions={<OwnerControls />}
+            actions={
+              readOnly ? (
+                <Link
+                  to="/"
+                  className="rounded-full border border-line px-3.5 py-1.5 text-sm font-medium text-ink transition-colors hover:border-ink/40 hover:bg-cream"
+                >
+                  이런 아카이브 나도 만들기 →
+                </Link>
+              ) : (
+                <OwnerControls />
+              )
+            }
           />
 
           <main className="mx-auto flex w-full max-w-375 flex-1 flex-col gap-12 px-5 py-10 sm:px-10 sm:py-14">
