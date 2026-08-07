@@ -430,6 +430,132 @@ async def delete_auth_user(user_id: str) -> None:
         raise HTTPException(502, f"계정 삭제 오류 (HTTP {resp.status_code}).")
 
 
+# ── 콘텐츠 태그 (M13) ─────────────────────────────────────────────────
+
+
+async def fetch_content(content_id: str) -> dict[str, Any] | None:
+    """콘텐츠 전체 행 조회(태그 소유권 확인 + LLM 자동 태깅 입력에 사용). 없으면 None."""
+    base, key = _credentials()
+    rows = await _select(base, key, "contents", {"id": f"eq.{content_id}", "select": "*"})
+    return rows[0] if rows else None
+
+
+async def list_tags() -> list[dict[str, Any]]:
+    """태그 마스터 전체 목록(이름순) — 자동완성/드롭다운용."""
+    base, key = _credentials()
+    return await _select(base, key, "tags", {"select": "*", "order": "name.asc"})
+
+
+async def list_content_tags(content_id: str) -> list[dict[str, Any]]:
+    """특정 콘텐츠에 달린 태그 목록. content_tags→tags 임베드 조회."""
+    base, key = _credentials()
+    rows = await _select(
+        base,
+        key,
+        "content_tags",
+        {"content_id": f"eq.{content_id}", "select": "tags(*)"},
+    )
+    return [row["tags"] for row in rows if row.get("tags")]
+
+
+async def require_content_owner(content_id: str, user_id: str) -> dict[str, Any]:
+    """콘텐츠를 조회하고 소유권을 검증한다. 없으면 404, 소유자가 아니면 403.
+
+    태그 관련 엔드포인트(추가·제거·자동추천) 3곳이 공유하는 소유권 확인 지점.
+    """
+    content = await fetch_content(content_id)
+    if content is None:
+        raise HTTPException(404, "콘텐츠를 찾을 수 없습니다.")
+    if content.get("user_id") != user_id:
+        raise HTTPException(403, "본인 콘텐츠에만 이 작업을 할 수 있습니다.")
+    return content
+
+
+def _ilike_escape(value: str) -> str:
+    """LIKE 패턴 메타문자(%·_·\\)를 이스케이프해 리터럴 매치 패턴을 만든다.
+
+    PostgREST는 like/ilike 값의 `*`를 `%`로 치환하므로 `*`만은 이스케이프가
+    불가능하다(와일드카드로 남음) — 호출부가 앱 레벨 정확 비교로 오탐을 거른다.
+    """
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+async def _find_or_create_tag(name: str) -> dict[str, Any]:
+    """이름(대소문자·공백 무시)으로 태그를 찾고, 없으면 새로 만든다.
+
+    조회는 두 단계 — ① eq 정확 일치(와일드카드 해석이 없어 주입 위험 없음)
+    ② 이스케이프한 ilike로 대소문자만 다른 기존 행 탐색(유니크 인덱스가
+    lower(name) 기준이라 eq만으로는 "Jazz"↔"jazz"를 놓쳐 영구 409가 됨).
+    전체 테이블을 가져오지 않으므로 PostgREST 기본 1000행 상한에 걸려
+    기존 태그를 놓치는 일이 없다. 동시 생성 경합 시(유일 인덱스 위반 409)
+    재조회로 자체 복구한다(락 대신 재시도).
+    """
+    stripped = name.strip()
+    normalized = stripped.lower()
+    base, key = _credentials()
+
+    async def _lookup() -> dict[str, Any] | None:
+        rows = await _select(base, key, "tags", {"select": "*", "name": f"eq.{stripped}"})
+        if rows:
+            return rows[0]
+        rows = await _select(
+            base, key, "tags", {"select": "*", "name": f"ilike.{_ilike_escape(stripped)}"}
+        )
+        if "*" in stripped:
+            # `*`가 %로 남아 와일드카드 매치됐을 수 있음 — 정확 비교로 오탐 제거.
+            for row in rows:
+                if (row.get("name") or "").strip().lower() == normalized:
+                    return row
+            return None
+        return rows[0] if rows else None
+
+    existing = await _lookup()
+    if existing:
+        return existing
+    try:
+        created = await _write(
+            "POST", "tags", json={"name": stripped}, prefer="return=representation"
+        )
+        return created[0]
+    except HTTPException as exc:
+        if exc.status_code == 409:
+            existing = await _lookup()
+            if existing:
+                return existing
+            # 재조회로도 못 찾은 미해결 경합 — _write()의 일반 409 메시지는
+            # 폴더 참조 위반 문구라 태그 맥락에 안 맞으므로 태그용 메시지로 교체.
+            raise HTTPException(409, "태그 이름이 방금 다른 요청으로 등록됐습니다. 다시 시도해 주세요.")
+        raise
+
+
+async def add_content_tag(content_id: str, tag_name: str, user_id: str) -> dict[str, Any]:
+    """콘텐츠에 태그를 연결(소유자만). 마스터에 없는 이름이면 새로 생성.
+
+    이미 연결된 태그면 멱등(ignore-duplicates).
+    """
+    await require_content_owner(content_id, user_id)
+    tag = await _find_or_create_tag(tag_name)
+    await _write(
+        "POST",
+        "content_tags",
+        params={"on_conflict": "content_id,tag_id"},
+        json={"content_id": content_id, "tag_id": tag["id"]},
+        prefer="return=minimal,resolution=ignore-duplicates",
+    )
+    return tag
+
+
+async def remove_content_tag(content_id: str, tag_id: str, user_id: str) -> None:
+    """콘텐츠에서 태그 연결을 제거(소유자만). 연결이 없어도 무해(0행)."""
+    await require_content_owner(content_id, user_id)
+
+    await _write(
+        "DELETE",
+        "content_tags",
+        params={"content_id": f"eq.{content_id}", "tag_id": f"eq.{tag_id}"},
+    )
+
+
 async def fetch_bootstrap() -> tuple[dict[str, Any] | None, list[dict], list[dict]]:
     """프로필(단일)·폴더·콘텐츠를 병렬 조회한다.
 

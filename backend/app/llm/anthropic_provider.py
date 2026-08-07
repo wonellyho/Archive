@@ -8,7 +8,14 @@ import logging
 import anthropic
 
 from ..schemas import SuggestIn, SuggestResult
-from .base import LLMError, LLMRateLimited, build_messages, parse_result
+from .base import (
+    LLMError,
+    LLMRateLimited,
+    build_messages,
+    build_tag_messages,
+    parse_result,
+    parse_tag_result,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +30,15 @@ class AnthropicProvider:
 
     async def suggest(self, data: SuggestIn) -> tuple[SuggestResult, int]:
         system, user = build_messages(data)
+        message, tokens = await self._create(system, user)
+        return parse_result(_extract_text(message)), tokens
+
+    async def suggest_tags(self, content: dict) -> tuple[list[str], int]:
+        system, user = build_tag_messages(content)
+        message, tokens = await self._create(system, user)
+        return parse_tag_result(_extract_text(message)), tokens
+
+    async def _create(self, system: str, user: str) -> tuple["anthropic.types.Message", int]:
         try:
             message = await self._client.messages.create(
                 model=self._model,
@@ -46,7 +62,7 @@ class AnthropicProvider:
         tokens = (getattr(usage, "input_tokens", 0) or 0) + (
             getattr(usage, "output_tokens", 0) or 0
         )
-        return parse_result(_extract_text(message)), tokens
+        return message, tokens
 
 
 def _extract_text(message: "anthropic.types.Message") -> str:

@@ -7,14 +7,12 @@
   4) 인젝션 방어·출력 검증 — llm.base(프롬프트 격리 + 스키마/길이 강제)
 """
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Request
+from fastapi import APIRouter, Body, Depends, Request
 
 from ..deps import CurrentUser, get_current_user
-from ..config import get_settings
 from ..limiter import LIMIT_LLM, limiter
-from ..llm import LLMError, LLMRateLimited, get_provider
-from ..llm.budget import current_month, get_monthly_budget
-from ..llm.ratelimit import get_rate_limiter
+from ..llm import get_provider
+from ..llm.guard import run_guarded
 from ..schemas import SuggestIn, SuggestResult
 
 router = APIRouter(prefix="/api/llm", tags=["llm"])
@@ -76,22 +74,8 @@ async def suggest(
     body: SuggestIn = Body(openapi_examples=_SUGGEST_EXAMPLES),
     user: CurrentUser = Depends(get_current_user),
 ) -> SuggestResult:
-    if not get_settings().anthropic_api_key:
-        raise HTTPException(503, "서버에 LLM API 키가 설정되지 않았습니다.")
-
-    if not get_rate_limiter().allow(user.id):
-        raise HTTPException(429, "요청이 너무 잦습니다. 잠시 후 다시 시도해 주세요.")
-
-    budget, month = get_monthly_budget(), current_month()
-    if budget.exceeded(user.id, month):
-        raise HTTPException(429, "이번 달 LLM 사용량 상한을 초과했습니다.")
-
-    try:
-        result, tokens = await get_provider().suggest(body)
-    except LLMRateLimited:
-        raise HTTPException(429, "LLM 사용량이 많습니다. 잠시 후 다시 시도해 주세요.")
-    except LLMError:
-        raise HTTPException(502, "문구 추천 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.")
-
-    budget.add(user.id, month, tokens)
-    return result
+    return await run_guarded(
+        user.id,
+        lambda: get_provider().suggest(body),
+        error_message="문구 추천 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+    )
