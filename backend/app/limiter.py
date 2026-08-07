@@ -16,5 +16,6 @@ LIMIT_UPLOAD = "20/minute"  # 이미지 업로드(스토리지 남용 보호)
 LIMIT_SAVES = "60/minute"  # 찜 저장/해제/목록(브라우징 중 잦을 수 있어 넉넉히)
 LIMIT_PUBLIC = "60/minute"  # 공개 프로필 조회(/api/u/{username})
 LIMIT_ACCOUNT_DELETE = "5/minute"  # 회원 탈퇴(영구 삭제, 되돌릴 수 없어 낮게)
+LIMIT_HIGHLIGHTS = "60/minute"  # 하이라이트 조회/등록/수정/삭제
 
 limiter = Limiter(key_func=get_remote_address)

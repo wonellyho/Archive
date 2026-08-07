@@ -18,6 +18,7 @@ from .routers import (
     discover,
     folders,
     health,
+    highlights,
     llm,
     profile,
     public,
@@ -101,6 +102,10 @@ TAGS_METADATA = [
         "name": "account",
         "description": "회원 탈퇴 — 계정 영구 삭제. 🔒 로그인 필요, 되돌릴 수 없습니다.",
     },
+    {
+        "name": "highlights",
+        "description": "하이라이트 — 콘텐츠의 특정 시점 타임스탬프+코멘트. 조회는 공개, 쓰기는 🔒 소유자만.",
+    },
 ]
 
 app = FastAPI(
@@ -174,6 +179,7 @@ app.include_router(search.router)
 app.include_router(timeline.router)
 app.include_router(discover.router)
 app.include_router(account.router)
+app.include_router(highlights.router)
 
 
 @app.exception_handler(RateLimitExceeded)
