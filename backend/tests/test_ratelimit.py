@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from app import db, http
 from app.config import get_settings
-from app.deps import get_current_user
+from app.deps import CurrentUser, get_current_user
 from app.limiter import LIMIT_BOOTSTRAP, limiter
 from app.main import app
 
@@ -18,12 +18,15 @@ client = TestClient(app)
 
 @pytest.fixture
 def mock_bootstrap(monkeypatch):
-    """bootstrap DB 조회를 네트워크 없이 빈 결과로 모킹."""
+    """bootstrap DB 조회를 네트워크 없이 빈 결과로 모킹하고 로그인 상태로 만든다(#66부터 인증 필요)."""
 
-    async def fake_fetch():
+    async def fake_fetch(user_id):
         return ({}, [], [])
 
     monkeypatch.setattr(db, "fetch_bootstrap", fake_fetch)
+    app.dependency_overrides[get_current_user] = lambda: CurrentUser(id="test-user")
+    yield
+    app.dependency_overrides.clear()
 
 
 # ── rate limit ──

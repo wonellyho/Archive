@@ -60,7 +60,7 @@ python -m pytest -q
 | 메서드 | 경로 | 설명 | 인증 |
 |---|---|---|---|
 | GET | `/health` | 서버 상태 | 공개 |
-| GET | `/api/bootstrap` | 초기 전체 로드(홈: 프로필+폴더+콘텐츠) | 공개 |
+| GET | `/api/bootstrap` | 내 아카이브 전체 로드(홈: 프로필+폴더+콘텐츠, #66) | 🔒 |
 | GET | `/api/youtube/search` | YouTube 검색 프록시(키 은닉) | 🔒 |
 | GET | `/api/me` | 내 프로필 조회 | 🔒 |
 | PUT | `/api/profile` | 프로필 저장(유저별, username) | 🔒 |

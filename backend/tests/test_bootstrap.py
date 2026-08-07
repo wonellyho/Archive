@@ -1,11 +1,20 @@
 """bootstrap 엔드포인트 단위 테스트 — db 계층을 모킹해 네트워크 없이 검증한다."""
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app import db
+from app.deps import CurrentUser, get_current_user
 from app.main import app
 
 client = TestClient(app)
+
+
+@pytest.fixture
+def authed():
+    app.dependency_overrides[get_current_user] = lambda: CurrentUser(id="test-user")
+    yield
+    app.dependency_overrides.clear()
 
 FOLDER_ROW = {
     "id": "f1",
@@ -32,13 +41,18 @@ CONTENT_ROW = {
 
 
 def _mock_fetch(profile_row, folder_rows, content_rows):
-    async def fake():
+    async def fake(user_id):
+        assert user_id == "test-user"  # 토큰 sub로 스코프됨
         return profile_row, folder_rows, content_rows
 
     return fake
 
 
-def test_returns_camel_case_repo_data(monkeypatch):
+def test_requires_auth():
+    assert client.get("/api/bootstrap").status_code == 401
+
+
+def test_returns_camel_case_repo_data(authed, monkeypatch):
     profile_row = {
         "id": "me",
         "name": "개발중",
@@ -77,7 +91,7 @@ def test_returns_camel_case_repo_data(monkeypatch):
     assert content["folderId"] is None
 
 
-def test_returns_default_profile_when_missing(monkeypatch):
+def test_returns_default_profile_when_missing(authed, monkeypatch):
     monkeypatch.setattr(db, "fetch_bootstrap", _mock_fetch(None, [], []))
 
     resp = client.get("/api/bootstrap")

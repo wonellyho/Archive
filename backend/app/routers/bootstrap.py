@@ -1,11 +1,13 @@
 """초기 데이터 로드. 프론트 supabaseRepository.loadAll()을 서버로 이관한 것.
 
-인증 불필요 — 방문자(비로그인)도 프로필을 볼 수 있어야 한다. 쓰기는 P3에서 JWT 보호.
+#66부터는 "홈 = 로그인한 사용자 본인의 아카이브"로 바뀌어 인증이 필요하다.
+방문자(비로그인)를 위한 공개 열람은 `/api/u/{username}`(routers/public.py)이 맡는다.
 """
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 
 from .. import db
+from ..deps import CurrentUser, get_current_user
 from ..limiter import LIMIT_BOOTSTRAP, limiter
 from ..schemas import BootstrapResponse, Content, Folder, Profile, default_profile
 
@@ -47,18 +49,23 @@ def build_archive_response(
 @router.get(
     "/bootstrap",
     response_model=BootstrapResponse,
-    summary="초기 데이터 전체 로드 (공개)",
+    summary="내 아카이브 전체 로드 🔒",
     response_description="프로필 + 음악/영상 폴더 + 음악/영상 콘텐츠 (프론트 RepoData와 동일)",
     responses={
+        401: {"description": "인증 실패 — 로그인 토큰 필요."},
         502: {"description": "데이터베이스 조회 실패 — 잠시 후 재시도."},
         503: {"description": "서버 환경변수(SUPABASE_URL/키) 미설정."},
     },
     description=(
         "프론트 `loadAll()`이 하던 3개 테이블 병렬 조회를 서버가 대신 수행합니다. "
-        "비로그인 방문자도 호출 가능(공개 읽기). 폴더·콘텐츠는 `sortOrder` 오름차순 정렬."
+        "로그인한 본인(user_id) 소유 데이터만 반환합니다(홈 = 내 아카이브). "
+        "아직 프로필을 저장한 적 없는 신규 사용자는 기본 프로필 + 빈 폴더/콘텐츠를 받습니다. "
+        "폴더·콘텐츠는 `sortOrder` 오름차순 정렬."
     ),
 )
 @limiter.limit(LIMIT_BOOTSTRAP)
-async def bootstrap(request: Request) -> BootstrapResponse:
-    profile_row, folder_rows, content_rows = await db.fetch_bootstrap()
+async def bootstrap(
+    request: Request, user: CurrentUser = Depends(get_current_user)
+) -> BootstrapResponse:
+    profile_row, folder_rows, content_rows = await db.fetch_bootstrap(user.id)
     return build_archive_response(profile_row, folder_rows, content_rows)

@@ -17,9 +17,6 @@ from fastapi import HTTPException
 from .config import get_settings
 from .http import get_client
 
-# 프론트 storageService.ts 와 동일한 단일 프로필 ID (멀티유저는 M2에서)
-PROFILE_ID = "me"
-
 
 def _credentials() -> tuple[str, str]:
     """(base_url, api_key)를 반환한다. 미설정 시 503."""
@@ -466,18 +463,32 @@ async def list_highlights(content_id: str) -> list[dict[str, Any]]:
     )
 
 
-async def fetch_bootstrap() -> tuple[dict[str, Any] | None, list[dict], list[dict]]:
-    """프로필(단일)·폴더·콘텐츠를 병렬 조회한다.
+async def fetch_bootstrap(
+    user_id: str,
+) -> tuple[dict[str, Any] | None, list[dict], list[dict]]:
+    """로그인한 사용자(user_id) 본인의 프로필·폴더·콘텐츠를 병렬 조회한다 — #66 멀티유저 홈.
 
-    프론트 supabaseRepository.loadAll()의 3쿼리 병렬 호출과 동일한 동작.
+    이전엔 고정 프로필(id='me') + 무필터 폴더/콘텐츠를 반환해 모두가 같은 화면을
+    봤다. 이제 `fetch_public_archive`와 동일하게 user_id로 스코프해, 로그인한
+    사람마다 자기 자신의 아카이브를 받는다(신규 유저는 프로필 행이 없어 None).
     return_exceptions=True로 세 태스크의 완료를 모두 기다린 뒤 첫 예외를
     재던진다(중간 실패 시 백그라운드 태스크 노이즈 방지).
     """
     base, key = _credentials()
     results = await asyncio.gather(
-        _select(base, key, "profiles", {"id": f"eq.{PROFILE_ID}", "select": "*"}),
-        _select(base, key, "folders", {"select": "*", "order": "sort_order.asc"}),
-        _select(base, key, "contents", {"select": "*", "order": "sort_order.asc"}),
+        _select(base, key, "profiles", {"user_id": f"eq.{user_id}", "select": "*"}),
+        _select(
+            base,
+            key,
+            "folders",
+            {"user_id": f"eq.{user_id}", "select": "*", "order": "sort_order.asc"},
+        ),
+        _select(
+            base,
+            key,
+            "contents",
+            {"user_id": f"eq.{user_id}", "select": "*", "order": "sort_order.asc"},
+        ),
         return_exceptions=True,
     )
     for result in results:
