@@ -28,9 +28,9 @@ export function SiteNav<T extends string>({
   actions,
 }: SiteNavProps<T>) {
   return (
-    <header className="sticky top-0 z-30 border-b border-[#dcd6ca] bg-[#efece5]/90 backdrop-blur-md">
+    <header className="glass site-nav sticky top-0 z-30 border-b border-[color:var(--surface-border)]">
       <div className="mx-auto flex w-full max-w-375 items-center gap-4 px-5 py-3 sm:gap-6 sm:px-10">
-        <span className="shrink-0 font-serif text-xl font-medium tracking-tight text-ink">
+        <span className="shrink-0 font-serif text-xl font-bold tracking-tight text-ink">
           {brand}
         </span>
 
@@ -48,7 +48,7 @@ export function SiteNav<T extends string>({
                 role="tab"
                 aria-selected={active}
                 onClick={() => onChange(tab.id)}
-                className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
                   active
                     ? "bg-ink text-paper"
                     : "text-ink-faint hover:bg-cream-deep hover:text-ink"

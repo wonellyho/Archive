@@ -13,7 +13,7 @@ export function ProfilePanel() {
 
   return (
     <section
-      aria-label="인사말"
+      aria-label="About"
       className="mx-auto flex w-full max-w-2xl flex-col items-center gap-10 text-center"
     >
       {profile.bio ? (
@@ -31,8 +31,8 @@ export function ProfilePanel() {
       ) : (
         <p className="font-serif text-xl italic text-ink-faint">
           {isOwner
-            ? "아직 인사말이 없어요. ‘인사말 쓰기’로 적어보세요."
-            : "아직 인사말이 없어요."}
+            ? "No greeting yet. Try 'Write a greeting'."
+            : "No greeting yet."}
         </p>
       )}
 
@@ -47,7 +47,7 @@ export function ProfilePanel() {
 
       {isOwner ? (
         <Button variant="ghost" onClick={() => setEditing(true)}>
-          ✎ 인사말 쓰기
+          ✎ Write a greeting
         </Button>
       ) : null}
 

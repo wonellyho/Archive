@@ -92,7 +92,7 @@ export function ContentList({
     return (
       <EmptyState
         title={emptyTitle}
-        hint={canEdit ? "검색해서 콘텐츠를 추가해 보세요." : undefined}
+        hint={canEdit ? "Search to add content." : undefined}
       />
     );
   }
@@ -160,7 +160,7 @@ export function ContentList({
             }
             onDrop={draggable ? (event) => event.preventDefault() : undefined}
             onDragEnd={draggable ? handleDragEnd : undefined}
-            className={`relative transition-opacity ${
+            className={`group relative transition-opacity ${
               draggable ? "cursor-grab active:cursor-grabbing" : ""
             } ${isDragging ? "opacity-40" : ""}`}
             style={{ animationDelay: `${index * 45}ms` }}
@@ -175,10 +175,10 @@ export function ContentList({
                 }
                 onSelect(content);
               }}
-              className={`group flex h-full w-full flex-col overflow-hidden rounded-3xl border bg-paper text-left transition-all duration-200 hover:-translate-y-1 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+              className={`glass flex h-full w-full flex-col overflow-hidden rounded-3xl border text-left shadow-[0_10px_24px_-16px_rgba(24,22,18,0.4)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_20px_34px_-14px_rgba(24,22,18,0.5)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
                 selected
                   ? "border-accent shadow-md"
-                  : "border-line hover:border-ink/30"
+                  : "border-[color:var(--surface-border)] hover:border-ink/25"
               }`}
             >
               <span className="relative block aspect-video w-full overflow-hidden bg-cream-deep">
@@ -202,11 +202,11 @@ export function ContentList({
             </button>
 
             {canEdit ? (
-              <div className="absolute right-2 top-2 z-10 flex items-center gap-0.5 rounded-full bg-paper/85 p-1 shadow-md backdrop-blur">
+              <div className="absolute right-2 top-2 z-10 flex items-center gap-0.5 rounded-full bg-paper/85 p-1 opacity-0 shadow-md backdrop-blur transition-opacity duration-200 hover:opacity-100 focus-within:opacity-100">
                 <button
                   type="button"
                   onClick={() => onEdit(content)}
-                  aria-label={`${content.title || content.sourceTitle} 편집`}
+                  aria-label={`Edit ${content.title || content.sourceTitle}`}
                   className="grid size-7 place-items-center rounded-full text-[0.95rem] text-ink-soft transition-colors hover:bg-cream-deep hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
                 >
                   <PencilIcon />
@@ -214,7 +214,7 @@ export function ContentList({
                 <button
                   type="button"
                   onClick={() => onDelete(content)}
-                  aria-label={`${content.title || content.sourceTitle} 삭제`}
+                  aria-label={`Delete ${content.title || content.sourceTitle}`}
                   className="grid size-7 place-items-center rounded-full text-[0.95rem] text-ink-faint transition-colors hover:bg-accent-soft hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
                 >
                   <TrashIcon />

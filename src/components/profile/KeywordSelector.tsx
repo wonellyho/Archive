@@ -2,41 +2,41 @@ import { useState } from "react";
 
 /** 취향 키워드 후보 — 선택(토글)해서 활성화한다. 쉼표 입력 대신 사용. */
 const KEYWORD_CANDIDATES = [
-  "잔잔함",
-  "감성",
-  "신남",
-  "위로",
-  "설렘",
-  "몽환",
-  "드라이브",
-  "밤",
-  "새벽",
-  "집중",
-  "운동",
-  "여행",
-  "자연",
-  "동기부여",
-  "사랑",
-  "이별",
-  "힐링",
-  "레트로",
-  "록",
-  "발라드",
-  "힙합",
-  "재즈",
-  "인디",
-  "JPOP",
-  "시티팝",
-  "클래식",
+  "Mellow",
+  "Emotional",
+  "Upbeat",
+  "Comforting",
+  "Butterflies",
+  "Dreamy",
+  "Driving",
+  "Night",
+  "Dawn",
+  "Focus",
+  "Workout",
+  "Travel",
+  "Nature",
+  "Motivation",
+  "Love",
+  "Heartbreak",
+  "Healing",
+  "Retro",
+  "Rock",
+  "Ballad",
+  "Hip-hop",
+  "Jazz",
+  "Indie",
+  "J-Pop",
+  "City Pop",
+  "Classical",
   "EDM",
   "R&B",
-  "영화",
-  "브이로그",
-  "다큐",
-  "예능",
-  "드라마",
-  "애니",
-  "공연",
+  "Movies",
+  "Vlog",
+  "Documentary",
+  "Variety",
+  "Drama",
+  "Anime",
+  "Live",
 ];
 
 interface KeywordSelectorProps {
@@ -103,7 +103,7 @@ export function KeywordSelector({ value, onChange }: KeywordSelectorProps) {
               addDraft();
             }
           }}
-          placeholder="직접 입력해 후보 추가"
+          placeholder="Type to add a keyword"
           className="min-w-0 flex-1 rounded-full border border-line bg-paper px-4 py-1.5 text-sm outline-none focus-visible:border-accent"
         />
         <button
@@ -112,7 +112,7 @@ export function KeywordSelector({ value, onChange }: KeywordSelectorProps) {
           disabled={!draft.trim()}
           className="shrink-0 rounded-full border border-line bg-cream px-4 py-1.5 text-sm text-ink-soft transition-colors hover:border-ink/30 hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
         >
-          추가
+          Add
         </button>
       </div>
     </div>

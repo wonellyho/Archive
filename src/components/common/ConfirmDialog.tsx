@@ -15,8 +15,8 @@ export function ConfirmDialog({
   open,
   title,
   message,
-  confirmLabel = "삭제",
-  cancelLabel = "취소",
+  confirmLabel = "Delete",
+  cancelLabel = "Cancel",
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -42,7 +42,7 @@ export function ConfirmDialog({
         aria-labelledby="confirm-title"
         aria-describedby="confirm-message"
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm rounded-3xl border border-line bg-paper p-6 shadow-xl"
+        className="glass w-full max-w-sm rounded-3xl border border-[color:var(--surface-border)] p-6 shadow-xl"
       >
         <h2 id="confirm-title" className="text-xl font-medium text-ink">
           {title}

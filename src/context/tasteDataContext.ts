@@ -26,6 +26,11 @@ export type ContentPatch = Partial<
 export interface TasteDataValue {
   /** True while the initial load from the backend is in flight. */
   loading: boolean;
+  /**
+   * Set when the initial `loadAll()` rejects (e.g. a public archive's
+   * username doesn't exist, or the backend is unreachable). `null` otherwise.
+   */
+  error: string | null;
   profile: Profile;
   musicFolders: TasteFolder[];
   videoFolders: TasteFolder[];

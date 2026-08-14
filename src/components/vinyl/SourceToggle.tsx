@@ -26,7 +26,7 @@ export function SourceToggle({ content }: SourceToggleProps) {
           aria-expanded={showSource}
           className="text-xs text-ink-faint transition-colors hover:text-ink"
         >
-          출처 {showSource ? "▴" : "▾"}
+          Source {showSource ? "▴" : "▾"}
         </button>
       </div>
 

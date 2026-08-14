@@ -7,10 +7,18 @@ interface ModalProps {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  /** Tailwind max-width utility for the card. Defaults to a compact form size. */
+  widthClassName?: string;
 }
 
 /** Generic modal shell: backdrop, centered card, Escape + backdrop-click close. */
-export function Modal({ open, title, onClose, children }: ModalProps) {
+export function Modal({
+  open,
+  title,
+  onClose,
+  children,
+  widthClassName = "max-w-lg",
+}: ModalProps) {
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
@@ -35,14 +43,14 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
         aria-modal="true"
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
-        className="my-auto w-full max-w-lg rounded-3xl border border-line bg-paper p-6 font-serif shadow-xl sm:p-8"
+        className={`glass my-auto w-full ${widthClassName} rounded-3xl border border-[color:var(--surface-border)] p-6 font-serif shadow-xl sm:p-8`}
       >
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-xl font-medium text-ink">{title}</h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="닫기"
+            aria-label="Close"
             className="rounded-full px-3 py-1.5 text-base text-ink-faint transition-colors hover:text-ink"
           >
             ✕

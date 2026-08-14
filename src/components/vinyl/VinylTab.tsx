@@ -113,13 +113,14 @@ export function VinylTab() {
   }
 
   return (
-    <section aria-label="바이닐" className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-serif text-2xl text-ink">폴더</h2>
-        {isOwner ? (
-          <Button onClick={() => setShowAdd((v) => !v)}>＋ 음악 추가</Button>
-        ) : null}
-      </div>
+    <section aria-label="Vinyl" className="flex flex-col gap-6">
+      {isOwner ? (
+        <div className="flex justify-end">
+          <Button size="lg" onClick={() => setShowAdd((v) => !v)}>
+            ＋ Add music
+          </Button>
+        </div>
+      ) : null}
 
       {showAdd && isOwner ? (
         <AddContentPanel
@@ -146,7 +147,7 @@ export function VinylTab() {
         countOf={countOf}
         canEdit={isOwner}
         typeIcon="🎵"
-        typeLabel="음악"
+        typeLabel="Music"
         showDisc
       />
 
@@ -177,8 +178,8 @@ export function VinylTab() {
             </div>
           ) : null}
           <ContentList
-            label={`${openFolder.name} 음악`}
-            emptyTitle="이 폴더는 비어 있어요."
+            label={`${openFolder.name} music`}
+            emptyTitle="This folder is empty."
             contents={items}
             selectedContentId={selectedId}
             onSelect={selectMusic}
@@ -193,7 +194,7 @@ export function VinylTab() {
 
       {folderForm ? (
         <FolderFormModal
-          title={folderForm.mode === "create" ? "새 폴더" : "폴더 편집"}
+          title={folderForm.mode === "create" ? "New folder" : "Edit folder"}
           initialName={
             folderForm.mode === "edit" ? folderForm.folder.name : undefined
           }
@@ -228,11 +229,11 @@ export function VinylTab() {
 
       <ConfirmDialog
         open={pending !== null}
-        title={pending?.kind === "folder" ? "폴더 삭제" : "콘텐츠 삭제"}
+        title={pending?.kind === "folder" ? "Delete folder" : "Delete content"}
         message={
           pending?.kind === "folder"
-            ? `‘${pending.folder.name}’ 폴더와 그 안의 콘텐츠 ${pending.count}개가 삭제됩니다. 계속할까요?`
-            : "이 콘텐츠를 삭제할까요?"
+            ? `The folder '${pending.folder.name}' and its ${pending.count} item(s) will be deleted. Continue?`
+            : "Delete this content?"
         }
         onConfirm={confirmDelete}
         onCancel={() => setPending(null)}

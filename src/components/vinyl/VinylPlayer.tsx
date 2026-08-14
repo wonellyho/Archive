@@ -71,7 +71,7 @@ export function VinylPlayer({
               ) : null}
             </>
           ) : (
-            <p className="text-lg text-ink-faint">트랙을 선택해 주세요</p>
+            <p className="text-lg text-ink-faint">Select a track</p>
           )}
         </div>
       </div>

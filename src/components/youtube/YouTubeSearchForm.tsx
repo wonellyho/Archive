@@ -21,12 +21,12 @@ export function YouTubeSearchForm({ onSearch, loading }: YouTubeSearchFormProps)
       <input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="유튜브에서 검색…"
-        aria-label="YouTube 검색어"
+        placeholder="Search YouTube…"
+        aria-label="YouTube search query"
         className="flex-1 rounded-full border border-line bg-paper px-5 py-2.5 font-serif text-base outline-none focus-visible:border-accent"
       />
       <Button type="submit" disabled={loading}>
-        {loading ? "검색 중…" : "검색"}
+        {loading ? "Searching…" : "Search"}
       </Button>
     </form>
   );

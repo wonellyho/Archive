@@ -89,7 +89,7 @@ export function PlaybackProgress({
       <div
         ref={trackRef}
         role="slider"
-        aria-label="재생 위치"
+        aria-label="Playback position"
         aria-valuemin={0}
         aria-valuemax={Math.round(duration)}
         aria-valuenow={Math.round(currentTime)}

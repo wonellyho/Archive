@@ -39,8 +39,8 @@ function OwnerArea() {
         <button
           type="button"
           className={iconBtn}
-          aria-label="공유"
-          title="공유"
+          aria-label="Share"
+          title="Share"
           onClick={() => setOpen("share")}
         >
           <ShareIcon />
@@ -48,8 +48,8 @@ function OwnerArea() {
         <button
           type="button"
           className={iconBtn}
-          aria-label="프로필 수정"
-          title="프로필 수정"
+          aria-label="Edit profile"
+          title="Edit profile"
           onClick={() => setOpen("settings")}
         >
           <PencilIcon />
@@ -61,7 +61,7 @@ function OwnerArea() {
         onClick={() => void signOut()}
         className="hidden text-xs text-ink-faint transition-colors hover:text-ink sm:inline"
       >
-        로그아웃
+        Log out
       </button>
 
       {open === "share" ? (
@@ -99,7 +99,7 @@ export function OwnerControls() {
           onClick={() => setLoginOpen(true)}
           className="rounded-full px-3 py-1.5 text-ink-faint transition-colors hover:text-ink"
         >
-          🔒 관리자
+          🔒 Admin
         </button>
       )}
       {loginOpen ? <LoginModal onClose={() => setLoginOpen(false)} /> : null}

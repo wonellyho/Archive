@@ -9,7 +9,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
   return (
     <header className="flex flex-col items-center gap-4 text-center">
       <span className="text-xs uppercase tracking-[0.4em] text-ink-faint">
-        취향 아카이브
+        Taste Archive
       </span>
       <h1 className="font-serif text-5xl font-medium leading-[1.05] tracking-tight text-ink sm:text-6xl">
         {profile.name}

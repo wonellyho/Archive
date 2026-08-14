@@ -26,7 +26,7 @@ export function YouTubeResultCard({
         />
         {alreadySaved ? (
           <span className="absolute right-2 top-2 rounded-full bg-ink/80 px-2.5 py-1 text-xs text-paper">
-            이미 저장됨
+            Already saved
           </span>
         ) : null}
       </span>

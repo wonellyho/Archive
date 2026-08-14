@@ -25,7 +25,7 @@ export function useYouTubeSearch(): UseYouTubeSearch {
     const check = checkQuery(query);
     if (!check.valid) {
       setStatus("error");
-      setError(check.message ?? "검색어를 확인해 주세요.");
+      setError(check.message ?? "Please check your search query.");
       setResults([]);
       return;
     }
@@ -49,7 +49,7 @@ export function useYouTubeSearch(): UseYouTubeSearch {
         setError(
           err instanceof YouTubeServiceError
             ? err.message
-            : "검색 중 알 수 없는 오류가 발생했습니다.",
+            : "An unknown error occurred while searching.",
         );
       });
   }, []);
