@@ -13,7 +13,7 @@ export function checkQuery(raw: string): QueryCheck {
     return {
       valid: false,
       query,
-      message: `검색어는 ${MIN_QUERY_LENGTH}글자 이상 입력해 주세요.`,
+      message: `Please enter at least ${MIN_QUERY_LENGTH} characters.`,
     };
   }
   return { valid: true, query };

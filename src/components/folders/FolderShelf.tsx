@@ -186,7 +186,7 @@ export function FolderShelf({
                           setOpeningId(folder.id);
                           onSelect(folder.id);
                         }}
-                        aria-label={`${folder.name} — ${typeLabel} 폴더 열기 (${count}개)`}
+                        aria-label={`Open ${folder.name} — ${typeLabel} folder (${count} items)`}
                       >
                         {folder.coverImageUrl ? (
                           <img
@@ -207,13 +207,9 @@ export function FolderShelf({
                             </span>
                           </span>
                         )}
-                        <span className="shelf-badge">
-                          <span aria-hidden="true">{typeIcon}</span>
-                          {typeLabel}
-                        </span>
                         <span className="shelf-overlay">
                           <span className="shelf-overlay-title">{folder.name}</span>
-                          <span className="shelf-overlay-open">{count}개 · 열기</span>
+                          <span className="shelf-overlay-open">{count} · Open</span>
                         </span>
                       </button>
                     </div>
@@ -224,7 +220,7 @@ export function FolderShelf({
                           <button
                             type="button"
                             onClick={() => onEdit(folder)}
-                            aria-label={`${folder.name} 폴더 편집`}
+                            aria-label={`Edit ${folder.name} folder`}
                             className="grid size-7 place-items-center rounded-full text-[0.95rem] text-ink-soft transition-colors hover:bg-cream-deep hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
                           >
                             <PencilIcon />
@@ -232,7 +228,7 @@ export function FolderShelf({
                           <button
                             type="button"
                             onClick={() => onDelete(folder)}
-                            aria-label={`${folder.name} 폴더 삭제`}
+                            aria-label={`Delete ${folder.name} folder`}
                             className="grid size-7 place-items-center rounded-full text-[0.95rem] text-ink-faint transition-colors hover:bg-accent-soft hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
                           >
                             <TrashIcon />
@@ -246,11 +242,12 @@ export function FolderShelf({
 
               {showAdd && rowIndex === addRowIndex ? (
                 <li className="shelf-slot">
+                  <span aria-hidden="true" className="shelf-shadow" />
                   <button type="button" className="shelf-add" onClick={onAddFolder}>
-                    <span className="text-3xl" aria-hidden="true">
+                    <span className="shelf-add-icon" aria-hidden="true">
                       ＋
                     </span>
-                    <span className="text-sm">새 폴더</span>
+                    <span className="text-sm">New folder</span>
                   </button>
                 </li>
               ) : null}

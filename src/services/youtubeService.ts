@@ -56,23 +56,23 @@ async function searchViaBackend(
     if (err instanceof ApiError) {
       if (err.status === 401) {
         throw new YouTubeServiceError(
-          "검색하려면 로그인이 필요합니다. 다시 로그인해 주세요.",
+          "Please log in to search.",
         );
       }
       if (err.status === 429) {
         throw new YouTubeServiceError(
-          "검색 요청이 너무 잦거나 할당량을 초과했습니다. 잠시 후 다시 시도하세요.",
+          "Too many search requests or quota exceeded. Please try again shortly.",
         );
       }
       if (err.status === 503) {
         throw new YouTubeServiceError(
-          "서버에 YouTube API 키가 설정되지 않았습니다. 관리자에게 문의하세요.",
+          "The server has no YouTube API key configured. Please contact an admin.",
         );
       }
-      throw new YouTubeServiceError(`검색에 실패했습니다 (HTTP ${err.status}).`);
+      throw new YouTubeServiceError(`Search failed (HTTP ${err.status}).`);
     }
     throw new YouTubeServiceError(
-      "네트워크 오류로 검색에 실패했습니다. 연결을 확인해 주세요.",
+      "Search failed due to a network error. Please check your connection.",
     );
   }
 }
@@ -85,7 +85,7 @@ async function searchDirect(
   const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY;
   if (!apiKey) {
     throw new YouTubeServiceError(
-      "YouTube API 키가 없습니다. 프로젝트 루트에 .env를 만들고 VITE_YOUTUBE_API_KEY를 입력하세요.",
+      "No YouTube API key found. Create a .env file in the project root and set VITE_YOUTUBE_API_KEY.",
     );
   }
 
@@ -105,17 +105,17 @@ async function searchDirect(
     response = await fetch(`${SEARCH_ENDPOINT}?${params.toString()}`);
   } catch {
     throw new YouTubeServiceError(
-      "네트워크 오류로 검색에 실패했습니다. 연결을 확인해 주세요.",
+      "Search failed due to a network error. Please check your connection.",
     );
   }
 
   if (!response.ok) {
     if (response.status === 403) {
       throw new YouTubeServiceError(
-        "API 할당량을 초과했거나 키가 유효하지 않습니다. 키 설정과 사용량을 확인하세요.",
+        "API quota exceeded or the key is invalid. Please check your key setup and usage.",
       );
     }
-    throw new YouTubeServiceError(`검색에 실패했습니다 (HTTP ${response.status}).`);
+    throw new YouTubeServiceError(`Search failed (HTTP ${response.status}).`);
   }
 
   const data = (await response.json()) as YouTubeApiResponse;
@@ -129,7 +129,7 @@ async function searchDirect(
       const thumbnails = snippet?.thumbnails;
       return {
         youtubeVideoId: videoId,
-        title: snippet?.title ?? "(제목 없음)",
+        title: snippet?.title ?? "(No title)",
         channelTitle: snippet?.channelTitle ?? "",
         thumbnailUrl:
           thumbnails?.medium?.url ??

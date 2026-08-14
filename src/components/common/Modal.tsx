@@ -42,7 +42,7 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
           <button
             type="button"
             onClick={onClose}
-            aria-label="닫기"
+            aria-label="Close"
             className="rounded-full px-3 py-1.5 text-base text-ink-faint transition-colors hover:text-ink"
           >
             ✕

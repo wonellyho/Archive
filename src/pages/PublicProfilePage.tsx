@@ -16,10 +16,10 @@ import { OwnerControls } from "../components/auth/OwnerControls";
 type TabId = "about" | "tv" | "vinyl" | "timeline";
 
 const TABS: TabItem<TabId>[] = [
-  { id: "about", label: "인사말", icon: "✎" },
-  { id: "vinyl", label: "바이닐", icon: "🎵" },
-  { id: "tv", label: "비디오", icon: "📺" },
-  { id: "timeline", label: "축적", icon: "📈" },
+  { id: "about", label: "About", icon: "✎" },
+  { id: "vinyl", label: "Vinyl", icon: "🎵" },
+  { id: "tv", label: "Video", icon: "📺" },
+  { id: "timeline", label: "Timeline", icon: "📈" },
 ];
 
 interface PublicProfilePageProps {
@@ -40,7 +40,7 @@ export function PublicProfilePage({ readOnly = false }: PublicProfilePageProps) 
   if (loading) {
     return (
       <main className="flex min-h-svh items-center justify-center">
-        <p className="text-base text-ink-faint">불러오는 중…</p>
+        <p className="text-base text-ink-faint">Loading…</p>
       </main>
     );
   }
@@ -50,7 +50,7 @@ export function PublicProfilePage({ readOnly = false }: PublicProfilePageProps) 
       <main className="flex min-h-svh flex-col items-center justify-center gap-4">
         <p className="text-base text-ink-soft">{error}</p>
         <Link to="/" className="text-sm text-accent hover:underline">
-          ← 홈으로
+          ← Home
         </Link>
       </main>
     );
@@ -71,7 +71,7 @@ export function PublicProfilePage({ readOnly = false }: PublicProfilePageProps) 
                   to="/"
                   className="rounded-full border border-line px-3.5 py-1.5 text-sm font-medium text-ink transition-colors hover:border-ink/40 hover:bg-cream"
                 >
-                  이런 아카이브 나도 만들기 →
+                  Create your own archive →
                 </Link>
               ) : (
                 <OwnerControls />

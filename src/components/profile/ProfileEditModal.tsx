@@ -31,30 +31,30 @@ export function ProfileEditModal({
       await onSave({ ...profile, bio: bio.trim(), keywords });
       onClose();
     } catch {
-      setError("저장에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+      setError("Save failed. Please try again shortly.");
       setSaving(false);
     }
   }
 
   return (
-    <Modal open title="인사말 편집" onClose={onClose}>
+    <Modal open title="Edit Greeting" onClose={onClose}>
       <div className="flex flex-col gap-5">
         <label className="flex flex-col gap-1.5 text-base">
-          <span className="text-ink-soft">인사말</span>
+          <span className="text-ink-soft">Greeting</span>
           <textarea
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             rows={4}
             autoFocus
-            placeholder="방문자에게 건네는 인사말을 적어보세요."
+            placeholder="Write a greeting for your visitors."
             className={`${field} resize-none leading-relaxed`}
           />
         </label>
 
         <div className="flex flex-col gap-2 text-base">
-          <span className="text-ink-soft">취향 키워드</span>
+          <span className="text-ink-soft">Taste keywords</span>
           <span className="text-sm text-ink-faint">
-            어울리는 키워드를 눌러 선택하세요. 다시 누르면 해제됩니다.
+            Tap keywords that fit to select them. Tap again to deselect.
           </span>
           <KeywordSelector value={keywords} onChange={setKeywords} />
         </div>
@@ -63,10 +63,10 @@ export function ProfileEditModal({
 
         <div className="mt-1 flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose} disabled={saving}>
-            취소
+            Cancel
           </Button>
           <Button onClick={handleSave} disabled={saving}>
-            {saving ? "저장 중…" : "저장"}
+            {saving ? "Saving…" : "Save"}
           </Button>
         </div>
       </div>

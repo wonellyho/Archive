@@ -38,7 +38,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
     headers: { ...(await authHeaders()), ...(init?.headers ?? {}) },
   });
   if (!res.ok) {
-    throw new ApiError(res.status, `API 요청 실패 (HTTP ${res.status})`);
+    throw new ApiError(res.status, `API request failed (HTTP ${res.status})`);
   }
   return res.status === 204 ? (undefined as T) : ((await res.json()) as T);
 }
@@ -68,7 +68,7 @@ export async function uploadImage(
     body: form,
   });
   if (!res.ok) {
-    throw new ApiError(res.status, `이미지 업로드 실패 (HTTP ${res.status})`);
+    throw new ApiError(res.status, `Image upload failed (HTTP ${res.status})`);
   }
   const { url } = (await res.json()) as { url: string };
   return url;

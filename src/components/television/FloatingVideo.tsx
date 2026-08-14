@@ -72,7 +72,7 @@ export function FloatingVideo() {
             <button
               type="button"
               onClick={() => watch(watching)}
-              aria-label="영상 이어서 재생"
+              aria-label="Resume video"
               className="group/play absolute inset-0"
             >
               <img
@@ -92,7 +92,7 @@ export function FloatingVideo() {
             <button
               type="button"
               onClick={stop}
-              aria-label="영상 닫기"
+              aria-label="Close video"
               className="absolute right-2 top-2 z-10 flex size-7 items-center justify-center rounded-full bg-ink/60 text-sm text-paper opacity-0 transition-opacity hover:bg-ink/80 group-hover:opacity-100"
             >
               ✕

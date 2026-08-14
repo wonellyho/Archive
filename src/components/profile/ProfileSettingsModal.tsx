@@ -16,13 +16,13 @@ const field =
 
 function saveErrorMessage(err: unknown): string {
   if (err instanceof ApiError) {
-    if (err.status === 409) return "이미 사용 중인 username입니다.";
+    if (err.status === 409) return "This username is already taken.";
     if (err.status === 422)
-      return "username 형식을 확인해 주세요 (영문 소문자·숫자·_·-, 3~30자).";
-    if (err.status === 401) return "로그인이 필요합니다. 다시 로그인해 주세요.";
-    return `저장에 실패했습니다 (HTTP ${err.status}).`;
+      return "Please check the username format (lowercase letters, numbers, _, -, 3–30 characters).";
+    if (err.status === 401) return "Please log in to continue.";
+    return `Save failed (HTTP ${err.status}).`;
   }
-  return "저장에 실패했습니다. 잠시 후 다시 시도해 주세요.";
+  return "Save failed. Please try again shortly.";
 }
 
 /** 프로필(정체성) 편집 — 이미지·이름·한 줄 소개·공개 주소(username). */
@@ -51,8 +51,8 @@ export function ProfileSettingsModal({
       }
     } catch (err) {
       setError(err instanceof ApiError && err.status === 413
-        ? "이미지 용량이 너무 큽니다."
-        : "이미지를 불러오지 못했습니다.");
+        ? "The image file is too large."
+        : "Failed to load the image.");
     } finally {
       setUploading(false);
     }
@@ -79,9 +79,9 @@ export function ProfileSettingsModal({
   const busy = saving || uploading;
 
   return (
-    <Modal open title="프로필 수정" onClose={onClose}>
+    <Modal open title="Edit Profile" onClose={onClose}>
       <div className="flex flex-col gap-5">
-        {/* 프로필 이미지 */}
+        {/* Profile image */}
         <div className="flex items-center gap-4">
           <div className="size-20 shrink-0 overflow-hidden rounded-full border border-line bg-cream-deep">
             {image ? (
@@ -100,7 +100,7 @@ export function ProfileSettingsModal({
                   : "cursor-pointer hover:bg-cream hover:text-ink"
               }`}
             >
-              {uploading ? "업로드 중…" : "이미지 변경"}
+              {uploading ? "Uploading…" : "Change image"}
               <input
                 type="file"
                 accept="image/*"
@@ -115,19 +115,19 @@ export function ProfileSettingsModal({
                 onClick={() => setImage(undefined)}
                 className="text-left text-sm text-ink-faint hover:text-accent"
               >
-                이미지 제거
+                Remove image
               </button>
             ) : null}
           </div>
         </div>
 
         <label className="flex flex-col gap-1.5 text-base">
-          <span className="text-ink-soft">이름</span>
+          <span className="text-ink-soft">Name</span>
           <input value={name} onChange={(e) => setName(e.target.value)} className={field} />
         </label>
 
         <label className="flex flex-col gap-1.5 text-base">
-          <span className="text-ink-soft">한 줄 소개</span>
+          <span className="text-ink-soft">Tagline</span>
           <input
             value={tagline}
             onChange={(e) => setTagline(e.target.value)}
@@ -137,7 +137,7 @@ export function ProfileSettingsModal({
 
         <label className="flex flex-col gap-1.5 text-base">
           <span className="text-ink-soft">
-            공개 주소 (username)
+            Public address (username)
             <span className="ml-2 text-sm text-ink-faint">/u/…</span>
           </span>
           <input
@@ -150,7 +150,7 @@ export function ProfileSettingsModal({
             className={field}
           />
           <span className="text-sm text-ink-faint">
-            영문 소문자·숫자·_·-, 3~30자. 공유 링크·취향 타임라인 주소가 됩니다.
+            Lowercase letters, numbers, _, -, 3–30 characters. Used for your share link and taste timeline.
           </span>
         </label>
 
@@ -158,10 +158,10 @@ export function ProfileSettingsModal({
 
         <div className="mt-1 flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose} disabled={busy}>
-            취소
+            Cancel
           </Button>
           <Button onClick={handleSave} disabled={busy}>
-            {saving ? "저장 중…" : "저장"}
+            {saving ? "Saving…" : "Save"}
           </Button>
         </div>
       </div>

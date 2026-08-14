@@ -117,7 +117,7 @@ export const apiRepository: TasteRepository = {
 
 /** 쓰기 메서드는 절대 호출되지 않는다(isOwner=false가 편집 UI를 전부 가림) — 방어적으로 거부. */
 async function readOnly(): Promise<void> {
-  throw new Error("공개 아카이브는 읽기 전용입니다.");
+  throw new Error("Public archives are read-only.");
 }
 
 /**

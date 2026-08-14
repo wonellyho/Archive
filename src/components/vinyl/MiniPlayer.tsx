@@ -68,7 +68,7 @@ export function MiniPlayer() {
               <button
                 type="button"
                 onClick={isPlaying ? player.pause : player.play}
-                aria-label={isPlaying ? "일시정지" : "재생"}
+                aria-label={isPlaying ? "Pause" : "Play"}
                 className="mx-auto flex size-11 items-center justify-center rounded-full bg-ink text-lg text-paper transition-transform hover:scale-105 active:scale-95"
               >
                 {isPlaying ? "❚❚" : "►"}

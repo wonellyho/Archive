@@ -53,7 +53,7 @@ function TimelineChart({ buckets }: ChartProps) {
         width={width}
         height={svgH}
         role="img"
-        aria-label="월별 취향 축적 차트"
+        aria-label="Monthly taste accumulation chart"
         className="mx-auto block"
       >
         {/* baseline */}
@@ -136,13 +136,13 @@ function TimelineChart({ buckets }: ChartProps) {
           <div className="mb-1 font-medium text-ink">{buckets[hover].period}</div>
           <div className="flex items-center gap-1.5 text-ink-soft">
             <span className="inline-block size-2.5 rounded-full" style={{ background: MUSIC }} />
-            음악 {buckets[hover].music}
+            Music {buckets[hover].music}
           </div>
           <div className="flex items-center gap-1.5 text-ink-soft">
             <span className="inline-block size-2.5 rounded-full" style={{ background: VIDEO }} />
-            영상 {buckets[hover].video}
+            Video {buckets[hover].video}
           </div>
-          <div className="mt-0.5 text-ink-faint">합계 {buckets[hover].total}</div>
+          <div className="mt-0.5 text-ink-faint">Total {buckets[hover].total}</div>
         </div>
       ) : null}
     </div>
@@ -153,13 +153,13 @@ function TimelineChart({ buckets }: ChartProps) {
 function TimelineTable({ buckets }: ChartProps) {
   return (
     <table className="sr-only">
-      <caption>월별 취향 축적</caption>
+      <caption>Monthly taste accumulation</caption>
       <thead>
         <tr>
-          <th>기간</th>
-          <th>음악</th>
-          <th>영상</th>
-          <th>합계</th>
+          <th>Period</th>
+          <th>Music</th>
+          <th>Video</th>
+          <th>Total</th>
         </tr>
       </thead>
       <tbody>
@@ -181,11 +181,11 @@ function Legend() {
     <div className="flex items-center justify-center gap-5 text-sm text-ink-soft">
       <span className="flex items-center gap-1.5">
         <span className="inline-block size-3 rounded-full" style={{ background: MUSIC }} />
-        음악
+        Music
       </span>
       <span className="flex items-center gap-1.5">
         <span className="inline-block size-3 rounded-full" style={{ background: VIDEO }} />
-        영상
+        Video
       </span>
     </div>
   );
@@ -227,32 +227,32 @@ export function TasteTimeline({ username }: { username?: string }) {
 
   return (
     <section
-      aria-label="취향의 축적"
+      aria-label="Taste accumulation"
       className="mx-auto flex w-full max-w-3xl flex-col gap-6 rounded-3xl border border-line bg-paper px-6 py-10 shadow-sm sm:px-10"
     >
       <div className="flex flex-col items-center gap-1 text-center">
         <span className="text-sm uppercase tracking-[0.25em] text-ink-faint">
           Timeline
         </span>
-        <h2 className="font-serif text-3xl text-ink">취향의 축적</h2>
+        <h2 className="font-serif text-3xl text-ink">Taste Accumulation</h2>
         <p className="text-base text-ink-soft">
-          담아온 콘텐츠가 시간과 함께 쌓인 기록
+          A record of content gathered over time
         </p>
       </div>
 
       {!username ? (
         <p className="py-8 text-center text-base text-ink-faint">
-          공개 주소(username)를 설정하면 취향 타임라인이 만들어져요.
+          Set a public address (username) to build your taste timeline.
         </p>
       ) : status === "loading" ? (
-        <p className="py-8 text-center text-base text-ink-faint">불러오는 중…</p>
+        <p className="py-8 text-center text-base text-ink-faint">Loading…</p>
       ) : status === "error" ? (
         <p className="py-8 text-center text-base text-ink-faint">
-          타임라인을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.
+          Couldn't load the timeline. Please try again shortly.
         </p>
       ) : !buckets || buckets.length === 0 ? (
         <p className="py-8 text-center text-base text-ink-faint">
-          아직 담은 콘텐츠가 없어요. 콘텐츠를 담으면 이곳에 쌓입니다.
+          No content saved yet. Content you add will build up here.
         </p>
       ) : (
         <>
@@ -260,7 +260,7 @@ export function TasteTimeline({ username }: { username?: string }) {
           <Legend />
           <TimelineTable buckets={buckets} />
           <p className="text-center text-sm text-ink-faint">
-            지금까지 총 {total}개의 취향을 담았어요.
+            You've saved {total} items of taste so far.
           </p>
         </>
       )}

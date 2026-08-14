@@ -30,7 +30,7 @@ export function LoginModal({ onClose }: LoginModalProps) {
   }
 
   return (
-    <Modal open title="관리자 로그인" onClose={onClose}>
+    <Modal open title="Admin Login" onClose={onClose}>
       <form
         className="flex flex-col gap-4"
         onSubmit={(e) => {
@@ -39,11 +39,11 @@ export function LoginModal({ onClose }: LoginModalProps) {
         }}
       >
         <p className="text-sm text-ink-faint">
-          로그인하면 편집·추가·삭제 기능이 켜집니다. 방문자에게는 보이지
-          않습니다.
+          Logging in enables editing, adding, and deleting. Visitors won't see
+          these controls.
         </p>
         <label className="flex flex-col gap-1.5 text-base">
-          <span className="text-ink-soft">이메일</span>
+          <span className="text-ink-soft">Email</span>
           <input
             type="email"
             value={email}
@@ -53,7 +53,7 @@ export function LoginModal({ onClose }: LoginModalProps) {
           />
         </label>
         <label className="flex flex-col gap-1.5 text-base">
-          <span className="text-ink-soft">비밀번호</span>
+          <span className="text-ink-soft">Password</span>
           <input
             type="password"
             value={password}
@@ -67,10 +67,10 @@ export function LoginModal({ onClose }: LoginModalProps) {
 
         <div className="mt-2 flex justify-end gap-2">
           <Button variant="ghost" type="button" onClick={onClose}>
-            취소
+            Cancel
           </Button>
           <Button type="submit" disabled={busy}>
-            {busy ? "로그인 중…" : "로그인"}
+            {busy ? "Logging in…" : "Log in"}
           </Button>
         </div>
       </form>

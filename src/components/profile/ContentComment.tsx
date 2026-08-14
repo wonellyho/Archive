@@ -43,7 +43,7 @@ export function ContentComment({ content }: ContentCommentProps) {
           aria-expanded={showSource}
           className="text-xs text-ink-faint transition-colors hover:text-ink"
         >
-          출처 {showSource ? "▴" : "▾"}
+          Source {showSource ? "▴" : "▾"}
         </button>
         {showSource ? (
           <div className="mt-1 flex flex-col gap-0.5 text-xs text-ink-faint">

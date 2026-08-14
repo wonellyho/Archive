@@ -44,7 +44,7 @@ export function AddContentPanel({
   const [body, setBody] = useState("");
   const [showPreview, setShowPreview] = useState(false);
 
-  const typeLabel = type === "music" ? "음악" : "영상";
+  const typeLabel = type === "music" ? "Music" : "Video";
 
   function selectResult(result: YouTubeSearchResult) {
     setSelected(result);
@@ -69,7 +69,7 @@ export function AddContentPanel({
 
     if (
       hasContent(selected.youtubeVideoId) &&
-      !window.confirm("이미 저장된 콘텐츠입니다. 그래도 추가할까요?")
+      !window.confirm("This content is already saved. Add it anyway?")
     ) {
       return;
     }
@@ -90,17 +90,17 @@ export function AddContentPanel({
 
   return (
     <section
-      aria-label={`${typeLabel} 추가`}
+      aria-label={`Add ${typeLabel.toLowerCase()}`}
       className="flex flex-col gap-5 rounded-4xl border border-line bg-cream p-6 font-serif shadow-md sm:p-8"
     >
       <div className="flex items-center justify-between">
-        <h3 className="text-xl font-medium text-ink">{typeLabel} 추가</h3>
+        <h3 className="text-xl font-medium text-ink">Add {typeLabel.toLowerCase()}</h3>
         <button
           type="button"
           onClick={onClose}
           className="rounded-full px-3 py-1.5 text-base text-ink-faint transition-colors hover:text-ink"
         >
-          닫기 ✕
+          Close ✕
         </button>
       </div>
 
@@ -117,12 +117,12 @@ export function AddContentPanel({
             </p>
           ) : null}
 
-          {status === "loading" ? <EmptyState title="검색 중입니다…" /> : null}
+          {status === "loading" ? <EmptyState title="Searching…" /> : null}
 
           {status === "success" && results.length === 0 ? (
             <EmptyState
-              title="검색 결과가 없습니다."
-              hint="다른 검색어를 입력해 보세요."
+              title="No results found."
+              hint="Try a different search term."
             />
           ) : null}
 
@@ -166,62 +166,62 @@ export function AddContentPanel({
                 onClick={() => setShowPreview((v) => !v)}
                 className="mt-2 text-base text-accent hover:underline"
               >
-                {showPreview ? "미리보기 닫기" : "미리보기"}
+                {showPreview ? "Close preview" : "Preview"}
               </button>
             </div>
 
             <p className="flex-1 text-sm text-ink-faint">
-              출처 · {selected.title}
+              Source · {selected.title}
               <br />
               {selected.channelTitle}
             </p>
           </div>
 
           <label className="flex flex-col gap-1.5 text-base">
-            <span className="text-ink-soft">제목</span>
+            <span className="text-ink-soft">Title</span>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="내가 붙이는 제목"
+              placeholder="Your own title"
               className={fieldClass}
             />
           </label>
 
           <label className="flex flex-col gap-1.5 text-base">
-            <span className="text-ink-soft">부제목</span>
+            <span className="text-ink-soft">Subtitle</span>
             <input
               value={subtitle}
               onChange={(e) => setSubtitle(e.target.value)}
-              placeholder="회색으로 표시되는 부제목 (선택)"
+              placeholder="Shown in grey (optional)"
               className={fieldClass}
             />
           </label>
 
           <label className="flex flex-col gap-1.5 text-base">
-            <span className="text-ink-soft">본문</span>
+            <span className="text-ink-soft">Body</span>
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
               rows={3}
-              placeholder="이 콘텐츠가 나에게 어떤 의미인지 적어보세요."
+              placeholder="Write what this content means to you."
               className={`${fieldClass} resize-none leading-relaxed`}
             />
           </label>
 
           <label className="flex flex-col gap-1.5 text-base">
-            <span className="text-ink-soft">폴더</span>
+            <span className="text-ink-soft">Folder</span>
             <select
               value={folderId}
               onChange={(e) => setFolderId(e.target.value)}
               className={fieldClass}
             >
-              <option value={NONE}>미분류</option>
+              <option value={NONE}>Unsorted</option>
               {folders.map((folder) => (
                 <option key={folder.id} value={folder.id}>
                   {folder.name}
                 </option>
               ))}
-              <option value={NEW}>+ 새 폴더 만들기</option>
+              <option value={NEW}>+ Create new folder</option>
             </select>
           </label>
 
@@ -229,17 +229,17 @@ export function AddContentPanel({
             <input
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
-              placeholder="새 폴더 이름"
-              aria-label="새 폴더 이름"
+              placeholder="New folder name"
+              aria-label="New folder name"
               className={fieldClass}
             />
           ) : null}
 
           <div className="flex items-center justify-end gap-2">
             <Button variant="ghost" onClick={() => setSelected(null)}>
-              ← 결과로
+              ← Back to results
             </Button>
-            <Button onClick={handleSave}>저장</Button>
+            <Button onClick={handleSave}>Save</Button>
           </div>
         </div>
       )}

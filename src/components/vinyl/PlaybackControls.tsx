@@ -11,11 +11,11 @@ interface PlaybackControlsProps {
 }
 
 const statusLabel: Record<VinylSpinState, string> = {
-  idle: "재생할 트랙을 선택하세요",
-  ready: "재생 준비됨",
-  playing: "재생 중",
-  paused: "일시 정지",
-  ended: "재생 완료",
+  idle: "Select a track to play",
+  ready: "Ready to play",
+  playing: "Playing",
+  paused: "Paused",
+  ended: "Finished",
 };
 
 export function PlaybackControls({
@@ -35,29 +35,29 @@ export function PlaybackControls({
           <Button
             onClick={onPause}
             disabled={disabled}
-            aria-label="일시 정지"
+            aria-label="Pause"
             className="font-serif"
           >
-            ❚❚ 일시정지
+            ❚❚ Pause
           </Button>
         ) : (
           <Button
             onClick={onPlay}
             disabled={disabled}
-            aria-label="재생"
+            aria-label="Play"
             className="font-serif"
           >
-            ► 재생
+            ► Play
           </Button>
         )}
         <Button
           variant="outline"
           onClick={onRestart}
           disabled={disabled}
-          aria-label="처음부터 다시 재생"
+          aria-label="Restart from the beginning"
           className="font-serif"
         >
-          ↺ 처음부터
+          ↺ Restart
         </Button>
       </div>
 

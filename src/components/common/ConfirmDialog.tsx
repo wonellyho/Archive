@@ -15,8 +15,8 @@ export function ConfirmDialog({
   open,
   title,
   message,
-  confirmLabel = "삭제",
-  cancelLabel = "취소",
+  confirmLabel = "Delete",
+  cancelLabel = "Cancel",
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {

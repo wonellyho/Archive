@@ -23,11 +23,11 @@ export function ShareProfileModal({ username, onClose }: ShareProfileModalProps)
   }
 
   return (
-    <Modal open title="프로필 공유" onClose={onClose}>
+    <Modal open title="Share Profile" onClose={onClose}>
       {username ? (
         <div className="flex flex-col gap-4">
           <p className="text-base text-ink-soft">
-            이 링크로 내 아카이브를 공유할 수 있어요.
+            Share this link to let others view your archive.
           </p>
           <div className="flex items-stretch gap-2">
             <input
@@ -37,20 +37,20 @@ export function ShareProfileModal({ username, onClose }: ShareProfileModalProps)
               className="min-w-0 flex-1 rounded-2xl border border-line bg-cream px-4 py-2.5 text-base text-ink-soft outline-none"
             />
             <Button onClick={copy} className="shrink-0">
-              {copied ? "복사됨 ✓" : "복사"}
+              {copied ? "Copied ✓" : "Copy"}
             </Button>
           </div>
         </div>
       ) : (
         <div className="flex flex-col gap-4">
           <p className="text-base text-ink-soft">
-            공유 링크를 만들려면 먼저 <b>공개 주소(username)</b>를 설정하세요.
+            To create a share link, first set a <b>public address (username)</b>.
             <br />
-            우측 상단 <b>프로필 수정</b>에서 정할 수 있어요.
+            You can set one from <b>Edit Profile</b> in the top right.
           </p>
           <div className="flex justify-end">
             <Button variant="ghost" onClick={onClose}>
-              닫기
+              Close
             </Button>
           </div>
         </div>

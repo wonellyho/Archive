@@ -9,10 +9,10 @@ function fileToDownscaledCanvas(
 ): Promise<HTMLCanvasElement> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onerror = () => reject(new Error("이미지를 읽지 못했습니다."));
+    reader.onerror = () => reject(new Error("Failed to read the image."));
     reader.onload = () => {
       const img = new Image();
-      img.onerror = () => reject(new Error("이미지를 불러오지 못했습니다."));
+      img.onerror = () => reject(new Error("Failed to load the image."));
       img.onload = () => {
         const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
         const canvas = document.createElement("canvas");
@@ -20,7 +20,7 @@ function fileToDownscaledCanvas(
         canvas.height = Math.round(img.height * scale);
         const ctx = canvas.getContext("2d");
         if (!ctx) {
-          reject(new Error("이미지를 처리하지 못했습니다."));
+          reject(new Error("Failed to process the image."));
           return;
         }
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
@@ -53,7 +53,7 @@ export async function fileToCoverBlob(file: File, maxSize = 480): Promise<Blob> 
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) =>
-        blob ? resolve(blob) : reject(new Error("이미지를 처리하지 못했습니다.")),
+        blob ? resolve(blob) : reject(new Error("Failed to process the image.")),
       "image/jpeg",
       0.82,
     );

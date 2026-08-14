@@ -1,8 +1,53 @@
 @import "tailwindcss";
 
+/* Self-hosted brand typeface — Crimson Text (OFL), used across the whole
+   site (body copy and headings alike). Files live in public/fonts. */
+@font-face {
+  font-family: "Crimson Text";
+  src: url("/fonts/CrimsonText-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Crimson Text";
+  src: url("/fonts/CrimsonText-Italic.ttf") format("truetype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Crimson Text";
+  src: url("/fonts/CrimsonText-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Crimson Text";
+  src: url("/fonts/CrimsonText-SemiBoldItalic.ttf") format("truetype");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Crimson Text";
+  src: url("/fonts/CrimsonText-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Crimson Text";
+  src: url("/fonts/CrimsonText-BoldItalic.ttf") format("truetype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
 @theme {
-  --font-sans: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
-  --font-serif: "Georgia", "Times New Roman", serif;
+  --font-sans: "Crimson Text", Georgia, "Times New Roman", serif;
+  --font-serif: "Crimson Text", Georgia, "Times New Roman", serif;
 
   /* Light / paper editorial palette */
   --color-paper: #ffffff;
@@ -24,6 +69,13 @@ html {
   font-size: 18px;
 }
 
+/* Headings use the same brand serif as body copy, at its SemiBold cut, so
+   they read as display text rather than paragraph text. */
+.font-serif {
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
 @media (max-width: 640px) {
   html {
     font-size: 17px;
@@ -41,10 +93,10 @@ body {
   /* A plastered wall: an opaque grain layer blended (soft-light) onto a warm
      light-grey gradient, so the whole screen reads as one tactile surface.
      soft-light keeps the grain gentle while staying clearly visible. */
-  background-color: #e6e2da;
+  background-color: #ededec;
   background-image:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0' intercept='1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
-    radial-gradient(125% 90% at 50% -8%, #f4f1ea 0%, #e6e2da 48%, #d3cdc2 100%);
+    radial-gradient(125% 90% at 50% -8%, #f7f7f6 0%, #ededec 48%, #dedcd8 100%);
   background-repeat: repeat, no-repeat;
   background-size:
     180px 180px,
@@ -168,6 +220,12 @@ body {
    plank; on hover the sleeve tilts toward you and the disc slides out and spins.
    Structure inspired by an editions-style showcase — palette/copy are our own. */
 .shelf-showcase {
+  /* Fixed sleeve/gap sizing so the shelf is a fixed width, not fluid — four
+     sleeves per row plus a gap-sized margin on each end, same as the gap
+     between sleeves (matches the reference "Editions" showcase). */
+  --shelf-record: 17.5rem;
+  --shelf-gap: 2rem;
+  --shelf-width: calc(4 * var(--shelf-record) + 5 * var(--shelf-gap));
   position: relative;
   padding: 1.5rem 0 0.5rem;
 }
@@ -182,6 +240,11 @@ body {
 
 .shelf-shelf {
   position: relative;
+  /* A fixed board width — four sleeves plus their gaps, cut to size like a
+     real shelf board, not a wall-to-wall ledge. */
+  width: var(--shelf-width);
+  max-width: 100%;
+  margin-inline: auto;
 }
 
 /* Light mounted behind the shelf's edge: a warm halo centred on the plank line
@@ -190,19 +253,20 @@ body {
   position: absolute;
   z-index: 0;
   left: 50%;
-  bottom: -28px;
-  width: 96%;
-  height: 104%;
+  bottom: -34px;
+  width: 128%;
+  height: 132%;
   transform: translateX(-50%);
   pointer-events: none;
   background: radial-gradient(
-    60% 62% at 50% 84%,
+    58% 64% at 50% 80%,
     rgba(255, 255, 255, 1) 0%,
-    rgba(255, 251, 244, 0.82) 26%,
-    rgba(255, 251, 244, 0.4) 48%,
-    rgba(255, 251, 244, 0) 72%
+    rgba(255, 244, 224, 0.95) 20%,
+    rgba(255, 244, 224, 0.6) 40%,
+    rgba(255, 244, 224, 0.18) 62%,
+    rgba(255, 244, 224, 0) 78%
   );
-  filter: blur(9px);
+  filter: blur(12px);
 }
 
 /* A tighter, brighter core right at the plank line reads as the light strip. */
@@ -210,17 +274,17 @@ body {
   content: "";
   position: absolute;
   left: 50%;
-  bottom: 20px;
-  width: 84%;
-  height: 46px;
+  bottom: 22px;
+  width: 92%;
+  height: 60px;
   transform: translateX(-50%);
   border-radius: 50%;
   background: radial-gradient(
     50% 50% at 50% 50%,
-    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 255, 255, 1) 0%,
     rgba(255, 255, 255, 0) 72%
   );
-  filter: blur(6px);
+  filter: blur(5px);
 }
 
 .shelf-track {
@@ -229,32 +293,37 @@ body {
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  gap: clamp(1.25rem, 4vw, 3.5rem);
+  gap: var(--shelf-gap);
+  width: 100%;
+  box-sizing: border-box;
+  padding-inline: var(--shelf-gap);
 }
 
 .shelf-slot {
   position: relative;
   flex: 0 0 auto;
-  width: clamp(9.5rem, 18vw, 14rem);
+  width: var(--shelf-record);
   perspective: 1300px;
 }
 
-/* Contact shadow cast onto the plank; stays put while the sleeve lifts. */
+/* Tight contact shadow right where the sleeve's base meets the plank — reads
+   as real weight resting on the board, distinct from the soft ambient glow
+   behind it. */
 .shelf-shadow {
   position: absolute;
   left: 50%;
-  bottom: -9px;
-  width: 78%;
-  height: 22px;
+  bottom: -3px;
+  width: 92%;
+  height: 12px;
   transform: translateX(-50%);
   border-radius: 50%;
   background: radial-gradient(
     50% 50% at 50% 50%,
-    rgba(27, 25, 22, 0.42),
-    rgba(27, 25, 22, 0) 72%
+    rgba(20, 18, 15, 0.55),
+    rgba(20, 18, 15, 0) 72%
   );
-  filter: blur(3px);
-  opacity: 0.9;
+  filter: blur(2px);
+  opacity: 1;
   transition:
     width 0.45s ease,
     height 0.45s ease,
@@ -264,12 +333,13 @@ body {
 
 .shelf-slot:hover .shelf-shadow,
 .shelf-slot:focus-within .shelf-shadow {
-  width: 98%;
-  height: 32px;
-  opacity: 0.6;
+  width: 78%;
+  height: 24px;
+  opacity: 0.55;
 }
 
-/* The card = disc behind + sleeve cover; the whole thing tilts in 3D. */
+/* The card = disc behind + sleeve cover. At rest it stands perfectly upright
+   on the shelf, flush and square; only on hover does it lift and tilt in 3D. */
 .shelf-card {
   position: relative;
   z-index: 1;
@@ -453,23 +523,6 @@ body {
   overflow: hidden;
 }
 
-.shelf-badge {
-  position: absolute;
-  top: 0.55rem;
-  left: 0.55rem;
-  z-index: 3;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.18rem 0.5rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.9);
-  color: var(--color-ink-soft);
-  font-size: 0.7rem;
-  font-weight: 600;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
-}
-
 /* Title overlay — hidden until hover/focus, then rises from the base. */
 .shelf-overlay {
   position: absolute;
@@ -513,25 +566,21 @@ body {
   color: rgba(255, 255, 255, 0.85);
 }
 
-/* Owner-only edit/delete controls — rise with the sleeve on hover (same easing
-   and lift as the card) so they read as part of the same motion. */
+/* Owner-only edit/delete controls — invisible until the cursor is over this
+   exact top-right corner (not the whole sleeve), so they never flash into
+   view just from browsing the shelf. */
 .shelf-actions {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
   z-index: 4;
   opacity: 0;
-  transform: translateY(6px) scale(0.9);
-  transform-origin: top right;
-  transition:
-    transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1),
-    opacity 0.3s ease;
+  transition: opacity 0.25s ease;
 }
 
-.shelf-slot:hover .shelf-actions,
-.shelf-slot:focus-within .shelf-actions {
+.shelf-actions:hover,
+.shelf-actions:focus-within {
   opacity: 1;
-  transform: translateY(-16px) scale(1);
 }
 
 /* The plank the sleeves rest on — a bright top face over a darker front edge
@@ -540,8 +589,8 @@ body {
   position: relative;
   z-index: 1;
   margin-top: -2px;
-  height: 18px;
-  border-radius: 3px 3px 4px 4px;
+  height: 16px;
+  border-radius: 3px 3px 0 0;
   background: linear-gradient(
     180deg,
     #ffffff 0%,
@@ -552,36 +601,89 @@ body {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.95),
     inset 0 -1px 0 rgba(0, 0, 0, 0.07),
-    0 28px 30px -20px rgba(40, 36, 30, 0.5),
-    0 3px 6px rgba(0, 0, 0, 0.1);
+    0 40px 44px -22px rgba(30, 27, 22, 0.62),
+    0 4px 8px rgba(0, 0, 0, 0.14);
 }
 
-/* Ghost "add folder" tile that lives at the end of the shelf. */
+/* The plank's visible front edge — a darker face angled just below the top
+   surface, so the board reads as a real slab with thickness, not a flat line. */
+.shelf-plank::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 10px;
+  border-radius: 0 0 4px 4px;
+  background: linear-gradient(180deg, #d9d4c8 0%, #aca492 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 16px 22px -10px rgba(20, 18, 14, 0.55);
+}
+
+/* Ghost "add folder" tile that lives at the end of the shelf — same footprint
+   and lift as a real sleeve so it reads as part of the row, not a form field
+   dropped on top of it. */
 .shelf-add {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.65rem;
   width: 100%;
   aspect-ratio: 1 / 1;
   border-radius: 6px;
-  border: 2px dashed var(--color-line);
-  background: rgba(255, 255, 255, 0.45);
+  border: 1.5px dashed rgba(27, 25, 22, 0.24);
+  background: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.65) 0%,
+    rgba(255, 255, 255, 0.18) 100%
+  );
   color: var(--color-ink-faint);
   cursor: pointer;
+  box-shadow: 0 14px 22px -16px rgba(24, 22, 18, 0.4);
   transition:
-    border-color 0.25s ease,
-    color 0.25s ease,
-    transform 0.25s ease;
+    border-color 0.35s ease,
+    color 0.35s ease,
+    background 0.35s ease,
+    box-shadow 0.5s ease,
+    transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.shelf-add-icon {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: rgba(27, 25, 22, 0.06);
+  font-size: 1.3rem;
+  line-height: 1;
+  transition:
+    background 0.35s ease,
+    transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 .shelf-add:hover,
 .shelf-add:focus-visible {
-  border-color: rgba(27, 25, 22, 0.35);
+  border-color: var(--color-accent);
   color: var(--color-ink);
-  transform: translateY(-6px);
+  background: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(255, 255, 255, 0.35) 100%
+  );
+  box-shadow: 0 34px 40px -18px rgba(24, 22, 18, 0.48);
+  transform: translateY(-16px) scale(1.03);
   outline: none;
+}
+
+.shelf-add:hover .shelf-add-icon,
+.shelf-add:focus-visible .shelf-add-icon {
+  background: var(--color-accent-soft);
+  transform: scale(1.1);
 }
 
 .shelf-add:focus-visible {
@@ -589,17 +691,27 @@ body {
   outline-offset: 3px;
 }
 
-/* Mobile: shelves become horizontally scrolling tracks; no hover, so the title
+/* Below the fixed shelf's width, it becomes a horizontally scrolling track
+   instead of shrinking the sleeves; on touch there's no hover, so the title
    overlay stays visible. */
-@media (max-width: 640px) {
+@media (max-width: 1400px) {
   .shelf-stage {
     border-radius: 18px;
   }
+  .shelf-showcase {
+    --shelf-record: 11rem;
+    --shelf-gap: 1.25rem;
+  }
+  /* Undo the fixed-width sizing so the track can overflow and scroll — a
+     board cut to a fixed width would never let its content exceed it. */
+  .shelf-shelf {
+    width: 100%;
+    margin-inline: 0;
+  }
   .shelf-track {
     justify-content: flex-start;
-    gap: 1.1rem;
     overflow-x: auto;
-    padding-bottom: 0.25rem;
+    padding-block-end: 0.25rem;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
   }
@@ -607,7 +719,6 @@ body {
     display: none;
   }
   .shelf-slot {
-    width: 9rem;
     scroll-snap-align: center;
     perspective: 900px;
   }

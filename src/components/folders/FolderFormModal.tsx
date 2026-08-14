@@ -7,15 +7,15 @@ import { ApiError, isApiConfigured, uploadImage } from "../../services/apiClient
 /** 업로드 실패 상태코드를 사용자용 메시지로 변환한다. */
 function uploadErrorMessage(err: unknown): string {
   if (err instanceof ApiError) {
-    if (err.status === 401) return "로그인이 필요합니다. 다시 로그인해 주세요.";
+    if (err.status === 401) return "Please log in to continue.";
     if (err.status === 400)
-      return "지원하지 않는 이미지 형식입니다(JPEG/PNG/WEBP/GIF).";
-    if (err.status === 413) return "이미지 용량이 너무 큽니다.";
+      return "Unsupported image format (JPEG/PNG/WEBP/GIF).";
+    if (err.status === 413) return "The image file is too large.";
     if (err.status === 429)
-      return "업로드가 너무 잦습니다. 잠시 후 다시 시도해 주세요.";
-    return `이미지 업로드에 실패했습니다 (HTTP ${err.status}).`;
+      return "Too many uploads. Please try again shortly.";
+    return `Image upload failed (HTTP ${err.status}).`;
   }
-  return "이미지를 불러오지 못했습니다.";
+  return "Failed to load the image.";
 }
 
 interface FolderFormModalProps {
@@ -60,7 +60,7 @@ export function FolderFormModal({
   function handleSubmit() {
     const trimmed = name.trim();
     if (trimmed.length === 0) {
-      setError("폴더 이름을 입력해 주세요.");
+      setError("Please enter a folder name.");
       return;
     }
     onSubmit({ name: trimmed, coverImageUrl: cover });
@@ -70,18 +70,18 @@ export function FolderFormModal({
     <Modal open title={title} onClose={onCancel}>
       <div className="flex flex-col gap-4">
         <label className="flex flex-col gap-1.5 text-base">
-          <span className="text-ink-soft">폴더 이름</span>
+          <span className="text-ink-soft">Folder name</span>
           <input
             autoFocus
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="예: Night Walk"
+            placeholder="e.g. Night Walk"
             className="rounded-2xl border border-line bg-paper px-4 py-2.5 font-serif text-base outline-none focus-visible:border-accent"
           />
         </label>
 
         <div className="flex flex-col gap-2 text-base">
-          <span className="text-ink-soft">폴더 썸네일 이미지</span>
+          <span className="text-ink-soft">Folder thumbnail image</span>
           <div className="flex items-center gap-4">
             <div className="size-24 shrink-0 overflow-hidden rounded-2xl border border-line bg-cream-deep">
               {cover ? (
@@ -100,7 +100,7 @@ export function FolderFormModal({
                     : "cursor-pointer hover:bg-cream hover:text-ink"
                 }`}
               >
-                {uploading ? "업로드 중…" : "이미지 첨부"}
+                {uploading ? "Uploading…" : "Attach image"}
                 <input
                   type="file"
                   accept="image/*"
@@ -115,7 +115,7 @@ export function FolderFormModal({
                   onClick={() => setCover(undefined)}
                   className="text-left text-sm text-ink-faint hover:text-accent"
                 >
-                  이미지 제거
+                  Remove image
                 </button>
               ) : null}
             </div>
@@ -126,10 +126,10 @@ export function FolderFormModal({
 
         <div className="mt-2 flex justify-end gap-2">
           <Button variant="ghost" onClick={onCancel}>
-            취소
+            Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={uploading}>
-            저장
+            Save
           </Button>
         </div>
       </div>

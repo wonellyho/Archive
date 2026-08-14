@@ -31,10 +31,10 @@ export function ContentEditModal({
   }
 
   return (
-    <Modal open title="콘텐츠 편집" onClose={onCancel}>
+    <Modal open title="Edit Content" onClose={onCancel}>
       <div className="flex flex-col gap-4">
         <label className="flex flex-col gap-1.5 text-base">
-          <span className="text-ink-soft">제목</span>
+          <span className="text-ink-soft">Title</span>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -42,32 +42,32 @@ export function ContentEditModal({
           />
         </label>
         <label className="flex flex-col gap-1.5 text-base">
-          <span className="text-ink-soft">부제목</span>
+          <span className="text-ink-soft">Subtitle</span>
           <input
             value={subtitle}
             onChange={(e) => setSubtitle(e.target.value)}
-            placeholder="회색으로 표시되는 부제목 (선택)"
+            placeholder="Shown in grey (optional)"
             className={field}
           />
         </label>
         <label className="flex flex-col gap-1.5 text-base">
-          <span className="text-ink-soft">본문</span>
+          <span className="text-ink-soft">Body</span>
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={4}
-            placeholder="이 콘텐츠가 나에게 어떤 의미인지 적어보세요."
+            placeholder="Write what this content means to you."
             className={`${field} resize-none leading-relaxed`}
           />
         </label>
 
-        <p className="text-sm text-ink-faint">출처 · {content.sourceTitle}</p>
+        <p className="text-sm text-ink-faint">Source · {content.sourceTitle}</p>
 
         <div className="mt-2 flex justify-end gap-2">
           <Button variant="ghost" onClick={onCancel}>
-            취소
+            Cancel
           </Button>
-          <Button onClick={handleSave}>저장</Button>
+          <Button onClick={handleSave}>Save</Button>
         </div>
       </div>
     </Modal>

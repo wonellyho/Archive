@@ -29,7 +29,7 @@ function createId(): string {
 /** Fire-and-forget persistence; surfaces backend errors without crashing the UI. */
 function persist(promise: Promise<void>): void {
   promise.catch((error: unknown) => {
-    console.error("데이터 저장에 실패했습니다:", error);
+    console.error("Failed to save data:", error);
   });
 }
 
@@ -98,8 +98,8 @@ export function TasteDataProvider({ children, repository }: TasteDataProviderPro
         if (cancelled) return;
         setError(
           err instanceof ApiError && err.status === 404
-            ? "사용자를 찾을 수 없습니다."
-            : "데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
+            ? "User not found."
+            : "Failed to load data. Please try again shortly.",
         );
       })
       .finally(() => {
