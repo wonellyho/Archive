@@ -175,10 +175,10 @@ export function ContentList({
                 }
                 onSelect(content);
               }}
-              className={`flex h-full w-full flex-col overflow-hidden rounded-3xl border bg-cream text-left shadow-[0_10px_24px_-16px_rgba(24,22,18,0.4)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_20px_34px_-14px_rgba(24,22,18,0.5)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+              className={`glass flex h-full w-full flex-col overflow-hidden rounded-3xl border text-left shadow-[0_10px_24px_-16px_rgba(24,22,18,0.4)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_20px_34px_-14px_rgba(24,22,18,0.5)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
                 selected
                   ? "border-accent shadow-md"
-                  : "border-line/70 hover:border-ink/25"
+                  : "border-[color:var(--surface-border)] hover:border-ink/25"
               }`}
             >
               <span className="relative block aspect-video w-full overflow-hidden bg-cream-deep">

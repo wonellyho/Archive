@@ -63,6 +63,44 @@
 
 :root {
   color-scheme: light;
+
+  /* Glass-surface tokens for anything sitting on top of a custom wallpaper
+     (cards, nav, modals, popovers) — translucent + blurred rather than a
+     flat opaque fill, so the photo behind keeps showing through. */
+  --surface: rgba(255, 255, 255, 0.68);
+  --surface-strong: rgba(255, 255, 255, 0.88);
+  --surface-border: rgba(27, 25, 22, 0.08);
+  /* User-adjustable nav bar opacity (#66 appearance settings), 0–1. */
+  --nav-alpha: 0.9;
+}
+
+/* When a dark wallpaper is active (#66 background picker — auto-detected or
+   user-overridden), flip body text to light-on-dark and the glass tint to a
+   dark wash, so contrast holds regardless of which photo is behind it. */
+:root[data-bg-tone="dark"] {
+  --color-ink: #f6f3ec;
+  --color-ink-soft: #d9d3c6;
+  --color-ink-faint: #a39c8d;
+  --color-line: rgba(255, 255, 255, 0.16);
+  --surface: rgba(20, 18, 15, 0.55);
+  --surface-strong: rgba(20, 18, 15, 0.75);
+  --surface-border: rgba(255, 255, 255, 0.14);
+}
+
+/* Shared glass-surface look: translucent fill + blur, so the wallpaper (or
+   default paper texture) still reads through cards/nav/modals. Doesn't set
+   its own border — pair with a `border-*` utility using --surface-border so
+   callers control which edges get one. */
+.glass {
+  background: var(--surface);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+}
+
+/* The nav bar's own opacity, independent of every other glass surface — set
+   from the appearance settings modal's slider via --nav-alpha. */
+.site-nav {
+  background: color-mix(in srgb, var(--surface) calc(var(--nav-alpha, 0.9) * 100%), transparent);
 }
 
 html {
@@ -228,6 +266,11 @@ body {
   --shelf-width: calc(4 * var(--shelf-record) + 5 * var(--shelf-gap));
   position: relative;
   padding: 1.5rem 0 0.5rem;
+  /* The boards run wider than the viewport on purpose; clip that overhang
+     horizontally so it can't produce a page-wide scrollbar. `clip` (not
+     `hidden`) leaves the vertical axis alone, so the shelves' drop shadows
+     still spill downward as they should. */
+  overflow-x: clip;
 }
 
 .shelf-rows {
@@ -245,46 +288,57 @@ body {
   width: var(--shelf-width);
   max-width: 100%;
   margin-inline: auto;
+  /* Camera depth for the board faces' rotateX, so they project as real
+     receding trapezoids instead of uniformly squashed rectangles. Deliberately
+     short: at this distance the board's back edge lands near 90% of the front
+     edge's width, which is what actually reads as a trapezoid. */
+  perspective: 900px;
 }
 
-/* Light mounted behind the shelf's edge: a warm halo centred on the plank line
-   that glows outward across the wall, so the shelf lifts off with depth. */
+/* One camera, not one per shelf: every row's vanishing point is aimed at the
+   same eye-level line sitting between the rows, so the boards' front lips all
+   converge on it. A row above the horizon looks up at it (origin below the
+   row); a row below it looks down (origin above the row). */
+.shelf-shelf[data-level="above"] {
+  perspective-origin: 50% 130%;
+}
+
+.shelf-shelf[data-level="below"] {
+  perspective-origin: 50% -15%;
+}
+
+/* Light mounted between each sleeve — three discrete warm spots along the
+   plank line (no lights at the outer edges, no boxed-in showcase framing —
+   the shelf and its sleeves float directly on the page background). */
 .shelf-backlight {
   position: absolute;
   z-index: 0;
-  left: 50%;
-  bottom: -34px;
-  width: 128%;
-  height: 132%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  bottom: -30px;
+  height: 150px;
   pointer-events: none;
-  background: radial-gradient(
-    58% 64% at 50% 80%,
-    rgba(255, 255, 255, 1) 0%,
-    rgba(255, 244, 224, 0.95) 20%,
-    rgba(255, 244, 224, 0.6) 40%,
-    rgba(255, 244, 224, 0.18) 62%,
-    rgba(255, 244, 224, 0) 78%
-  );
-  filter: blur(12px);
+  /* Centers of the 3 gaps between the 4 sleeves. */
+  --lx1: calc(1.5 * var(--shelf-gap) + var(--shelf-record));
+  --lx2: calc(2.5 * var(--shelf-gap) + 2 * var(--shelf-record));
+  --lx3: calc(3.5 * var(--shelf-gap) + 3 * var(--shelf-record));
+  background:
+    radial-gradient(80px 110px at var(--lx1) 70%, rgba(255, 246, 224, 0.85) 0%, rgba(255, 246, 224, 0) 70%),
+    radial-gradient(80px 110px at var(--lx2) 70%, rgba(255, 246, 224, 0.85) 0%, rgba(255, 246, 224, 0) 70%),
+    radial-gradient(80px 110px at var(--lx3) 70%, rgba(255, 246, 224, 0.85) 0%, rgba(255, 246, 224, 0) 70%);
+  filter: blur(11px);
 }
 
-/* A tighter, brighter core right at the plank line reads as the light strip. */
+/* Tighter, brighter cores at the same three points read as the actual bulbs. */
 .shelf-backlight::after {
   content: "";
   position: absolute;
-  left: 50%;
-  bottom: 22px;
-  width: 92%;
-  height: 60px;
-  transform: translateX(-50%);
-  border-radius: 50%;
-  background: radial-gradient(
-    50% 50% at 50% 50%,
-    rgba(255, 255, 255, 1) 0%,
-    rgba(255, 255, 255, 0) 72%
-  );
-  filter: blur(5px);
+  inset: 0;
+  background:
+    radial-gradient(24px 30px at var(--lx1) 62%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 72%),
+    radial-gradient(24px 30px at var(--lx2) 62%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 72%),
+    radial-gradient(24px 30px at var(--lx3) 62%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 72%);
+  filter: blur(4px);
 }
 
 .shelf-track {
@@ -306,44 +360,58 @@ body {
   perspective: 1300px;
 }
 
-/* Tight contact shadow right where the sleeve's base meets the plank — reads
-   as real weight resting on the board, distinct from the soft ambient glow
-   behind it. */
+/* The shadow the sleeve throws back onto the wall behind it. The key light is
+   up and to the left, so it falls down and to the right, large and soft. */
 .shelf-shadow {
   position: absolute;
-  left: 50%;
-  bottom: -3px;
-  width: 92%;
-  height: 12px;
-  transform: translateX(-50%);
-  border-radius: 50%;
-  background: radial-gradient(
-    50% 50% at 50% 50%,
-    rgba(20, 18, 15, 0.55),
-    rgba(20, 18, 15, 0) 72%
-  );
-  filter: blur(2px);
-  opacity: 1;
-  transition:
-    width 0.45s ease,
-    height 0.45s ease,
-    opacity 0.45s ease;
   z-index: 0;
+  inset: 0;
+  transform: translate(8px, 4px);
+  background: rgba(0, 0, 0, 0.18);
+  filter: blur(20px);
+  transition: opacity 0.45s ease;
+}
+
+/* On a shelf we look down onto, the sleeve also throws a shadow backwards
+   across the top surface — the pool of dark right behind its base. Rows above
+   the horizon show no top surface, so they get none. */
+.shelf-shadow-soft {
+  display: none;
+}
+
+.shelf-shelf[data-level="below"] .shelf-shadow-soft {
+  display: block;
+  position: absolute;
+  z-index: 1;
+  left: 4%;
+  right: 4%;
+  bottom: -9px;
+  height: 18px;
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    rgba(0, 0, 0, 0.28),
+    rgba(0, 0, 0, 0) 70%
+  );
+  filter: blur(6px);
+  transition: opacity 0.45s ease;
 }
 
 .shelf-slot:hover .shelf-shadow,
-.shelf-slot:focus-within .shelf-shadow {
-  width: 78%;
-  height: 24px;
-  opacity: 0.55;
+.shelf-slot:focus-within .shelf-shadow,
+.shelf-slot:hover .shelf-shadow-soft,
+.shelf-slot:focus-within .shelf-shadow-soft {
+  opacity: 0.5;
 }
 
-/* The card = disc behind + sleeve cover. At rest it stands perfectly upright
-   on the shelf, flush and square; only on hover does it lift and tilt in 3D. */
+/* The card = disc behind + sleeve cover. At rest it leans back against the
+   shelf rather than standing square, and a tiny per-sleeve rotateZ (its own
+   --card-lean, set inline per folder) keeps a row from looking machine-set.
+   Only on hover does it lift and tilt further in 3D. */
 .shelf-card {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   transform-origin: center bottom;
+  transform: rotateX(3.5deg) rotateZ(var(--card-lean, 0deg));
   transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
   will-change: transform;
 }
@@ -441,9 +509,12 @@ body {
   background: var(--color-cream-deep);
   cursor: pointer;
   overflow: hidden;
+  /* Contact first — tight, dark, drawn in slightly narrower than the sleeve so
+     it reads as the line where cardboard meets board. Then the diffuse spread
+     under it. */
   box-shadow:
-    0 16px 26px -14px rgba(24, 22, 18, 0.55),
-    0 3px 8px rgba(0, 0, 0, 0.14),
+    0 2px 5px -1px rgba(0, 0, 0, 0.55),
+    0 12px 26px -6px rgba(0, 0, 0, 0.22),
     inset 0 0 0 1px rgba(0, 0, 0, 0.06);
   transition: box-shadow 0.5s ease;
 }
@@ -459,6 +530,29 @@ body {
 .shelf-cover:focus-visible {
   outline: 3px solid var(--color-accent);
   outline-offset: 3px;
+}
+
+/* Light modelling across the sleeve's own face. Because it leans back, its
+   top catches the overhead key light while its base sits in the board's
+   shade — that top-to-bottom falloff is most of what makes a flat rectangle
+   read as a physical object standing at an angle. soft-light keeps it as
+   lighting rather than a grey wash over the artwork. */
+.shelf-cover::before,
+.shelf-add::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: soft-light;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.16) 0%,
+    rgba(255, 255, 255, 0.02) 25%,
+    rgba(0, 0, 0, 0) 55%,
+    rgba(0, 0, 0, 0.18) 88%,
+    rgba(0, 0, 0, 0.34) 100%
+  );
 }
 
 /* Selected folder: a flat accent ring only — it should not read as "lifted". */
@@ -583,42 +677,238 @@ body {
   opacity: 1;
 }
 
-/* The plank the sleeves rest on — a bright top face over a darker front edge
-   gives it real thickness, and a soft drop shadow floats it off the wall. */
-.shelf-plank {
-  position: relative;
-  z-index: 1;
-  margin-top: -2px;
-  height: 16px;
-  border-radius: 3px 3px 0 0;
-  background: linear-gradient(
-    180deg,
-    #ffffff 0%,
-    #f6f4ef 38%,
-    #e6e2da 70%,
-    #cfcabf 100%
-  );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.07),
-    0 40px 44px -22px rgba(30, 27, 22, 0.62),
-    0 4px 8px rgba(0, 0, 0, 0.14);
+/* The shelf board — real faces, not one div with rounded corners. Which faces
+   are visible depends on where the row sits relative to the scene's single
+   eye-level (horizon): a row ABOVE it is seen from below, so only its front
+   edge and underside show; a row BELOW it is seen from above, so its top
+   surface and front edge show. `data-level` (set in FolderShelf) picks which.
+   Both faces bleed past the row's own width so the board reads as a physical
+   object wider than the row of sleeves standing on it. */
+
+/* All three board faces share their footprint. The board is a finite length cut
+   a little wider than the row of sleeves, so its perspective-tapered ends stay
+   visible as trapezoids rather than running off the frame. No borders anywhere:
+   every tonal edge here is a gradient stop. */
+.shelf-top,
+.shelf-face,
+.shelf-under {
+  position: absolute;
+  left: -1.75rem;
+  right: -1.75rem;
+  pointer-events: none;
+  border: 0;
+  border-radius: 0;
+  background-blend-mode: overlay, normal;
 }
 
-/* The plank's visible front edge — a darker face angled just below the top
-   surface, so the board reads as a real slab with thickness, not a flat line. */
-.shelf-plank::after {
+/* Faint grain over each face, so no surface is a flat fill of one colour. */
+.shelf-top::after,
+.shelf-face::after,
+.shelf-bevel::after,
+.shelf-under::after {
   content: "";
   position: absolute;
-  left: 0;
-  right: 0;
+  inset: 0;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Top surface — a shallow, perspective-projected trapezoid. Its front edge
+   sits just below the sleeves' base line, leaving a ~12px strip of surface
+   visible in front of them. Shallow on purpose: any deeper and the board
+   stops reading as a shelf and starts reading as a ramp. */
+.shelf-top {
+  z-index: 0;
+  bottom: -12px;
+  height: 52px;
+  transform-origin: bottom center;
+  transform: rotateX(78deg);
+  background:
+    linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.1) 0%,
+      rgba(255, 255, 255, 0.06) 38%,
+      rgba(255, 255, 255, 0.03) 55%,
+      rgba(0, 0, 0, 0.08) 100%
+    ),
+    linear-gradient(to bottom, #c2c6cc 0%, #d6dade 60%, #dde1e6 100%);
+  filter: blur(0.4px);
+}
+
+.shelf-shelf[data-level="above"] .shelf-top {
+  display: none;
+}
+
+/* Underside — the board's bottom plane, receding from the front edge back to
+   the wall. Only rows above the horizon show one, and it is the darkest thing
+   on screen: that's what sells "this shelf is over your head". It's inset from
+   the front face on both sides and tucked a couple of pixels behind it, so the
+   lip reads as edge banding proud of the underside rather than one slab. */
+/* Two thin, pale bevels stepping back from the front lip. They start at the
+   lip's own width and taper with it, so the board's edge reads as a moulded
+   profile rather than a single slab dropping straight to a dark plane. */
+.shelf-bevel {
+  position: absolute;
+  z-index: 2;
+  left: -1.75rem;
+  right: -1.75rem;
   top: 100%;
-  height: 10px;
-  border-radius: 0 0 4px 4px;
-  background: linear-gradient(180deg, #d9d4c8 0%, #aca492 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    0 16px 22px -10px rgba(20, 18, 14, 0.55);
+  height: 16px;
+  transform-origin: top center;
+  transform: rotateX(-78deg);
+  pointer-events: none;
+  border: 0;
+  filter: blur(0.4px);
+}
+
+.shelf-bevel-1 {
+  margin-top: 3px;
+  background: linear-gradient(to bottom, #e2e4e8 0%, #cdd0d5 100%);
+}
+
+.shelf-bevel-2 {
+  left: -1.1rem;
+  right: -1.1rem;
+  margin-top: 6px;
+  background: linear-gradient(to bottom, #c8cbd0 0%, #aeb1b7 100%);
+}
+
+/* The flat underside itself — square-sided, not tapered. Still the darkest
+   part of the board (that's what reads as "this is over your head"), but only
+   just: pushed too dark it stops looking like a shaded surface and starts
+   looking like a drawn line. Its width picks up exactly where the last bevel's
+   taper ends, so the profile steps back and then runs straight. */
+.shelf-under {
+  z-index: 2;
+  left: -0.4rem;
+  right: -0.4rem;
+  top: 100%;
+  margin-top: 9px;
+  height: 4px;
+  background:
+    linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.12) 0%,
+      rgba(255, 255, 255, 0.05) 38%,
+      rgba(255, 255, 255, 0.02) 55%,
+      rgba(0, 0, 0, 0.1) 100%
+    ),
+    linear-gradient(to bottom, #a8abb1 0%, #8f9299 45%, #797c83 100%);
+}
+
+.shelf-shelf[data-level="below"] .shelf-under,
+.shelf-shelf[data-level="below"] .shelf-bevel {
+  display: none;
+}
+
+/* The front face. On rows below the horizon it sits under the visible top
+   surface; on rows above it, it rides *up* over the sleeves' bottom edge so
+   they read as plugged into the board rather than resting on top of it
+   (z-index 3 puts it in front of the sleeves at 2). The vertical ramp carries
+   the lit top lip and the bounced light near its base; the horizontal ramp
+   over it puts the key light left of centre, so the board is never one even
+   tone along its length. */
+.shelf-face {
+  z-index: 3;
+  bottom: -26px;
+  height: 14px;
+  background:
+    linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.1) 0%,
+      rgba(255, 255, 255, 0.06) 38%,
+      rgba(255, 255, 255, 0.03) 55%,
+      rgba(0, 0, 0, 0.08) 100%
+    ),
+    linear-gradient(
+      to bottom,
+      #fbfcfd 0%,
+      #f1f2f4 30%,
+      #e3e5e8 70%,
+      #eceef0 92%,
+      #dcdee1 100%
+    );
+}
+
+/* Seen from below the board is a touch thicker, its lit lip weaker, and its
+   base darkens into the shadow the lip throws onto the underside behind it. */
+.shelf-shelf[data-level="above"] .shelf-face {
+  height: 13px;
+  bottom: -3px;
+  background:
+    linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.1) 0%,
+      rgba(255, 255, 255, 0.06) 38%,
+      rgba(255, 255, 255, 0.03) 55%,
+      rgba(0, 0, 0, 0.08) 100%
+    ),
+    linear-gradient(
+      to bottom,
+      #f6f7f9 0%,
+      #eef0f2 28%,
+      #e3e5e8 62%,
+      #eceef0 84%,
+      #c6c9cd 95%,
+      #93969c 100%
+    );
+}
+
+/* The shadow the board itself casts on the wall below it — separate from the
+   sleeves' own contact shadows, and from the ambient backlight glow. Kept
+   slightly narrower than the board: a shadow wider than its caster reads as
+   a graphic, not as light. Sits just under whichever face is lowest, which
+   differs by level. */
+.shelf-wall-shadow {
+  position: absolute;
+  z-index: -1;
+  left: -0.5rem;
+  right: -0.5rem;
+  bottom: -106px;
+  height: 70px;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.26) 0%,
+    rgba(0, 0, 0, 0.1) 40%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  /* Heavy blur plus fading ends: without both, a rectangle of flat grey under
+     the board reads as a second solid strip stuck to the shelf instead of as
+     light the shelf is blocking. */
+  filter: blur(18px);
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    #000 9%,
+    #000 91%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    #000 9%,
+    #000 91%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.shelf-shelf[data-level="above"] .shelf-wall-shadow {
+  bottom: -83px;
+}
+
+/* An overhead shelf also presses down on everything under it — a much wider,
+   fainter falloff below the local cast shadow. */
+.shelf-shelf[data-level="above"] .shelf-wall-shadow::after {
+  content: "";
+  position: absolute;
+  left: -6rem;
+  right: -6rem;
+  top: 100%;
+  height: 220px;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0));
 }
 
 /* Ghost "add folder" tile that lives at the end of the shelf — same footprint
@@ -635,6 +925,7 @@ body {
   width: 100%;
   aspect-ratio: 1 / 1;
   border-radius: 6px;
+  overflow: hidden;
   border: 1.5px dashed rgba(27, 25, 22, 0.24);
   background: linear-gradient(
     155deg,
@@ -727,12 +1018,25 @@ body {
     transform: none;
     padding-top: 1.2rem;
   }
+  /* No overhang on narrow screens — the row already fills the width, so a
+     bleed would only get clipped away. */
+  .shelf-top,
+  .shelf-face,
+  .shelf-wall-shadow {
+    left: 0;
+    right: 0;
+  }
+  .shelf-under {
+    left: 1.25rem;
+    right: 1.25rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .shelf-card,
   .shelf-disc-wrap,
   .shelf-shadow,
+  .shelf-shadow-soft,
   .shelf-cover,
   .shelf-overlay,
   .shelf-actions {

@@ -12,6 +12,7 @@ import { PlaybackDock } from "../components/common/PlaybackDock";
 import { PlayerProvider } from "../context/PlayerProvider";
 import { VideoProvider } from "../context/VideoProvider";
 import { OwnerControls } from "../components/auth/OwnerControls";
+import { BackgroundPicker } from "../components/common/BackgroundPicker";
 
 type TabId = "about" | "tv" | "vinyl" | "timeline";
 
@@ -74,7 +75,10 @@ export function PublicProfilePage({ readOnly = false }: PublicProfilePageProps) 
                   Create your own archive →
                 </Link>
               ) : (
-                <OwnerControls />
+                <div className="flex items-center gap-1.5">
+                  <BackgroundPicker />
+                  <OwnerControls />
+                </div>
               )
             }
           />

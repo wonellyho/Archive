@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import type { DragEvent } from "react";
+import type { CSSProperties, DragEvent } from "react";
 import type { TasteFolder } from "../../types/folder";
 import { PencilIcon, TrashIcon } from "../common/icons";
 
@@ -39,6 +39,14 @@ function gradientFor(id: string): string {
   let hash = 0;
   for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) | 0;
   return COVER_GRADIENTS[Math.abs(hash) % COVER_GRADIENTS.length];
+}
+
+/** A small, deterministic per-sleeve tilt in [-0.8, 0.8]deg — so a row reads
+ * as hand-placed rather than machine-aligned, without shuffling on re-render. */
+function leanFor(id: string): number {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 33 + id.charCodeAt(i)) | 0;
+  return (Math.abs(hash) % 160) / 100 - 0.8;
 }
 
 function chunk<T>(items: T[], size: number): T[][] {
@@ -130,7 +138,15 @@ export function FolderShelf({
     <div className="shelf-showcase">
       <div className="shelf-rows">
         {rows.map((shelf, rowIndex) => (
-          <div key={rowIndex} className="shelf-shelf">
+          <div
+            key={rowIndex}
+            className="shelf-shelf"
+            // One shared eye-level for the whole showcase: the first of several
+            // rows sits above it (seen from below — underside showing), every
+            // row after sits below it (seen from above — top surface showing).
+            // A lone row reads better looked-down-on than overhead.
+            data-level={rowIndex === 0 && rows.length > 1 ? "above" : "below"}
+          >
             <div aria-hidden="true" className="shelf-backlight" />
             <ul className="shelf-track">
               {shelf.map((folder) => {
@@ -155,11 +171,13 @@ export function FolderShelf({
                     onDragEnd={draggable ? handleDragEnd : undefined}
                     style={{ opacity: isDragging ? 0.4 : undefined }}
                   >
+                    <span aria-hidden="true" className="shelf-shadow-soft" />
                     <span aria-hidden="true" className="shelf-shadow" />
                     <div
                       className={`shelf-card${
                         folder.id === openingId ? " is-opening" : ""
                       }`}
+                      style={{ "--card-lean": `${leanFor(folder.id)}deg` } as CSSProperties}
                       onAnimationEnd={() =>
                         setOpeningId((prev) =>
                           prev === folder.id ? null : prev,
@@ -242,6 +260,7 @@ export function FolderShelf({
 
               {showAdd && rowIndex === addRowIndex ? (
                 <li className="shelf-slot">
+                  <span aria-hidden="true" className="shelf-shadow-soft" />
                   <span aria-hidden="true" className="shelf-shadow" />
                   <button type="button" className="shelf-add" onClick={onAddFolder}>
                     <span className="shelf-add-icon" aria-hidden="true">
@@ -252,7 +271,12 @@ export function FolderShelf({
                 </li>
               ) : null}
             </ul>
-            <div aria-hidden="true" className="shelf-plank" />
+            <div aria-hidden="true" className="shelf-wall-shadow" />
+            <div aria-hidden="true" className="shelf-top" />
+            <div aria-hidden="true" className="shelf-face" />
+            <div aria-hidden="true" className="shelf-bevel shelf-bevel-1" />
+            <div aria-hidden="true" className="shelf-bevel shelf-bevel-2" />
+            <div aria-hidden="true" className="shelf-under" />
           </div>
         ))}
       </div>

@@ -25,7 +25,7 @@ export function MiniPlayer() {
 
   return (
     <div className="mini-player group w-full">
-      <div className="overflow-hidden rounded-2xl border border-line bg-paper/95 shadow-xl backdrop-blur transition-colors group-hover:bg-cream/95">
+      <div className="glass overflow-hidden rounded-2xl border border-[color:var(--surface-border)] shadow-xl">
         {/* Compact row — always visible */}
         <div className="flex items-center gap-3 p-2.5">
           <span className="size-14 shrink-0 overflow-hidden rounded-xl bg-cream-deep">
