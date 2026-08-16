@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Pin, PinDecoration, PinDraft, PinLayout } from "../types/pin";
-import { BOARD_REF_WIDTH } from "../types/pin";
+import type {
+  BoardSettings,
+  Pin,
+  PinDecoration,
+  PinDraft,
+  PinLayout,
+} from "../types/pin";
+import {
+  BOARD_REF_WIDTH,
+  DEFAULT_BOARD,
+  DEFAULT_TEXT_STYLE,
+} from "../types/pin";
 import { MOCK_PINS } from "../components/pinboard/mockPins";
 
 /**
@@ -13,9 +23,10 @@ import { MOCK_PINS } from "../components/pinboard/mockPins";
 // v3: pins gained `z`/`decoration` and lost their default tilt. Old boards are
 // discarded rather than migrated — nothing on them was worth a migration path.
 const STORAGE_KEY = "taste:v3:pins";
+const BOARD_KEY = "taste:v3:board";
 
 /** Only used to reason about vertical overlap when auto-placing a new pin. */
-const BOARD_REF_HEIGHT = 800;
+const BOARD_REF_HEIGHT = BOARD_REF_WIDTH / DEFAULT_BOARD.aspect;
 
 /** Dragging fires continuously; don't hit localStorage on every frame. */
 const SAVE_DEBOUNCE_MS = 400;
@@ -26,11 +37,26 @@ function load(): Pin[] {
     if (raw === null) return MOCK_PINS;
     const parsed = JSON.parse(raw) as Pin[];
     if (!Array.isArray(parsed) || parsed.length === 0) return MOCK_PINS;
-    return normaliseStack(parsed);
+    return normaliseStack(parsed.map(fillDefaults));
   } catch {
     // Corrupted JSON or storage unavailable — start from the seed board.
     return MOCK_PINS;
   }
+}
+
+/**
+ * Fills in fields added after a board was last saved, so an older board opens
+ * instead of rendering with undefined text settings.
+ */
+function fillDefaults(pin: Pin): Pin {
+  return {
+    ...pin,
+    decoration: pin.decoration ?? "none",
+    // Boards written before the note editor hold plain text, and must keep
+    // rendering as plain text — not be reinterpreted as markup.
+    format: pin.format ?? "text",
+    textStyle: { ...DEFAULT_TEXT_STYLE, ...pin.textStyle },
+  };
 }
 
 /**
@@ -51,6 +77,18 @@ function save(pins: Pin[]): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(pins));
   } catch {
     // Quota exceeded (data-URL images add up) — the board still works in memory.
+  }
+}
+
+function loadBoard(): BoardSettings {
+  try {
+    const raw = localStorage.getItem(BOARD_KEY);
+    if (raw === null) return DEFAULT_BOARD;
+    // Spread over the defaults so a board saved before a field existed still
+    // opens instead of rendering with an undefined aspect.
+    return { ...DEFAULT_BOARD, ...(JSON.parse(raw) as Partial<BoardSettings>) };
+  } catch {
+    return DEFAULT_BOARD;
   }
 }
 
@@ -101,11 +139,15 @@ export interface PinboardApi {
   raisePin: (id: string) => void;
   /** Sticks tape or a tack on a pin, or takes it back off. */
   decoratePin: (id: string, decoration: PinDecoration) => void;
+  board: BoardSettings;
+  updateBoard: (patch: Partial<BoardSettings>) => void;
 }
 
 export function usePinboard(): PinboardApi {
   const [pins, setPins] = useState<Pin[]>(load);
+  const [board, setBoard] = useState<BoardSettings>(loadBoard);
   const saveTimer = useRef<number | undefined>(undefined);
+  const boardTimer = useRef<number | undefined>(undefined);
   // Mirrors `pins` so addPin can look at the current board without taking a
   // dependency on it (a setPins updater can't be read back synchronously).
   const pinsRef = useRef(pins);
@@ -116,6 +158,23 @@ export function usePinboard(): PinboardApi {
     saveTimer.current = window.setTimeout(() => save(pins), SAVE_DEBOUNCE_MS);
     return () => window.clearTimeout(saveTimer.current);
   }, [pins]);
+
+  // Same treatment: dragging the board's edge fires as fast as the pointer does.
+  useEffect(() => {
+    window.clearTimeout(boardTimer.current);
+    boardTimer.current = window.setTimeout(() => {
+      try {
+        localStorage.setItem(BOARD_KEY, JSON.stringify(board));
+      } catch {
+        // Storage unavailable — the board still works for this session.
+      }
+    }, SAVE_DEBOUNCE_MS);
+    return () => window.clearTimeout(boardTimer.current);
+  }, [board]);
+
+  const updateBoard = useCallback((patch: Partial<BoardSettings>) => {
+    setBoard((current) => ({ ...current, ...patch }));
+  }, []);
 
   const updateLayout = useCallback((id: string, layout: Partial<PinLayout>) => {
     setPins((current) =>
@@ -151,6 +210,7 @@ export function usePinboard(): PinboardApi {
       id: `pin-${Date.now().toString(36)}`,
       images: draft.images,
       content: draft.content,
+      format: "html",
       x,
       y,
       width,
@@ -159,6 +219,7 @@ export function usePinboard(): PinboardApi {
       rotation: 0,
       z: current.reduce((max, pin) => Math.max(max, pin.z), 0) + 1,
       decoration: "none",
+      textStyle: draft.textStyle,
       variant,
       createdAt: new Date().toISOString(),
     };
@@ -170,5 +231,14 @@ export function usePinboard(): PinboardApi {
     setPins((current) => current.filter((pin) => pin.id !== id));
   }, []);
 
-  return { pins, updateLayout, addPin, removePin, raisePin, decoratePin };
+  return {
+    pins,
+    updateLayout,
+    addPin,
+    removePin,
+    raisePin,
+    decoratePin,
+    board,
+    updateBoard,
+  };
 }

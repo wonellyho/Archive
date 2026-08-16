@@ -117,7 +117,7 @@ export function BackgroundPicker() {
             <div className="mt-2 flex items-center justify-between">
               <input
                 type="range"
-                min={10}
+                min={0}
                 max={100}
                 value={navOpacity}
                 onChange={(e) => setNavOpacity(Number(e.target.value))}

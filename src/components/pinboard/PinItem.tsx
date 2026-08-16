@@ -1,13 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent as ReactPointerEvent, RefObject } from "react";
 import type { Pin, PinDecoration as Decoration, PinLayout } from "../../types/pin";
 import {
   BOARD_REF_WIDTH,
   DECORATIONS,
+  MAX_PIN_HEIGHT,
   MAX_PIN_WIDTH,
+  MIN_PIN_HEIGHT,
   MIN_PIN_WIDTH,
 } from "../../types/pin";
 import { PinDecoration, PinDecorationSwatch } from "./PinDecoration";
+import { textStyleVars } from "./textStyle";
+import { htmlToPlainText, sanitizeHtml } from "../../utils/richText";
 
 /** Movement below this is a click, not a drag — fingers are never still. */
 const DRAG_THRESHOLD = 4;
@@ -21,8 +25,16 @@ const DECORATION_LABEL: Record<Decoration, string> = {
   tape: "Tape",
 };
 
+/**
+ * `resize-x` / `resize-y` pull one edge; `resize` pulls the corner and moves
+ * both. Nothing is aspect-locked — the pin's box is a window onto its photo
+ * (which is drawn `object-fit: cover`), so narrowing it crops rather than
+ * squashes, and the shape you want is rarely the shape the camera gave you.
+ */
+type Gesture = "move" | "rotate" | "resize" | "resize-x" | "resize-y";
+
 interface DragState {
-  mode: "move" | "resize" | "rotate";
+  mode: Gesture;
   pointerId: number;
   startX: number;
   startY: number;
@@ -93,14 +105,25 @@ export function PinItem({
 }: PinItemProps) {
   const ref = useRef<HTMLDivElement>(null);
   const drag = useRef<DragState | null>(null);
-  // A drag ends with a pointerup over the card, which the browser then turns
-  // into a click; this stops that click from opening the detail view.
-  const swallowClick = useRef(false);
-  const [gesture, setGesture] = useState<DragState["mode"] | null>(null);
+  // Two routes can ask to open this pin, and which one fires depends on whether
+  // the pin is draggable — see openPin(). This de-duplicates them.
+  const openedAt = useRef(0);
+  const [gesture, setGesture] = useState<Gesture | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const cover = pin.images[0];
   const stacked = pin.images.length > 1;
+
+  // Parsing markup is not free and this component re-renders on every frame of
+  // a drag, so both derivations are cached against the content itself.
+  const noteHtml = useMemo(
+    () => (pin.format === "html" ? sanitizeHtml(pin.content) : null),
+    [pin.format, pin.content],
+  );
+  const notePlain = useMemo(
+    () => (pin.format === "html" ? htmlToPlainText(pin.content) : pin.content),
+    [pin.format, pin.content],
+  );
 
   // Stable so the board's node map isn't torn down and rebuilt on every
   // pointermove of a drag.
@@ -131,7 +154,7 @@ export function PinItem({
     };
   }, [menuOpen]);
 
-  function begin(mode: DragState["mode"], e: ReactPointerEvent<HTMLElement>) {
+  function begin(mode: Gesture, e: ReactPointerEvent<HTMLElement>) {
     if (!interactive || e.button !== 0) return;
     const board = boardRef.current;
     const el = ref.current;
@@ -194,19 +217,33 @@ export function PinItem({
       return;
     }
 
-    // Resize pulls the bottom-right corner. Aspect ratio is preserved so photos
-    // never stretch, and the pin can't grow past the board's right edge.
+    // Resize. One scale converts pixels to reference units on both axes: the
+    // pin's rendered height is `height / BOARD_REF_WIDTH * boardW` too, because
+    // its CSS aspect-ratio derives height from its percentage width.
     const toRef = BOARD_REF_WIDTH / d.boardW;
-    const roomRight = ((100 - pin.x) / 100) * BOARD_REF_WIDTH;
-    const width = clamp(
-      d.fromW + dx * toRef,
-      MIN_PIN_WIDTH,
-      Math.min(MAX_PIN_WIDTH, roomRight),
-    );
-    onLayout(pin.id, {
-      width: Math.round(width),
-      height: Math.round(width * (d.fromH / d.fromW)),
-    });
+    const next: Partial<PinLayout> = {};
+
+    if (d.mode !== "resize-y") {
+      const roomRight = ((100 - pin.x) / 100) * BOARD_REF_WIDTH;
+      next.width = Math.round(
+        clamp(
+          d.fromW + dx * toRef,
+          MIN_PIN_WIDTH,
+          Math.min(MAX_PIN_WIDTH, roomRight),
+        ),
+      );
+    }
+    if (d.mode !== "resize-x") {
+      const roomBelow = ((100 - pin.y) / 100) * d.boardH * toRef;
+      next.height = Math.round(
+        clamp(
+          d.fromH + dy * toRef,
+          MIN_PIN_HEIGHT,
+          Math.min(MAX_PIN_HEIGHT, roomBelow),
+        ),
+      );
+    }
+    onLayout(pin.id, next);
   }
 
   function end(e: ReactPointerEvent<HTMLElement>) {
@@ -218,22 +255,32 @@ export function PinItem({
       e.currentTarget.releasePointerCapture(e.pointerId);
     }
     if (d.moved) {
-      swallowClick.current = true;
       // Whatever you just handled ends up on top of the stack.
       onRaise(pin.id);
+    } else if (d.mode === "move") {
+      // A press with no travel is a click. It has to be handled here rather
+      // than by an onClick on the card, because pointer capture retargets the
+      // click that follows to the capturing element — this outer div — so a
+      // handler on the card inside it would simply never run.
+      openPin();
     }
   }
 
-  function open() {
-    if (swallowClick.current) {
-      swallowClick.current = false;
-      return;
-    }
+  /**
+   * Opens the detail view, from whichever route got there first: the pointer
+   * gesture above when the pin is draggable, or a plain click on the card when
+   * it isn't (visitors, and the mobile column). The window swallows the second
+   * of the two if both ever fire for one press.
+   */
+  function openPin() {
+    const now = Date.now();
+    if (now - openedAt.current < 350) return;
+    openedAt.current = now;
     onOpen(pin);
   }
 
   /** Handles share these; each one captures the pointer on itself. */
-  const handleProps = (mode: DragState["mode"]) => ({
+  const handleProps = (mode: Gesture) => ({
     onPointerDown: (e: ReactPointerEvent<HTMLElement>) => begin(mode, e),
     onPointerMove: move,
     onPointerUp: end,
@@ -245,6 +292,10 @@ export function PinItem({
       ref={attach}
       className="pin-item"
       data-layout={layout}
+      // Which way this one leans in the mobile column. Taken from the index
+      // rather than :nth-of-type so the board's own toolbar, which is a sibling,
+      // can't flip the alternation.
+      data-side={index % 2 === 0 ? "left" : "right"}
       data-variant={pin.variant}
       data-gesture={gesture ?? undefined}
       data-lifted={lifted || undefined}
@@ -272,22 +323,32 @@ export function PinItem({
         tabIndex={0}
         aria-label={
           pin.variant === "memo"
-            ? `Note: ${pin.content.slice(0, 40)}`
+            ? `Note: ${notePlain.slice(0, 40)}`
             : `Memory with ${pin.images.length} photo(s)`
         }
         className="pin-card"
-        onClick={open}
+        onClick={openPin}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            onOpen(pin);
+            openPin();
           }
         }}
       >
         {cover ? (
           <img className="pin-photo" src={cover} alt="" draggable={false} />
+        ) : noteHtml !== null ? (
+          <div
+            className="pin-memo-text"
+            style={textStyleVars(pin.textStyle)}
+            // Sanitised above: an allowlist of typographic tags and style
+            // properties, nothing that can carry script or fetch a resource.
+            dangerouslySetInnerHTML={{ __html: noteHtml }}
+          />
         ) : (
-          <p className="pin-memo-text">{pin.content}</p>
+          <p className="pin-memo-text" style={textStyleVars(pin.textStyle)}>
+            {pin.content}
+          </p>
         )}
 
         {stacked ? (
@@ -307,6 +368,21 @@ export function PinItem({
             role="presentation"
             title="Drag to turn"
             {...handleProps("rotate")}
+          />
+          {/* Edge handles for one axis at a time, corner for both. */}
+          <span
+            className="pin-handle"
+            data-handle="resize-x"
+            role="presentation"
+            title="Drag to change width"
+            {...handleProps("resize-x")}
+          />
+          <span
+            className="pin-handle"
+            data-handle="resize-y"
+            role="presentation"
+            title="Drag to change height"
+            {...handleProps("resize-y")}
           />
           <span
             className="pin-handle"

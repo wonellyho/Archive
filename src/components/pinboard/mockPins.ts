@@ -1,4 +1,5 @@
 import type { Pin } from "../../types/pin";
+import { DEFAULT_TEXT_STYLE } from "../../types/pin";
 
 /**
  * Seed content for the board (#pinboard). Placeholder photography is generated
@@ -222,6 +223,8 @@ export const MOCK_PINS: Pin[] = [
   ...seed,
   rotation: 0,
   z: i + 1,
+  format: "text" as const,
   decoration: "none" as const,
+  textStyle: DEFAULT_TEXT_STYLE,
   variant: seed.images.length === 0 ? ("memo" as const) : ("photo" as const),
 }));

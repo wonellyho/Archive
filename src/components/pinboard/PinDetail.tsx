@@ -2,6 +2,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { createPortal } from "react-dom";
 import type { Pin } from "../../types/pin";
 import { PinCarousel } from "./PinCarousel";
+import { textStyleVars } from "./textStyle";
+import { sanitizeHtml } from "../../utils/richText";
 
 const OPEN_MS = 460;
 const CLOSE_MS = 340;
@@ -109,7 +111,10 @@ export function PinDetail({ pin, getOrigin, onClose }: PinDetailProps) {
   }, [requestClose]);
 
   const date = monthLabel(pin.createdAt);
-  const paragraphs = pin.content.split("\n").filter((line) => line.trim() !== "");
+  const paragraphs =
+    pin.format === "html"
+      ? null
+      : pin.content.split("\n").filter((line) => line.trim() !== "");
 
   return createPortal(
     <div
@@ -131,10 +136,15 @@ export function PinDetail({ pin, getOrigin, onClose }: PinDetailProps) {
           <PinCarousel images={pin.images} label="Memory" />
         ) : null}
 
-        <div className="pin-detail-text">
-          {paragraphs.map((line, i) => (
-            <p key={i}>{line}</p>
-          ))}
+        <div className="pin-detail-text" style={textStyleVars(pin.textStyle)}>
+          {paragraphs === null ? (
+            <div
+              // Sanitised on the way in — see utils/richText.
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(pin.content) }}
+            />
+          ) : (
+            paragraphs.map((line, i) => <p key={i}>{line}</p>)
+          )}
           {date ? <span className="pin-detail-date">{date}</span> : null}
         </div>
 
