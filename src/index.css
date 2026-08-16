@@ -1032,6 +1032,767 @@ body {
   }
 }
 
+/* --- Pinboard: a glass wall of pinned memories --- */
+/* The counterpart to the shelves: where Vinyl arranges things in rows, this is
+   the surface nothing is aligned on. Every position here was set by hand, so
+   the styling's job is to stay out of the way — the board is a pane of the same
+   frosted glass as the nav, not a piece of furniture competing with the photos
+   stuck to it. */
+
+.pinboard-wall {
+  position: relative;
+  padding-block: 0 1.25rem;
+}
+
+.pinboard-board {
+  position: relative;
+  width: 100%;
+  border-radius: 22px;
+  /* Same recipe and the same user-set opacity as the nav bar, so both panes
+     read as one material and the wallpaper carries straight through. */
+  background: color-mix(
+    in srgb,
+    var(--surface) calc(var(--nav-alpha, 0.9) * 100%),
+    transparent
+  );
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  /* No frame and no outline: depth comes from the shadow the pane casts, which
+     is what a sheet of glass off the wall actually gives you. */
+  box-shadow: 0 30px 60px -34px rgba(24, 20, 14, 0.45);
+  /* Pins are clamped inside the board anyway; this catches the hover lift at
+     the very top edge rather than letting it spill onto the page. */
+  overflow: hidden;
+  transform-origin: 50% 0;
+  animation: board-drop 760ms both;
+}
+
+/* Free placement: a fixed-proportion canvas, so a layout saved on one screen
+   lands the same way on another. Percentage coordinates need a stable shape to
+   be percentages *of*. Wide and shallow — a wall, not a poster. */
+.pinboard-board[data-mode="free"] {
+  aspect-ratio: 1600 / 800;
+  min-height: 28rem;
+}
+
+.pinboard-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  padding: 2rem;
+  text-align: center;
+  color: var(--color-ink-faint);
+  font-size: 1rem;
+}
+
+/* Sits in the board's own top-right corner rather than in a toolbar above it:
+   the board is the surface you're working on, so the one control that adds to
+   it belongs on it. Quiet until you go near it. */
+.pinboard-add {
+  position: absolute;
+  top: 0.9rem;
+  right: 1rem;
+  z-index: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.95rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--color-ink-soft);
+  font-size: 0.82rem;
+  letter-spacing: 0.01em;
+  box-shadow: 0 1px 3px rgba(24, 20, 14, 0.12);
+  transition:
+    background 0.25s ease,
+    color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.pinboard-add span {
+  font-size: 1rem;
+  line-height: 1;
+  opacity: 0.75;
+}
+
+.pinboard-add:hover {
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--color-ink);
+  box-shadow: 0 4px 12px rgba(24, 20, 14, 0.18);
+}
+
+.pinboard-add:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* The board arriving: a weighted fall that overshoots its hook, swings back,
+   and settles. The tell is the timing — accelerating on the way down, easing
+   out of the bounce — not the distance travelled. */
+@keyframes board-drop {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -26%, 0) rotate(-0.9deg) scale(0.975);
+    animation-timing-function: cubic-bezier(0.55, 0, 0.85, 0.42);
+  }
+  38% {
+    opacity: 1;
+  }
+  56% {
+    transform: translate3d(0, 1.8%, 0) rotate(0.45deg) scale(1.006);
+    animation-timing-function: cubic-bezier(0.25, 0.6, 0.3, 1);
+  }
+  74% {
+    transform: translate3d(0, -0.7%, 0) rotate(-0.18deg) scale(0.999);
+  }
+  88% {
+    transform: translate3d(0, 0.25%, 0) rotate(0.06deg);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* --- One pinned memory --- */
+
+.pin-item {
+  position: absolute;
+  /* Lets everything inside size itself against the pin's own width, so a card
+     dragged from 120px to 500px scales its type with it. */
+  container-type: inline-size;
+  /* Square-on unless its owner turned it. --pin-rotate is 0deg by default. */
+  transform: rotate(var(--pin-rotate, 0deg));
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.25, 1);
+  /* Staggered so the pins look like they settled after the board did, rather
+     than arriving welded to it. */
+  animation: pin-settle 420ms cubic-bezier(0.2, 0.8, 0.25, 1) backwards;
+  animation-delay: calc(260ms + var(--pin-index, 0) * 26ms);
+}
+
+@keyframes pin-settle {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -10px, 0) rotate(var(--pin-rotate, 0deg)) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(var(--pin-rotate, 0deg));
+  }
+}
+
+.pin-item[data-interactive] {
+  /* Otherwise a touch-drag scrolls the page instead of moving the pin. */
+  touch-action: none;
+}
+
+/* Hovering lifts the pin slightly — the feel of picking something up off the
+   wall to look at it. It does not straighten it: the angle is the owner's. */
+.pin-item:hover,
+.pin-item:focus-within,
+.pin-item[data-menu] {
+  z-index: 400;
+  transform: rotate(var(--pin-rotate, 0deg)) translateY(-3px) scale(1.012);
+}
+
+.pin-item[data-gesture] {
+  z-index: 450;
+  transition: none;
+  transform: rotate(var(--pin-rotate, 0deg)) scale(1.03);
+}
+
+/* Open in the detail view — kept in the layout (its rect is what the enlarged
+   card animates back into) but not drawn twice. */
+.pin-item[data-lifted] {
+  visibility: hidden;
+}
+
+.pin-card {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* No mount, no border, no paper margin — the photo is the object. */
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow:
+    0 1px 2px rgba(24, 20, 14, 0.16),
+    0 12px 24px -14px rgba(24, 20, 14, 0.4);
+  transition: box-shadow 0.3s ease;
+}
+
+.pin-item[data-interactive] .pin-card {
+  cursor: grab;
+}
+
+.pin-item[data-gesture="move"] .pin-card {
+  cursor: grabbing;
+}
+
+.pin-item:hover .pin-card,
+.pin-item:focus-within .pin-card {
+  box-shadow:
+    0 2px 4px rgba(24, 20, 14, 0.18),
+    0 22px 34px -16px rgba(24, 20, 14, 0.45);
+}
+
+.pin-card:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.pin-photo {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  object-fit: cover;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* A note has no photo to be, so it needs a surface of its own. Kept as glass
+   rather than yellow legal-pad paper, to match the board it's stuck to. */
+.pin-item[data-variant="memo"] .pin-card {
+  padding: 9%;
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.pin-memo-text {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 9cqw;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--color-ink-soft);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+}
+
+.pin-count {
+  position: absolute;
+  right: 5%;
+  bottom: 5%;
+  display: grid;
+  place-items: center;
+  min-width: 1.9em;
+  padding: 0.15em 0.5em;
+  border-radius: 999px;
+  background: rgba(20, 16, 11, 0.5);
+  color: #fff;
+  font-size: 6cqw;
+  line-height: 1.4;
+  backdrop-filter: blur(2px);
+}
+
+/* --- Decoration: what the owner stuck it up with --- */
+/* Both shapes are flat. At this size an illustrated tack (dome, highlight,
+   needle) reads as clip art, while a plain disc reads as a tack. */
+
+.pin-deco {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.pin-deco[data-kind="pin"]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: clamp(9px, 6cqw, 16px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--color-accent);
+  transform: translate(-50%, -38%);
+  box-shadow: 0 2px 6px rgba(24, 16, 6, 0.35);
+}
+
+/* Two strips across the top corners — washi tape, minus the torn edges. */
+.pin-deco[data-kind="tape"]::before,
+.pin-deco[data-kind="tape"]::after {
+  content: "";
+  position: absolute;
+  top: 3%;
+  width: clamp(34px, 26cqw, 84px);
+  height: clamp(11px, 7cqw, 22px);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.72),
+    rgba(255, 255, 255, 0.42)
+  );
+  box-shadow: 0 1px 3px rgba(24, 20, 14, 0.16);
+}
+
+.pin-deco[data-kind="tape"]::before {
+  left: 0;
+  transform: translate(-32%, -46%) rotate(-38deg);
+}
+
+.pin-deco[data-kind="tape"]::after {
+  right: 0;
+  transform: translate(32%, -46%) rotate(38deg);
+}
+
+/* --- Owner handles --- */
+/* Nothing shows until the cursor is on the pin: the board should look like
+   photos on a wall, not like an editor with the panels left open. */
+
+.pin-handle {
+  position: absolute;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--color-ink-soft);
+  box-shadow: 0 1px 4px rgba(24, 20, 14, 0.3);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  touch-action: none;
+}
+
+.pin-handle[data-handle="resize"] {
+  right: -6px;
+  bottom: -6px;
+  cursor: nwse-resize;
+}
+
+/* Two strokes reading as a corner grip. */
+.pin-handle[data-handle="resize"]::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  opacity: 0.55;
+}
+
+.pin-handle[data-handle="rotate"] {
+  left: -6px;
+  bottom: -6px;
+  cursor: grab;
+}
+
+/* An open ring with a gap: the universal "turn this" mark. */
+.pin-handle[data-handle="rotate"]::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  border-top-color: transparent;
+  opacity: 0.6;
+}
+
+.pin-handle[data-handle="decorate"] {
+  right: -6px;
+  top: -6px;
+  cursor: pointer;
+}
+
+.pin-handle[data-handle="decorate"]::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.5;
+}
+
+.pin-item:hover .pin-handle,
+.pin-item:focus-within .pin-handle,
+.pin-item[data-menu] .pin-handle,
+.pin-item[data-gesture] .pin-handle {
+  opacity: 1;
+}
+
+.pin-menu {
+  position: absolute;
+  top: 18px;
+  right: -6px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  min-width: 8rem;
+  padding: 0.25rem;
+  border-radius: 12px;
+  background: var(--surface-strong);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  box-shadow: 0 14px 30px -12px rgba(24, 20, 14, 0.4);
+  /* The pin may be turned; its menu should not be. */
+  rotate: calc(-1 * var(--pin-rotate, 0deg));
+}
+
+.pin-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 8px;
+  color: var(--color-ink-soft);
+  font-size: 0.78rem;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.pin-menu-item:hover {
+  background: rgba(27, 25, 22, 0.06);
+  color: var(--color-ink);
+}
+
+.pin-menu-item[data-active] {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+.pin-menu-item[data-danger] {
+  margin-top: 0.15rem;
+  border-top: 1px solid var(--surface-border);
+  border-radius: 0 0 8px 8px;
+  color: var(--color-accent);
+}
+
+/* Miniature of each option, so the choice isn't made from a word alone. */
+.pin-deco-swatch {
+  position: relative;
+  flex: none;
+  width: 18px;
+  height: 14px;
+  border-radius: 2px;
+  background: rgba(27, 25, 22, 0.12);
+}
+
+.pin-deco-swatch[data-kind="pin"]::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  transform: translateX(-50%);
+}
+
+.pin-deco-swatch[data-kind="tape"]::before,
+.pin-deco-swatch[data-kind="tape"]::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  width: 11px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 1px rgba(27, 25, 22, 0.08);
+}
+
+.pin-deco-swatch[data-kind="tape"]::before {
+  left: -3px;
+  transform: rotate(-38deg);
+}
+
+.pin-deco-swatch[data-kind="tape"]::after {
+  right: -3px;
+  transform: rotate(38deg);
+}
+
+/* --- Small screens: a scrapbook column instead of a canvas --- */
+/* Free placement on a phone means dragging 200px cards around a 340px board,
+   which is worse than not having it. The tilt and the detail view stay; only
+   the arranging goes. */
+.pinboard-board[data-mode="flow"] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.5rem;
+  padding: 3.5rem 1rem 2.75rem;
+}
+
+.pin-item[data-layout="flow"] {
+  position: relative;
+  width: min(80%, 320px);
+}
+
+/* nth-of-type, not nth-child: the add button is a sibling and would otherwise
+   flip the alternation. */
+.pin-item[data-layout="flow"]:nth-of-type(odd) {
+  align-self: flex-start;
+  margin-left: 7%;
+}
+
+.pin-item[data-layout="flow"]:nth-of-type(even) {
+  align-self: flex-end;
+  margin-right: 7%;
+}
+
+/* --- Detail view: the pin, enlarged --- */
+/* Opened by growing out of the pin's own rect and closed by shrinking back
+   into it (the transform is computed in PinDetail.tsx), so a photo never
+   teleports away from its place on the wall. */
+
+.pin-detail-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(0.75rem, 4vw, 3rem);
+  background: rgba(22, 18, 13, 0);
+  transition:
+    background-color 300ms ease,
+    backdrop-filter 300ms ease;
+}
+
+/* Mostly a dark wash; the blur is deliberately shallow, since a heavy one over
+   a full-screen layer costs more than it adds while a card is animating. */
+.pin-detail-layer[data-shade="in"] {
+  background: rgba(22, 18, 13, 0.62);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+.pin-detail-card {
+  position: relative;
+  display: flex;
+  gap: clamp(1rem, 2vw, 2rem);
+  width: min(1000px, 100%);
+  max-height: 100%;
+  padding: clamp(0.9rem, 1.6vw, 1.5rem);
+  border: 1px solid var(--surface-border);
+  border-radius: 18px;
+  background: var(--surface-strong);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  box-shadow: 0 40px 80px -30px rgba(20, 15, 8, 0.7);
+  will-change: transform;
+}
+
+/* A note has no photo to sit beside, so it gets a narrower, text-first card. */
+.pin-detail-card[data-variant="memo"] {
+  width: min(34rem, 100%);
+}
+
+.pin-detail-close {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.7rem;
+  z-index: 2;
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+  color: var(--color-ink-faint);
+  font-size: 0.85rem;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+
+.pin-detail-close:hover {
+  color: var(--color-ink);
+}
+
+.pin-detail-text {
+  flex: 1 1 32%;
+  min-width: 0;
+  max-width: 22rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1.6rem 0.4rem 0.4rem;
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--color-ink-soft);
+}
+
+.pin-detail-card[data-variant="memo"] .pin-detail-text {
+  flex: 1 1 auto;
+  max-width: none;
+  font-size: 1.05rem;
+}
+
+.pin-detail-date {
+  margin-top: 0.5rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  color: var(--color-ink-faint);
+}
+
+/* --- Carousel --- */
+
+.pin-carousel {
+  flex: 1 1 62%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.pin-carousel-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #17140f;
+  aspect-ratio: 4 / 3;
+  max-height: 68vh;
+  /* Horizontal drags are swipes; vertical ones still scroll the page. */
+  touch-action: pan-y;
+}
+
+.pin-carousel-track {
+  display: flex;
+  height: 100%;
+  transition: transform 380ms cubic-bezier(0.22, 0.8, 0.24, 1);
+}
+
+.pin-carousel-image {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  /* contain, not cover: this is the view where you're looking at the photo. */
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.pin-carousel-arrow {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #1b1916;
+  font-size: 1.3rem;
+  line-height: 1;
+  transform: translateY(-50%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition:
+    opacity 0.2s ease,
+    background 0.2s ease;
+}
+
+.pin-carousel-arrow[data-side="prev"] {
+  left: 0.6rem;
+}
+
+.pin-carousel-arrow[data-side="next"] {
+  right: 0.6rem;
+}
+
+.pin-carousel-arrow:disabled {
+  opacity: 0.28;
+  cursor: default;
+}
+
+.pin-carousel-counter {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(20, 16, 11, 0.6);
+  color: #fff;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+
+.pin-carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.pin-carousel-dot {
+  width: 6px;
+  height: 6px;
+  padding: 0;
+  border-radius: 999px;
+  background: var(--color-ink-faint);
+  opacity: 0.4;
+  transition:
+    opacity 0.2s ease,
+    width 0.2s ease;
+}
+
+.pin-carousel-dot[data-active] {
+  width: 16px;
+  opacity: 1;
+  background: var(--color-ink);
+}
+
+/* Stack the card on phones — the carousel itself is unchanged. */
+@media (max-width: 860px) {
+  .pin-detail-card {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .pin-detail-text {
+    max-width: none;
+    padding-top: 0.2rem;
+  }
+  .pin-carousel-frame {
+    max-height: 52vh;
+  }
+}
+
+/* On a dark wallpaper the board's own tint already flips with --surface; only
+   the white-glass bits layered on top of it need saying again. */
+:root[data-bg-tone="dark"] .pinboard-add,
+:root[data-bg-tone="dark"] .pin-handle {
+  background: rgba(38, 34, 28, 0.82);
+  color: var(--color-ink-soft);
+}
+
+:root[data-bg-tone="dark"] .pinboard-add:hover {
+  background: rgba(48, 43, 35, 0.95);
+  color: var(--color-ink);
+}
+
+:root[data-bg-tone="dark"] .pin-item[data-variant="memo"] .pin-card {
+  background: rgba(28, 25, 20, 0.6);
+}
+
+:root[data-bg-tone="dark"] .pin-deco[data-kind="tape"]::before,
+:root[data-bg-tone="dark"] .pin-deco[data-kind="tape"]::after {
+  background: linear-gradient(
+    180deg,
+    rgba(246, 243, 236, 0.5),
+    rgba(246, 243, 236, 0.26)
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pinboard-board,
+  .pin-item {
+    animation: none;
+  }
+  .pin-item,
+  .pin-card,
+  .pin-carousel-track,
+  .pin-detail-layer {
+    transition: none;
+  }
+  .pin-item:hover,
+  .pin-item:focus-within {
+    transform: rotate(var(--pin-rotate, 0deg));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .shelf-card,
   .shelf-disc-wrap,
