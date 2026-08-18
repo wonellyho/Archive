@@ -5,9 +5,9 @@ import { PinCarousel } from "./PinCarousel";
 import { textStyleVars } from "./textStyle";
 import { sanitizeHtml } from "../../utils/richText";
 
-const OPEN_MS = 460;
+const OPEN_MS = 540;
 const CLOSE_MS = 340;
-const EASE = "cubic-bezier(0.22, 0.8, 0.24, 1)";
+const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
 
 interface PinDetailProps {
   pin: Pin;
@@ -69,10 +69,10 @@ export function PinDetail({ pin, getOrigin, onClose }: PinDetailProps) {
     const to = el.getBoundingClientRect();
     el.style.transition = "none";
     el.style.transform = flipTo(from, to, latest.current.rotation);
-    el.style.opacity = "0.55";
+    el.style.opacity = "0.38";
     // Flush the starting style, otherwise both frames coalesce into no animation.
     void el.offsetWidth;
-    el.style.transition = `transform ${OPEN_MS}ms ${EASE}, opacity 200ms ease-out`;
+    el.style.transition = `transform ${OPEN_MS}ms ${EASE}, opacity 260ms ease-out`;
     el.style.transform = "none";
     el.style.opacity = "1";
   }, []);
@@ -101,12 +101,8 @@ export function PinDetail({ pin, getOrigin, onClose }: PinDetailProps) {
       if (e.key === "Escape") requestClose();
     }
     window.addEventListener("keydown", onKey);
-    // The board behind must not scroll away under the open card.
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previous;
     };
   }, [requestClose]);
 

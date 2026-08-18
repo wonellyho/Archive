@@ -38,6 +38,8 @@ export interface Pin {
   z: number;
   /** Optional tape or tack the owner stuck on. Nothing by default. */
   decoration: PinDecoration;
+  /** Tack colour, only visible when decoration is "pin". */
+  pinColor?: PinColor;
   /** How the written part is set — chosen per memory, not site-wide. */
   textStyle: PinTextStyle;
   variant: PinVariant;
@@ -92,12 +94,49 @@ export type PinDecoration = "none" | "pin" | "tape";
 
 export const DECORATIONS: PinDecoration[] = ["none", "pin", "tape"];
 
+export type PinColor =
+  | "red"
+  | "orange"
+  | "yellow"
+  | "green"
+  | "blue"
+  | "indigo"
+  | "violet"
+  | "white"
+  | "black";
+
+export const PIN_COLORS: PinColor[] = [
+  "red",
+  "orange",
+  "yellow",
+  "green",
+  "blue",
+  "indigo",
+  "violet",
+  "white",
+  "black",
+];
+
+export const PIN_COLOR_VALUE: Record<PinColor, string> = {
+  red: "#ef4444",
+  orange: "#f97316",
+  yellow: "#eab308",
+  green: "#22c55e",
+  blue: "#3b82f6",
+  indigo: "#4f46e5",
+  violet: "#8b5cf6",
+  white: "#f8fafc",
+  black: "#1f2937",
+};
+
 /** Fields the user can change by dragging, resizing or turning a pin. */
 export type PinLayout = Pick<Pin, "x" | "y" | "width" | "height" | "rotation">;
 
 /** What the add form collects; everything else is filled in on the board. */
 export interface PinDraft {
   images: string[];
+  /** First image width / height, used to place photo pins in their real shape. */
+  aspectRatio?: number;
   /** Markup from the note editor — always sanitised before it is rendered. */
   content: string;
   textStyle: PinTextStyle;

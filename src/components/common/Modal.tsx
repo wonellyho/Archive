@@ -43,7 +43,7 @@ export function Modal({
         aria-modal="true"
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
-        className={`glass my-auto w-full ${widthClassName} rounded-3xl border border-[color:var(--surface-border)] p-6 font-serif shadow-xl sm:p-8`}
+        className={`glass modal-surface my-auto w-full ${widthClassName} rounded-3xl border border-[color:var(--surface-border)] p-6 font-serif shadow-xl sm:p-8`}
       >
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-xl font-medium text-ink">{title}</h2>

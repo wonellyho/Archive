@@ -39,10 +39,10 @@ export function ImageCropper({ src, onApply, onCancel }: ImageCropperProps) {
   const frameRef = useRef<HTMLDivElement>(null);
   const drag = useRef<DragState | null>(null);
   const [rect, setRect] = useState<CropRect>({
-    x: 0.05,
-    y: 0.05,
-    width: 0.9,
-    height: 0.9,
+    x: 0,
+    y: 0,
+    width: 1,
+    height: 1,
   });
 
   function begin(mode: Mode, e: ReactPointerEvent<HTMLElement>) {

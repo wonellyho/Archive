@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   BoardSettings,
   Pin,
+  PinColor,
   PinDecoration,
   PinDraft,
   PinLayout,
@@ -11,7 +12,6 @@ import {
   DEFAULT_BOARD,
   DEFAULT_TEXT_STYLE,
 } from "../types/pin";
-import { MOCK_PINS } from "../components/pinboard/mockPins";
 
 /**
  * Board state (#pinboard). Local-only for now — the backend has no pins table
@@ -24,6 +24,7 @@ import { MOCK_PINS } from "../components/pinboard/mockPins";
 // discarded rather than migrated — nothing on them was worth a migration path.
 const STORAGE_KEY = "taste:v3:pins";
 const BOARD_KEY = "taste:v3:board";
+const MOCK_PIN_IDS = new Set(Array.from({ length: 12 }, (_, i) => `pin-${i + 1}`));
 
 /** Only used to reason about vertical overlap when auto-placing a new pin. */
 const BOARD_REF_HEIGHT = BOARD_REF_WIDTH / DEFAULT_BOARD.aspect;
@@ -34,13 +35,15 @@ const SAVE_DEBOUNCE_MS = 400;
 function load(): Pin[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw === null) return MOCK_PINS;
+    if (raw === null) return [];
     const parsed = JSON.parse(raw) as Pin[];
-    if (!Array.isArray(parsed) || parsed.length === 0) return MOCK_PINS;
-    return normaliseStack(parsed.map(fillDefaults));
+    if (!Array.isArray(parsed) || parsed.length === 0) return [];
+    return normaliseStack(
+      parsed.filter((pin) => !MOCK_PIN_IDS.has(pin.id)).map(fillDefaults),
+    );
   } catch {
-    // Corrupted JSON or storage unavailable — start from the seed board.
-    return MOCK_PINS;
+    // Corrupted JSON or storage unavailable — start from an empty board.
+    return [];
   }
 }
 
@@ -52,6 +55,7 @@ function fillDefaults(pin: Pin): Pin {
   return {
     ...pin,
     decoration: pin.decoration ?? "none",
+    pinColor: pin.pinColor ?? "red",
     // Boards written before the note editor hold plain text, and must keep
     // rendering as plain text — not be reinterpreted as markup.
     format: pin.format ?? "text",
@@ -139,6 +143,8 @@ export interface PinboardApi {
   raisePin: (id: string) => void;
   /** Sticks tape or a tack on a pin, or takes it back off. */
   decoratePin: (id: string, decoration: PinDecoration) => void;
+  updatePinColor: (id: string, color: PinColor) => void;
+  updatePin: (id: string, draft: PinDraft) => void;
   board: BoardSettings;
   updateBoard: (patch: Partial<BoardSettings>) => void;
 }
@@ -200,10 +206,40 @@ export function usePinboard(): PinboardApi {
     );
   }, []);
 
+  const updatePinColor = useCallback((id: string, color: PinColor) => {
+    setPins((current) =>
+      current.map((pin) => (pin.id === id ? { ...pin, pinColor: color } : pin)),
+    );
+  }, []);
+
+  const updatePin = useCallback((id: string, draft: PinDraft) => {
+    setPins((current) =>
+      current.map((pin) =>
+        pin.id === id
+          ? {
+              ...pin,
+              images: draft.images,
+              content: draft.content,
+              textStyle: draft.textStyle,
+              variant: draft.images.length === 0 ? "memo" : "photo",
+              format: "html",
+            }
+          : pin,
+      ),
+    );
+  }, []);
+
   const addPin = useCallback((draft: PinDraft): Pin => {
     const variant = draft.images.length === 0 ? "memo" : "photo";
-    const width = variant === "memo" ? 200 : 250;
-    const height = variant === "memo" ? 150 : 185;
+    const ratio = draft.aspectRatio && Number.isFinite(draft.aspectRatio)
+      ? draft.aspectRatio
+      : 250 / 185;
+    const width =
+      variant === "memo" ? 200 : Math.round(ratio < 1 ? 190 : 250);
+    const height =
+      variant === "memo"
+        ? 150
+        : Math.round(Math.min(360, Math.max(120, width / ratio)));
     const current = pinsRef.current;
     const [x, y] = findFreeSpot(current, width, height);
     const created: Pin = {
@@ -219,6 +255,7 @@ export function usePinboard(): PinboardApi {
       rotation: 0,
       z: current.reduce((max, pin) => Math.max(max, pin.z), 0) + 1,
       decoration: "none",
+      pinColor: "red",
       textStyle: draft.textStyle,
       variant,
       createdAt: new Date().toISOString(),
@@ -238,6 +275,8 @@ export function usePinboard(): PinboardApi {
     removePin,
     raisePin,
     decoratePin,
+    updatePinColor,
+    updatePin,
     board,
     updateBoard,
   };

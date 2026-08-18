@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { PointerEvent as ReactPointerEvent } from "react";
+import type {
+  CSSProperties,
+  PointerEvent as ReactPointerEvent,
+} from "react";
 
 /** How far a swipe must travel before it counts as "next"/"previous". */
 const SWIPE_THRESHOLD = 48;
@@ -17,8 +20,27 @@ interface PinCarouselProps {
  */
 export function PinCarousel({ images, label }: PinCarouselProps) {
   const [index, setIndex] = useState(0);
+  const [orientation, setOrientation] = useState<Record<number, "landscape" | "portrait">>({});
+  const [ratio, setRatio] = useState<Record<number, number>>({});
+  const [viewport, setViewport] = useState(() => ({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  }));
   const swipe = useRef<{ pointerId: number; startX: number } | null>(null);
   const total = images.length;
+  const activeOrientation = orientation[index] ?? "landscape";
+  const activeRatio = ratio[index] ?? (activeOrientation === "portrait" ? 0.75 : 1.33);
+  const detailHeight = Math.min(viewport.height * 0.88, 940);
+  const portraitWidth =
+    activeOrientation === "portrait"
+      ? Math.max(
+          120,
+          Math.min(
+            Math.round(detailHeight * activeRatio),
+            Math.round(viewport.width * 0.96 - Math.min(viewport.width * 0.38, 620)),
+          ),
+        )
+      : undefined;
 
   const go = useCallback(
     (delta: number) => {
@@ -42,6 +64,14 @@ export function PinCarousel({ images, label }: PinCarouselProps) {
     return () => window.removeEventListener("keydown", onKey);
   }, [go, total]);
 
+  useEffect(() => {
+    function syncViewport() {
+      setViewport({ width: window.innerWidth, height: window.innerHeight });
+    }
+    window.addEventListener("resize", syncViewport);
+    return () => window.removeEventListener("resize", syncViewport);
+  }, []);
+
   function startSwipe(e: ReactPointerEvent<HTMLDivElement>) {
     if (total < 2) return;
     swipe.current = { pointerId: e.pointerId, startX: e.clientX };
@@ -58,7 +88,18 @@ export function PinCarousel({ images, label }: PinCarouselProps) {
   if (total === 0) return null;
 
   return (
-    <div className="pin-carousel">
+    <div
+      className="pin-carousel"
+      data-orientation={activeOrientation}
+      style={
+        {
+          "--active-image-ratio": activeRatio,
+          "--portrait-image-width": portraitWidth
+            ? `${portraitWidth}px`
+            : undefined,
+        } as CSSProperties
+      }
+    >
       <div
         className="pin-carousel-frame"
         role="group"
@@ -73,13 +114,27 @@ export function PinCarousel({ images, label }: PinCarouselProps) {
           style={{ transform: `translate3d(-${index * 100}%, 0, 0)` }}
         >
           {images.map((src, i) => (
-            <img
-              key={src.slice(0, 64) + i}
-              className="pin-carousel-image"
-              src={src}
-              alt={`${label} — ${i + 1} of ${total}`}
-              draggable={false}
-            />
+            <div key={src.slice(0, 64) + i} className="pin-carousel-slide">
+              <img
+                className="pin-carousel-image"
+                data-orientation={orientation[i] ?? undefined}
+                src={src}
+                alt={`${label} — ${i + 1} of ${total}`}
+                draggable={false}
+                onLoad={(e) => {
+                  const img = e.currentTarget;
+                  const next =
+                    img.naturalHeight > img.naturalWidth ? "portrait" : "landscape";
+                  setOrientation((current) =>
+                    current[i] === next ? current : { ...current, [i]: next },
+                  );
+                  const nextRatio = img.naturalWidth / img.naturalHeight;
+                  setRatio((current) =>
+                    current[i] === nextRatio ? current : { ...current, [i]: nextRatio },
+                  );
+                }}
+              />
+            </div>
           ))}
         </div>
 

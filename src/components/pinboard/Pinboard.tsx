@@ -3,6 +3,7 @@ import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 import type {
   BoardSettings,
   Pin,
+  PinColor,
   PinDecoration,
   PinLayout,
 } from "../../types/pin";
@@ -58,6 +59,8 @@ interface PinboardProps {
   onLayout: (id: string, layout: Partial<PinLayout>) => void;
   onRaise: (id: string) => void;
   onDecorate: (id: string, decoration: PinDecoration) => void;
+  onPinColor: (id: string, color: PinColor) => void;
+  onEdit: (pin: Pin) => void;
   onDelete: (pin: Pin) => void;
   onBoard: (patch: Partial<BoardSettings>) => void;
   onAdd: () => void;
@@ -76,6 +79,8 @@ export function Pinboard({
   onLayout,
   onRaise,
   onDecorate,
+  onPinColor,
+  onEdit,
   onDelete,
   onBoard,
   onAdd,
@@ -241,6 +246,8 @@ export function Pinboard({
               onLayout={onLayout}
               onRaise={onRaise}
               onDecorate={canEdit ? onDecorate : undefined}
+              onPinColor={canEdit ? onPinColor : undefined}
+              onEdit={canEdit ? onEdit : undefined}
               onDelete={canEdit ? onDelete : undefined}
               registerRef={registerRef}
             />

@@ -9,6 +9,7 @@ import { ImageCropper } from "./ImageCropper";
 import { RichTextEditor } from "./RichTextEditor";
 import type { PinDraft } from "../../types/pin";
 import { DEFAULT_TEXT_STYLE } from "../../types/pin";
+import type { Pin } from "../../types/pin";
 
 /** Enough for a board card and the enlarged view without bloating localStorage. */
 const IMAGE_MAX_SIZE = 900;
@@ -30,10 +31,22 @@ const STEPS: { id: Step; label: string }[] = [
 interface Picked {
   original: string;
   cropped: string;
+  aspectRatio?: number;
+}
+
+function imageAspectRatio(src: string): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img.naturalWidth / img.naturalHeight);
+    img.onerror = () => reject(new Error("Couldn't read image size."));
+    img.src = src;
+  });
 }
 
 interface AddPinModalProps {
-  onAdd: (draft: PinDraft) => void;
+  pin?: Pin;
+  onAdd?: (draft: PinDraft) => void;
+  onSave?: (draft: PinDraft) => void;
   onClose: () => void;
 }
 
@@ -44,10 +57,12 @@ interface AddPinModalProps {
  * uploaded. When there is one, only the submit handler changes: `PinDraft`
  * already carries exactly what the API would take.
  */
-export function AddPinModal({ onAdd, onClose }: AddPinModalProps) {
+export function AddPinModal({ pin, onAdd, onSave, onClose }: AddPinModalProps) {
   const [step, setStep] = useState<Step>("images");
-  const [images, setImages] = useState<Picked[]>([]);
-  const [content, setContent] = useState("");
+  const [images, setImages] = useState<Picked[]>(
+    () => pin?.images.map((src) => ({ original: src, cropped: src })) ?? [],
+  );
+  const [content, setContent] = useState(pin?.content ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Freshly picked images are offered for cropping one after another; cancelling
@@ -68,9 +83,14 @@ export function AddPinModal({ onAdd, onClose }: AddPinModalProps) {
           .slice(0, room)
           .map((file) => fileToCoverDataUrl(file, IMAGE_MAX_SIZE)),
       );
+      const ratios = await Promise.all(encoded.map(imageAspectRatio));
       setImages((current) => [
         ...current,
-        ...encoded.map((src) => ({ original: src, cropped: src })),
+        ...encoded.map((src, i) => ({
+          original: src,
+          cropped: src,
+          aspectRatio: ratios[i],
+        })),
       ]);
       // Straight into the cropper: deciding the frame is part of adding the
       // photo, not a separate errand you have to remember to run.
@@ -94,8 +114,11 @@ export function AddPinModal({ onAdd, onClose }: AddPinModalProps) {
     if (!target) return;
     try {
       const cropped = await cropToDataUrl(target.original, rect, IMAGE_MAX_SIZE);
+      const aspectRatio = (target.aspectRatio ?? 1) * (rect.width / rect.height);
       setImages((current) =>
-        current.map((img, i) => (i === index ? { ...img, cropped } : img)),
+        current.map((img, i) =>
+          i === index ? { ...img, cropped, aspectRatio } : img,
+        ),
       );
     } catch {
       setError("Couldn't crop that image.");
@@ -108,11 +131,14 @@ export function AddPinModal({ onAdd, onClose }: AddPinModalProps) {
       setError("Add a photo or write something.");
       return;
     }
-    onAdd({
+    const draft = {
       images: images.map((img) => img.cropped),
+      aspectRatio: images[0]?.aspectRatio,
       content: written ? content : "",
-      textStyle: DEFAULT_TEXT_STYLE,
-    });
+      textStyle: pin?.textStyle ?? DEFAULT_TEXT_STYLE,
+    };
+    if (pin) onSave?.(draft);
+    else onAdd?.(draft);
     onClose();
   }
 
@@ -139,7 +165,7 @@ export function AddPinModal({ onAdd, onClose }: AddPinModalProps) {
   return (
     <Modal
       open
-      title="Add to the board"
+      title={pin ? "Edit memory" : "Add to the board"}
       onClose={onClose}
       widthClassName="max-w-xl"
     >
@@ -240,7 +266,7 @@ export function AddPinModal({ onAdd, onClose }: AddPinModalProps) {
             Cancel
           </Button>
           <Button onClick={submit} disabled={busy}>
-            {busy ? "Reading…" : "Add to board"}
+            {busy ? "Reading…" : pin ? "Save changes" : "Add to board"}
           </Button>
         </div>
       </div>

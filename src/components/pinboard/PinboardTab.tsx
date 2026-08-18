@@ -19,11 +19,14 @@ export function PinboardTab() {
     removePin,
     raisePin,
     decoratePin,
+    updatePinColor,
+    updatePin,
     board,
     updateBoard,
   } = usePinboard();
   const { isOwner } = useAuth();
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState<Pin | null>(null);
   const [pending, setPending] = useState<Pin | null>(null);
 
   return (
@@ -40,6 +43,8 @@ export function PinboardTab() {
         onLayout={updateLayout}
         onRaise={raisePin}
         onDecorate={decoratePin}
+        onPinColor={updatePinColor}
+        onEdit={setEditing}
         onDelete={setPending}
         onBoard={updateBoard}
         onAdd={() => setAdding(true)}
@@ -54,6 +59,14 @@ export function PinboardTab() {
 
       {adding ? (
         <AddPinModal onAdd={addPin} onClose={() => setAdding(false)} />
+      ) : null}
+
+      {editing ? (
+        <AddPinModal
+          pin={editing}
+          onSave={(draft) => updatePin(editing.id, draft)}
+          onClose={() => setEditing(null)}
+        />
       ) : null}
 
       <ConfirmDialog

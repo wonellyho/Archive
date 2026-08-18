@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent as ReactPointerEvent, RefObject } from "react";
-import type { Pin, PinDecoration as Decoration, PinLayout } from "../../types/pin";
+import type {
+  Pin,
+  PinColor,
+  PinDecoration as Decoration,
+  PinLayout,
+} from "../../types/pin";
 import {
   BOARD_REF_WIDTH,
   DECORATIONS,
@@ -8,6 +13,8 @@ import {
   MAX_PIN_WIDTH,
   MIN_PIN_HEIGHT,
   MIN_PIN_WIDTH,
+  PIN_COLOR_VALUE,
+  PIN_COLORS,
 } from "../../types/pin";
 import { PinDecoration, PinDecorationSwatch } from "./PinDecoration";
 import { textStyleVars } from "./textStyle";
@@ -23,6 +30,18 @@ const DECORATION_LABEL: Record<Decoration, string> = {
   none: "Bare",
   pin: "Tack",
   tape: "Tape",
+};
+
+const PIN_COLOR_LABEL: Record<PinColor, string> = {
+  red: "Red",
+  orange: "Orange",
+  yellow: "Yellow",
+  green: "Green",
+  blue: "Blue",
+  indigo: "Indigo",
+  violet: "Violet",
+  black: "Black",
+  white: "White",
 };
 
 /**
@@ -75,6 +94,8 @@ interface PinItemProps {
   onLayout: (id: string, layout: Partial<PinLayout>) => void;
   onRaise: (id: string) => void;
   onDecorate?: (id: string, decoration: Decoration) => void;
+  onPinColor?: (id: string, color: PinColor) => void;
+  onEdit?: (pin: Pin) => void;
   onDelete?: (pin: Pin) => void;
   /** Lets the board re-measure this pin later, to animate the detail back into it. */
   registerRef: (id: string, el: HTMLDivElement | null) => void;
@@ -100,6 +121,8 @@ export function PinItem({
   onLayout,
   onRaise,
   onDecorate,
+  onPinColor,
+  onEdit,
   onDelete,
   registerRef,
 }: PinItemProps) {
@@ -356,9 +379,10 @@ export function PinItem({
             {pin.images.length}
           </span>
         ) : null}
+
       </div>
 
-      <PinDecoration kind={pin.decoration} />
+      <PinDecoration kind={pin.decoration} color={pin.pinColor} />
 
       {interactive ? (
         <>
@@ -413,20 +437,51 @@ export function PinItem({
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
             >
-              {DECORATIONS.map((kind) => (
+              {onEdit ? (
                 <button
-                  key={kind}
                   type="button"
                   className="pin-menu-item"
-                  data-active={pin.decoration === kind || undefined}
                   onClick={() => {
-                    onDecorate(pin.id, kind);
                     setMenuOpen(false);
+                    onEdit(pin);
                   }}
                 >
-                  <PinDecorationSwatch kind={kind} />
-                  {DECORATION_LABEL[kind]}
+                  Edit
                 </button>
+              ) : null}
+              {DECORATIONS.map((kind) => (
+                <div key={kind}>
+                  <button
+                    type="button"
+                    className="pin-menu-item"
+                    data-active={pin.decoration === kind || undefined}
+                    onClick={() => {
+                      onDecorate(pin.id, kind);
+                    }}
+                  >
+                    <PinDecorationSwatch kind={kind} color={pin.pinColor} />
+                    {DECORATION_LABEL[kind]}
+                  </button>
+                  {kind === "pin" && onPinColor ? (
+                    <div
+                      className="pin-color-row"
+                      data-open={pin.decoration === "pin" || undefined}
+                      aria-label="Tack color"
+                    >
+                      {PIN_COLORS.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          className="pin-color-dot"
+                          data-active={(pin.pinColor ?? "red") === color || undefined}
+                          style={{ "--pin-color": PIN_COLOR_VALUE[color] } as CSSProperties}
+                          aria-label={PIN_COLOR_LABEL[color]}
+                          onClick={() => onPinColor(pin.id, color)}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
               ))}
               {onDelete ? (
                 <button

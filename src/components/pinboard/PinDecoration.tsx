@@ -1,7 +1,10 @@
-import type { PinDecoration as Kind } from "../../types/pin";
+import type { CSSProperties } from "react";
+import type { PinColor, PinDecoration as Kind } from "../../types/pin";
+import { PIN_COLOR_VALUE } from "../../types/pin";
 
 interface PinDecorationProps {
   kind: Kind;
+  color?: PinColor;
 }
 
 /**
@@ -13,12 +16,26 @@ interface PinDecorationProps {
  *
  * The shapes themselves live in index.css so they scale with the pin.
  */
-export function PinDecoration({ kind }: PinDecorationProps) {
+export function PinDecoration({ kind, color = "red" }: PinDecorationProps) {
   if (kind === "none") return null;
-  return <span className="pin-deco" data-kind={kind} aria-hidden="true" />;
+  return (
+    <span
+      className="pin-deco"
+      data-kind={kind}
+      style={{ "--pin-color": PIN_COLOR_VALUE[color] } as CSSProperties}
+      aria-hidden="true"
+    />
+  );
 }
 
 /** Small preview used in the picker, so the choice isn't made from a word. */
-export function PinDecorationSwatch({ kind }: PinDecorationProps) {
-  return <span className="pin-deco-swatch" data-kind={kind} aria-hidden="true" />;
+export function PinDecorationSwatch({ kind, color = "red" }: PinDecorationProps) {
+  return (
+    <span
+      className="pin-deco-swatch"
+      data-kind={kind}
+      style={{ "--pin-color": PIN_COLOR_VALUE[color] } as CSSProperties}
+      aria-hidden="true"
+    />
+  );
 }

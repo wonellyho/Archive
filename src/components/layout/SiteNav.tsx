@@ -29,7 +29,7 @@ export function SiteNav<T extends string>({
 }: SiteNavProps<T>) {
   return (
     <header className="glass site-nav sticky top-0 z-30 border-b border-[color:var(--surface-border)]">
-      <div className="mx-auto flex w-full max-w-375 items-center gap-4 px-5 py-3 sm:gap-6 sm:px-10">
+      <div className="site-nav-inner mx-auto flex w-full max-w-375 items-center gap-4 px-5 py-3 sm:gap-6 sm:px-10">
         <span className="shrink-0 font-serif text-xl font-bold tracking-tight text-ink">
           {brand}
         </span>
@@ -37,7 +37,7 @@ export function SiteNav<T extends string>({
         <nav
           role="tablist"
           aria-label="Sections"
-          className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto"
+          className="site-nav-tabs flex min-w-0 flex-1 items-center gap-1 overflow-x-auto"
         >
           {tabs.map((tab) => {
             const active = tab.id === activeId;
@@ -48,11 +48,8 @@ export function SiteNav<T extends string>({
                 role="tab"
                 aria-selected={active}
                 onClick={() => onChange(tab.id)}
-                className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
-                  active
-                    ? "bg-ink text-paper"
-                    : "text-ink-faint hover:bg-cream-deep hover:text-ink"
-                }`}
+                className="site-nav-tab flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                data-active={active || undefined}
               >
                 <span aria-hidden="true">{tab.icon}</span>
                 <span>{tab.label}</span>
