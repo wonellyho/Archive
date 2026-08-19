@@ -182,7 +182,10 @@ export function Pinboard({
             {
               "--board-alpha": board.opacity / 100,
               ...(free
-                ? { width: `${board.widthPct}%`, aspectRatio: board.aspect }
+                ? {
+                    width: `${board.widthPct}%`,
+                    aspectRatio: board.aspect,
+                  }
                 : null),
             } as CSSProperties
           }

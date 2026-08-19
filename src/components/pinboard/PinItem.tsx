@@ -135,7 +135,6 @@ export function PinItem({
   const [menuOpen, setMenuOpen] = useState(false);
 
   const cover = pin.images[0];
-  const stacked = pin.images.length > 1;
 
   // Parsing markup is not free and this component re-renders on every frame of
   // a drag, so both derivations are cached against the content itself.
@@ -373,12 +372,6 @@ export function PinItem({
             {pin.content}
           </p>
         )}
-
-        {stacked ? (
-          <span className="pin-count" aria-hidden="true">
-            {pin.images.length}
-          </span>
-        ) : null}
 
       </div>
 

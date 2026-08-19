@@ -7,6 +7,12 @@ export interface Pin {
   id: string;
   /** Ordered carousel images. Empty for a `memo`, which is text only. */
   images: string[];
+  /** First image width / height, used before the image finishes loading. */
+  aspectRatio?: number;
+  title?: string;
+  subtitle?: string;
+  photoTexts?: PinPhotoText[];
+  detailSpacing?: number;
   content: string;
   /**
    * Whether `content` is plain text or markup from the note editor. Explicit
@@ -44,6 +50,10 @@ export interface Pin {
   textStyle: PinTextStyle;
   variant: PinVariant;
   createdAt: string;
+}
+
+export interface PinPhotoText {
+  content: string;
 }
 
 /**
@@ -138,13 +148,15 @@ export interface PinDraft {
   /** First image width / height, used to place photo pins in their real shape. */
   aspectRatio?: number;
   /** Markup from the note editor — always sanitised before it is rendered. */
+  photoTexts?: PinPhotoText[];
+  detailSpacing?: number;
   content: string;
   textStyle: PinTextStyle;
 }
 
 /** Inline size range the note editor's slider spans, in em of the base size. */
 export const MIN_TEXT_EM = 0.6;
-export const MAX_TEXT_EM = 2.6;
+export const MAX_TEXT_EM = 1.55;
 
 /**
  * The coordinate space `width`/`height` are expressed in. The board scales this

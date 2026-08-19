@@ -42,6 +42,7 @@ const ALLOWED_STYLES = [
   "font-style",
   "text-decoration",
   "text-align",
+  "background-color",
 ];
 
 /** Values that can reach out of the page even from inside a style property. */

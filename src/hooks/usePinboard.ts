@@ -56,6 +56,19 @@ function fillDefaults(pin: Pin): Pin {
     ...pin,
     decoration: pin.decoration ?? "none",
     pinColor: pin.pinColor ?? "red",
+    photoTexts:
+      pin.photoTexts ??
+      pin.images.map((_, i) =>
+        i === 0
+          ? {
+              content: pin.content ?? "",
+            }
+          : { content: "" },
+      ),
+    detailSpacing: pin.detailSpacing ?? 1,
+    aspectRatio:
+      pin.aspectRatio ??
+      (pin.images.length > 0 && pin.height > 0 ? pin.width / pin.height : undefined),
     // Boards written before the note editor hold plain text, and must keep
     // rendering as plain text — not be reinterpreted as markup.
     format: pin.format ?? "text",
@@ -219,6 +232,9 @@ export function usePinboard(): PinboardApi {
           ? {
               ...pin,
               images: draft.images,
+              aspectRatio: draft.aspectRatio,
+              photoTexts: draft.photoTexts ?? [],
+              detailSpacing: draft.detailSpacing ?? pin.detailSpacing ?? 1,
               content: draft.content,
               textStyle: draft.textStyle,
               variant: draft.images.length === 0 ? "memo" : "photo",
@@ -245,6 +261,9 @@ export function usePinboard(): PinboardApi {
     const created: Pin = {
       id: `pin-${Date.now().toString(36)}`,
       images: draft.images,
+      aspectRatio: draft.aspectRatio,
+      photoTexts: draft.photoTexts ?? [],
+      detailSpacing: draft.detailSpacing ?? 1,
       content: draft.content,
       format: "html",
       x,

@@ -93,14 +93,14 @@
    callers control which edges get one. */
 .glass {
   background:
-    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.28), transparent 36%),
-    color-mix(in srgb, var(--surface) 54%, transparent);
-  backdrop-filter: blur(24px) saturate(1.55) contrast(1.04);
-  -webkit-backdrop-filter: blur(24px) saturate(1.55) contrast(1.04);
+    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.2), transparent 38%),
+    color-mix(in srgb, var(--surface) 24%, transparent);
+  backdrop-filter: blur(18px) saturate(1.42) contrast(1.02);
+  -webkit-backdrop-filter: blur(18px) saturate(1.42) contrast(1.02);
   box-shadow:
-    inset 0 1px rgba(255, 255, 255, 0.38),
-    inset 0 -1px rgba(27, 25, 22, 0.04),
-    0 18px 42px -30px rgba(24, 20, 14, 0.42);
+    inset 0 1px rgba(255, 255, 255, 0.3),
+    inset 0 -1px rgba(255, 255, 255, 0.08),
+    0 18px 42px -34px rgba(24, 20, 14, 0.34);
 }
 
 .liquid-action,
@@ -157,35 +157,35 @@
   top: 0.65rem;
   width: min(calc(100% - 1.5rem), 92rem);
   margin-inline: auto;
-  border: 1px solid rgba(255, 255, 255, calc(var(--nav-alpha, 0.9) * 0.32));
+  border: 1px solid rgba(255, 255, 255, calc(0.14 + var(--nav-alpha, 0.9) * 0.2));
   border-radius: 999px;
   background:
     radial-gradient(
       110% 240% at 12% -80%,
-      rgba(255, 255, 255, calc(var(--nav-alpha, 0.9) * 0.42)),
+      rgba(255, 255, 255, calc(var(--nav-alpha, 0.9) * 0.2)),
       transparent 58%
     ),
     linear-gradient(
       135deg,
-      rgba(255, 255, 255, calc(var(--nav-alpha, 0.9) * 0.18)),
-      color-mix(in srgb, var(--surface) calc(var(--nav-alpha, 0.9) * 42%), transparent) 52%,
-      rgba(195, 229, 238, calc(var(--nav-alpha, 0.9) * 0.1))
+      rgba(255, 255, 255, calc(var(--nav-alpha, 0.9) * 0.08)),
+      color-mix(in srgb, var(--surface) calc(var(--nav-alpha, 0.9) * 18%), transparent) 52%,
+      rgba(195, 229, 238, calc(var(--nav-alpha, 0.9) * 0.05))
     );
-  backdrop-filter: blur(calc(18px + var(--nav-alpha, 0.9) * 18px))
-    saturate(1.85)
-    contrast(1.08);
-  -webkit-backdrop-filter: blur(calc(18px + var(--nav-alpha, 0.9) * 18px))
-    saturate(1.85)
-    contrast(1.08);
+  backdrop-filter: blur(calc(var(--nav-alpha, 0.9) * 26px))
+    saturate(calc(1 + var(--nav-alpha, 0.9) * 0.75))
+    contrast(1.04);
+  -webkit-backdrop-filter: blur(calc(var(--nav-alpha, 0.9) * 26px))
+    saturate(calc(1 + var(--nav-alpha, 0.9) * 0.75))
+    contrast(1.04);
   border-bottom-color: color-mix(
     in srgb,
     var(--surface-border) calc(var(--nav-alpha, 0.9) * 100%),
     transparent
   );
   box-shadow:
-    inset 0 1px rgba(255, 255, 255, calc(var(--nav-alpha, 0.9) * 0.42)),
-    inset 0 -1px rgba(255, 255, 255, calc(var(--nav-alpha, 0.9) * 0.18)),
-    0 18px 38px -30px rgba(24, 20, 14, calc(var(--nav-alpha, 0.9) * 0.55));
+    inset 0 1px rgba(255, 255, 255, calc(0.18 + var(--nav-alpha, 0.9) * 0.24)),
+    inset 0 -1px rgba(255, 255, 255, calc(0.08 + var(--nav-alpha, 0.9) * 0.12)),
+    0 18px 38px -32px rgba(24, 20, 14, calc(var(--nav-alpha, 0.9) * 0.42));
 }
 
 .site-nav::before {
@@ -196,7 +196,7 @@
   border-radius: inherit;
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, calc(var(--nav-alpha, 0.9) * 0.32)),
+    rgba(255, 255, 255, calc(0.08 + var(--nav-alpha, 0.9) * 0.18)),
     transparent
   );
   pointer-events: none;
@@ -1201,7 +1201,7 @@ body {
 
 .pinboard-wall {
   position: relative;
-  padding-block: 0 1.25rem;
+  padding-block: 0.65rem 1.25rem;
 }
 
 .pinboard-board {
@@ -1216,35 +1216,35 @@ body {
   background:
     radial-gradient(
       140% 120% at 8% -10%,
-      rgba(255, 255, 255, calc(var(--board-alpha, 0.9) * 0.32)),
+      rgba(255, 255, 255, calc(var(--board-alpha, 0.9) * 0.18)),
       transparent 54%
     ),
     radial-gradient(
       95% 120% at 92% 0%,
-      rgba(174, 226, 239, calc(var(--board-alpha, 0.9) * 0.1)),
+      rgba(174, 226, 239, calc(var(--board-alpha, 0.9) * 0.05)),
       transparent 58%
     ),
     linear-gradient(
       145deg,
-      rgba(255, 255, 255, calc(var(--board-alpha, 0.9) * 0.12)),
-      color-mix(in srgb, var(--surface) calc(var(--board-alpha, 0.9) * 34%), transparent) 58%,
-      rgba(207, 232, 238, calc(var(--board-alpha, 0.9) * 0.08))
+      rgba(255, 255, 255, calc(var(--board-alpha, 0.9) * 0.05)),
+      color-mix(in srgb, var(--surface) calc(var(--board-alpha, 0.9) * 16%), transparent) 58%,
+      rgba(207, 232, 238, calc(var(--board-alpha, 0.9) * 0.035))
     );
   /* Blur, saturation and shadow all ride the same dial as the fill, so 0% is
      clear glass — not an invisible pane that still smears what's behind it. */
-  backdrop-filter: blur(calc(16px + var(--board-alpha, 0.9) * 22px))
-    saturate(1.9)
-    contrast(1.08);
-  -webkit-backdrop-filter: blur(calc(16px + var(--board-alpha, 0.9) * 22px))
-    saturate(1.9)
-    contrast(1.08);
+  backdrop-filter: blur(calc(var(--board-alpha, 0.9) * 24px))
+    saturate(calc(1 + var(--board-alpha, 0.9) * 0.75))
+    contrast(1.04);
+  -webkit-backdrop-filter: blur(calc(var(--board-alpha, 0.9) * 24px))
+    saturate(calc(1 + var(--board-alpha, 0.9) * 0.75))
+    contrast(1.04);
   /* No frame and no outline: depth comes from the shadow the pane casts, which
      is what a sheet of glass off the wall actually gives you. */
   box-shadow:
-    inset 0 1px rgba(255, 255, 255, calc(var(--board-alpha, 0.9) * 0.52)),
-    inset 1px 0 rgba(255, 255, 255, calc(var(--board-alpha, 0.9) * 0.18)),
+    inset 0 1px rgba(255, 255, 255, calc(0.12 + var(--board-alpha, 0.9) * 0.3)),
+    inset 1px 0 rgba(255, 255, 255, calc(0.06 + var(--board-alpha, 0.9) * 0.12)),
     inset 0 -1px rgba(27, 25, 22, calc(var(--board-alpha, 0.9) * 0.05)),
-    0 34px 72px -36px rgba(24, 20, 14, calc(var(--board-alpha, 0.9) * 0.52));
+    0 34px 72px -40px rgba(24, 20, 14, calc(var(--board-alpha, 0.9) * 0.38));
   /* Pins are clamped inside the board anyway; this catches the hover lift at
      the very top edge rather than letting it spill onto the page. */
   overflow: hidden;
@@ -2028,9 +2028,354 @@ body {
 /* One height for every tab. Without it the dialog resizes and re-centres each
    time you switch, which turns a set of tabs into a moving target. */
 .pin-panel {
-  height: 19rem;
-  overflow-y: auto;
+  height: 30rem;
+  overflow: hidden;
   color: var(--color-ink);
+}
+
+.pin-writing-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.pin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--color-ink);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.pin-field input {
+  width: 100%;
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-paper) 78%, transparent);
+  color: var(--color-ink);
+  padding: 0.65rem 0.8rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  outline: none;
+}
+
+.pin-field input:focus {
+  border-color: rgba(27, 25, 22, 0.4);
+}
+
+.photo-text-action {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.2rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid rgba(27, 25, 22, 0.18);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 22% 12%, rgba(255, 255, 255, 0.86), transparent 38%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.38));
+  color: var(--color-ink);
+  font-size: 0.82rem;
+  font-weight: 700;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.7),
+    0 10px 24px -20px rgba(24, 20, 14, 0.5);
+  transition:
+    transform 0.18s ease,
+    border-color 0.2s ease;
+}
+
+.photo-text-action:hover {
+  transform: translateY(-1px) scale(1.04);
+  border-color: rgba(27, 25, 22, 0.3);
+}
+
+.image-composer {
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  gap: 0.55rem;
+  height: 100%;
+  min-height: 0;
+}
+
+.image-composer-empty {
+  display: grid;
+  place-items: center;
+  min-height: 100%;
+  border: 1px dashed rgba(27, 25, 22, 0.18);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.62), transparent 36%),
+    color-mix(in srgb, var(--color-paper) 62%, transparent);
+  color: var(--color-ink);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.image-composer-stage {
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #050505;
+}
+
+.image-composer-stage img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.image-composer-stage-wrap {
+  position: relative;
+  min-height: 0;
+  height: 100%;
+  padding-bottom: 1.15rem;
+}
+
+.image-stage-actions {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.1rem;
+  z-index: 2;
+  display: flex;
+  gap: 0.55rem;
+}
+
+.image-stage-action {
+  display: grid;
+  place-items: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #1b1916;
+  box-shadow: 0 8px 24px -14px rgba(0, 0, 0, 0.48);
+  transition:
+    transform 0.18s ease,
+    background 0.2s ease;
+}
+
+.image-stage-action:hover {
+  transform: scale(1.08);
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.image-composer-tray {
+  justify-self: center;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0.5rem;
+  border-radius: 18px;
+  background: rgba(20, 18, 15, 0.68);
+  backdrop-filter: blur(18px) saturate(1.25);
+  -webkit-backdrop-filter: blur(18px) saturate(1.25);
+}
+
+.image-thumb,
+.image-stack-add {
+  position: relative;
+  flex: 0 0 auto;
+  width: 4.3rem;
+  height: 4.3rem;
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.86);
+  background: rgba(255, 255, 255, 0.12);
+  transition:
+    transform 0.18s ease,
+    border-color 0.2s ease;
+}
+
+.image-thumb:hover,
+.image-stack-add:hover {
+  transform: scale(1.05);
+}
+
+.image-thumb[data-active] {
+  border-color: rgba(255, 255, 255, 0.88);
+}
+
+.image-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-thumb span {
+  position: absolute;
+  right: 0.25rem;
+  bottom: 0.2rem;
+  display: grid;
+  place-items: center;
+  min-width: 1rem;
+  height: 1rem;
+  border-radius: 999px;
+  background: rgba(20, 18, 15, 0.72);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.image-stack-add {
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  width: 3.4rem;
+  height: 3.4rem;
+}
+
+.image-composer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.55rem;
+}
+
+.image-text-next {
+  justify-self: end;
+  gap: 0.35rem;
+}
+
+.photo-writing {
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.8fr) minmax(24rem, 1.45fr);
+  gap: 1rem;
+}
+
+.photo-writing-form,
+.photo-writing-preview {
+  min-width: 0;
+  border: 1px solid rgba(27, 25, 22, 0.1);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.64), transparent 36%),
+    color-mix(in srgb, var(--color-paper) 74%, transparent);
+}
+
+.photo-writing-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1rem;
+}
+
+.photo-writing-tabs {
+  display: flex;
+  gap: 0.45rem;
+  overflow-x: auto;
+  padding-bottom: 0.15rem;
+}
+
+.photo-writing-tabs button {
+  position: relative;
+  flex: 0 0 auto;
+  width: 3.3rem;
+  height: 3.3rem;
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  background: rgba(27, 25, 22, 0.08);
+  transition:
+    transform 0.18s ease,
+    border-color 0.2s ease;
+}
+
+.photo-writing-tabs button:hover {
+  transform: scale(1.05);
+}
+
+.photo-writing-tabs button[data-active] {
+  border-color: rgba(181, 83, 29, 0.85);
+}
+
+.photo-writing-tabs img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-writing-tabs span {
+  position: absolute;
+  right: 0.25rem;
+  bottom: 0.2rem;
+  display: grid;
+  place-items: center;
+  min-width: 1rem;
+  height: 1rem;
+  border-radius: 999px;
+  background: rgba(27, 25, 22, 0.72);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.photo-spacing-control {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  color: var(--color-ink-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.photo-spacing-control input {
+  flex: 1;
+  min-width: 7rem;
+}
+
+.photo-writing-preview {
+  overflow: hidden;
+  padding: 0;
+}
+
+.photo-preview-feed {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(15rem, 0.58fr);
+  height: 100%;
+  min-height: 22rem;
+}
+
+.photo-preview-media {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  background: #050505;
+}
+
+.photo-preview-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.photo-preview-copy {
+  min-width: 0;
+  overflow-y: auto;
+  padding: 1rem;
+  border-left: 1px solid rgba(27, 25, 22, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  color: #1b1916;
+}
+
+.photo-preview-body {
+  color: #514c43;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.photo-preview-body p {
+  margin: 0 0 calc(0.75rem * var(--detail-spacing, 1));
 }
 
 /* --- The note editor --- */
@@ -2064,10 +2409,31 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+.rich-highlight {
+  width: 1.7rem;
+  min-width: 1.7rem;
+  color: transparent;
+}
+
+.rich-highlight::before {
+  content: "";
+  display: block;
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 999px;
+  background: var(--highlight);
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.55),
+    0 0 0 1px rgba(27, 25, 22, 0.12);
+}
+
 .rich-editor {
   min-height: 9rem;
   max-height: 12rem;
   overflow-y: auto;
+  overflow-x: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   padding: 0.85rem 1rem;
   border: 1px solid var(--color-line);
   border-radius: 16px;
@@ -2360,14 +2726,22 @@ body {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
+  gap: calc(0.95rem * var(--detail-spacing, 1));
   padding: 4rem 1.5rem 1.4rem;
   border-left: 1px solid #e6e6e6;
   font-family: var(--text-font, var(--font-serif));
   font-size: calc(0.95rem * var(--text-scale, 1));
   text-align: var(--text-align, left);
   line-height: 1.65;
-  color: var(--color-ink-soft);
+  color: #514c43;
+}
+
+.pin-detail-body {
+  padding-top: 0;
+}
+
+.pin-detail-body p {
+  margin: 0 0 calc(0.9rem * var(--detail-spacing, 1));
 }
 
 .pin-detail-card[data-variant="memo"] .pin-detail-text {
@@ -2381,7 +2755,7 @@ body {
   align-self: flex-end;
   font-size: 0.78rem;
   letter-spacing: 0.08em;
-  color: var(--color-ink-faint);
+  color: #8c8678;
 }
 
 /* --- Carousel --- */
@@ -2540,6 +2914,12 @@ body {
 
 /* Stack the card on phones — the carousel itself is unchanged. */
 @media (max-width: 860px) {
+  .photo-writing {
+    grid-template-columns: 1fr;
+  }
+  .photo-writing-preview > img {
+    height: 10rem;
+  }
   .pin-detail-card {
     flex-direction: column;
     overflow-y: auto;

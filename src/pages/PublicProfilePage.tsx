@@ -85,7 +85,13 @@ export function PublicProfilePage({ readOnly = false }: PublicProfilePageProps) 
             }
           />
 
-          <main className="mx-auto flex w-full max-w-375 flex-1 flex-col gap-12 px-5 py-10 sm:px-10 sm:py-14">
+          <main
+            className={`mx-auto flex w-full max-w-375 flex-1 flex-col px-5 sm:px-10 ${
+              tab === "pinboard"
+                ? "gap-3 py-2 sm:py-3"
+                : "gap-12 py-10 sm:py-14"
+            }`}
+          >
             {/* Greeting keeps a centered hero; the shelves fill the width. */}
             {tab === "about" ? (
               <div className="flex flex-col items-center gap-12 py-8 sm:py-12">

@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import type { MouseEvent as ReactMouseEvent } from "react";
+import type {
+  CSSProperties,
+  MouseEvent as ReactMouseEvent,
+  PointerEvent as ReactPointerEvent,
+} from "react";
 import {
   MAX_TEXT_EM,
   MIN_TEXT_EM,
@@ -20,6 +24,13 @@ const ALIGN_COMMAND: Record<TextAlign, string> = {
   center: "justifyCenter",
   right: "justifyRight",
 };
+
+const HIGHLIGHTS = [
+  { label: "Yellow highlight", color: "rgba(250, 204, 21, 0.38)" },
+  { label: "Red highlight", color: "rgba(248, 113, 113, 0.34)" },
+  { label: "Green highlight", color: "rgba(74, 222, 128, 0.32)" },
+  { label: "Sky highlight", color: "rgba(125, 211, 252, 0.36)" },
+];
 
 interface RichTextEditorProps {
   /** Initial markup. The field is uncontrolled after mount — see below. */
@@ -98,12 +109,44 @@ export function RichTextEditor({ initialHtml, onChange }: RichTextEditorProps) {
     report();
   }
 
+  function selectedSizedSpan(range: Range): HTMLSpanElement | null {
+    const start =
+      range.startContainer.nodeType === Node.ELEMENT_NODE
+        ? range.startContainer
+        : range.startContainer.parentElement;
+    const end =
+      range.endContainer.nodeType === Node.ELEMENT_NODE
+        ? range.endContainer
+        : range.endContainer.parentElement;
+    if (!(start instanceof HTMLElement) || !(end instanceof HTMLElement)) return null;
+    const span = start.closest("span");
+    if (!(span instanceof HTMLSpanElement) || span !== end.closest("span")) {
+      return null;
+    }
+    if (!span.style.fontSize) return null;
+    if (range.startOffset !== 0) return null;
+    return span;
+  }
+
   function applySize(em: number) {
     const el = ref.current;
     if (!el) return;
     el.focus();
     const range = targetRange();
     if (!range) return;
+
+    const existing = selectedSizedSpan(range);
+    if (existing) {
+      existing.style.fontSize = `${em}em`;
+      const sel = window.getSelection();
+      const next = document.createRange();
+      next.selectNodeContents(existing);
+      sel?.removeAllRanges();
+      sel?.addRange(next);
+      saved.current = next.cloneRange();
+      report();
+      return;
+    }
 
     const span = document.createElement("span");
     span.style.fontSize = `${em}em`;
@@ -124,6 +167,12 @@ export function RichTextEditor({ initialHtml, onChange }: RichTextEditorProps) {
       saved.current = after.cloneRange();
     }
     report();
+  }
+
+  function applySizeFromSlider(e: ReactPointerEvent<HTMLInputElement>) {
+    const em = Number(e.currentTarget.value) / 100;
+    setSizeEm(em);
+    applySize(em);
   }
 
   // Buttons must not take focus, or the selection they act on disappears first.
@@ -192,6 +241,21 @@ export function RichTextEditor({ initialHtml, onChange }: RichTextEditorProps) {
           ))}
         </div>
 
+        <div className="pin-choices">
+          {HIGHLIGHTS.map((highlight) => (
+            <button
+              key={highlight.label}
+              type="button"
+              className="pin-choice rich-highlight"
+              style={{ "--highlight": highlight.color } as CSSProperties}
+              onMouseDown={hold}
+              onClick={() => exec("hiliteColor", highlight.color)}
+              aria-label={highlight.label}
+              title={highlight.label}
+            />
+          ))}
+        </div>
+
         <label className="rich-size">
           <span>Size</span>
           <input
@@ -200,15 +264,10 @@ export function RichTextEditor({ initialHtml, onChange }: RichTextEditorProps) {
             max={MAX_TEXT_EM * 100}
             step={5}
             value={Math.round(sizeEm * 100)}
-            // Applied on release, not on every frame of the drag: each apply
-            // rewrites the selection's markup, and doing that per pixel would
-            // both churn the DOM and lose the caret.
-            onChange={(e) => {
-              const em = Number(e.target.value) / 100;
-              setSizeEm(em);
-              applySize(em);
-            }}
             onInput={(e) => setSizeEm(Number(e.currentTarget.value) / 100)}
+            onPointerDown={() => remember()}
+            onPointerUp={applySizeFromSlider}
+            onKeyUp={(e) => applySize(Number(e.currentTarget.value) / 100)}
             className="accent-accent"
             aria-label="Text size"
           />

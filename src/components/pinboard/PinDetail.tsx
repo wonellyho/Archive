@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import type { Pin } from "../../types/pin";
 import { PinCarousel } from "./PinCarousel";
@@ -51,6 +52,7 @@ export function PinDetail({ pin, getOrigin, onClose }: PinDetailProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const closing = useRef(false);
   const [shade, setShade] = useState<"in" | "out">("out");
+  const [activeImage, setActiveImage] = useState(0);
 
   // The open and close animations are one gesture with a pause in between, and
   // must not restart because a prop identity changed. Latest values are read
@@ -107,10 +109,13 @@ export function PinDetail({ pin, getOrigin, onClose }: PinDetailProps) {
   }, [requestClose]);
 
   const date = monthLabel(pin.createdAt);
+  const currentText = pin.photoTexts?.[activeImage] ?? {
+    content: activeImage === 0 ? pin.content : "",
+  };
   const paragraphs =
     pin.format === "html"
       ? null
-      : pin.content.split("\n").filter((line) => line.trim() !== "");
+      : currentText.content.split("\n").filter((line) => line.trim() !== "");
 
   return createPortal(
     <div
@@ -129,17 +134,33 @@ export function PinDetail({ pin, getOrigin, onClose }: PinDetailProps) {
         onClick={(e) => e.stopPropagation()}
       >
         {pin.images.length > 0 ? (
-          <PinCarousel images={pin.images} label="Memory" />
+          <PinCarousel
+            images={pin.images}
+            label="Memory"
+            initialAspectRatio={pin.aspectRatio}
+            onIndexChange={setActiveImage}
+          />
         ) : null}
 
-        <div className="pin-detail-text" style={textStyleVars(pin.textStyle)}>
+        <div
+          className="pin-detail-text"
+          style={
+            {
+              ...textStyleVars(pin.textStyle),
+              "--detail-spacing": pin.detailSpacing ?? 1,
+            } as CSSProperties
+          }
+        >
           {paragraphs === null ? (
             <div
+              className="pin-detail-body"
               // Sanitised on the way in — see utils/richText.
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(pin.content) }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentText.content) }}
             />
           ) : (
-            paragraphs.map((line, i) => <p key={i}>{line}</p>)
+            <div className="pin-detail-body">
+              {paragraphs.map((line, i) => <p key={i}>{line}</p>)}
+            </div>
           )}
           {date ? <span className="pin-detail-date">{date}</span> : null}
         </div>

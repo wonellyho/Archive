@@ -11,6 +11,8 @@ interface PinCarouselProps {
   images: string[];
   /** Announced to screen readers as the album's name. */
   label: string;
+  initialAspectRatio?: number;
+  onIndexChange?: (index: number) => void;
 }
 
 /**
@@ -18,10 +20,27 @@ interface PinCarouselProps {
  * counter, arrow keys, and swipe. Behaves the same on every screen size —
  * the board's layout simplifies on mobile, this doesn't.
  */
-export function PinCarousel({ images, label }: PinCarouselProps) {
+export function PinCarousel({
+  images,
+  label,
+  initialAspectRatio,
+  onIndexChange,
+}: PinCarouselProps) {
   const [index, setIndex] = useState(0);
-  const [orientation, setOrientation] = useState<Record<number, "landscape" | "portrait">>({});
-  const [ratio, setRatio] = useState<Record<number, number>>({});
+  const [orientation, setOrientation] = useState<Record<number, "landscape" | "portrait">>(
+    () => {
+      if (!initialAspectRatio || !Number.isFinite(initialAspectRatio)) {
+        return {} as Record<number, "landscape" | "portrait">;
+      }
+      return { 0: initialAspectRatio < 1 ? "portrait" : "landscape" };
+    },
+  );
+  const [ratio, setRatio] = useState<Record<number, number>>(() => {
+    if (!initialAspectRatio || !Number.isFinite(initialAspectRatio)) {
+      return {} as Record<number, number>;
+    }
+    return { 0: initialAspectRatio };
+  });
   const [viewport, setViewport] = useState(() => ({
     width: window.innerWidth,
     height: window.innerHeight,
@@ -53,6 +72,10 @@ export function PinCarousel({ images, label }: PinCarouselProps) {
     },
     [total],
   );
+
+  useEffect(() => {
+    onIndexChange?.(index);
+  }, [index, onIndexChange]);
 
   useEffect(() => {
     if (total < 2) return;
