@@ -410,18 +410,20 @@ export function PinItem({
           />
 
           {onDecorate ? (
-            <button
-              type="button"
-              className="pin-handle"
-              data-handle="decorate"
-              aria-label="Change how this is stuck up"
-              aria-expanded={menuOpen}
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                setMenuOpen((v) => !v);
-              }}
-            />
+            <div className="pin-corner-zone">
+              <button
+                type="button"
+                className="pin-handle"
+                data-handle="decorate"
+                aria-label="Change how this is stuck up"
+                aria-expanded={menuOpen}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen((v) => !v);
+                }}
+              />
+            </div>
           ) : null}
 
           {menuOpen && onDecorate ? (
@@ -439,6 +441,7 @@ export function PinItem({
                     onEdit(pin);
                   }}
                 >
+                  <EditIcon />
                   Edit
                 </button>
               ) : null}
@@ -486,6 +489,7 @@ export function PinItem({
                     onDelete(pin);
                   }}
                 >
+                  <TrashIcon />
                   Remove
                 </button>
               ) : null}
@@ -494,5 +498,35 @@ export function PinItem({
         </>
       ) : null}
     </div>
+  );
+}
+
+function EditIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true">
+      <path
+        d="m4.5 16.8-.7 3.4 3.4-.7L18.9 7.8l-2.7-2.7L4.5 16.8Zm10-10 2.7 2.7"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.9"
+      />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true">
+      <path
+        d="M4 7h16M9 7V5.8C9 4.8 9.8 4 10.8 4h2.4C14.2 4 15 4.8 15 5.8V7m-8 0 1 13h8l1-13"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.9"
+      />
+    </svg>
   );
 }

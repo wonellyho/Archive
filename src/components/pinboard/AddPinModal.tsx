@@ -412,7 +412,11 @@ export function AddPinModal({ pin, onAdd, onSave, onClose }: AddPinModalProps) {
                     onClick={() => fileInput.current?.click()}
                     disabled={busy}
                   >
-                    Choose photos
+                    <span className="image-empty-icons" aria-hidden="true">
+                      <PhotoIcon />
+                      <FileIcon />
+                    </span>
+                    <span>Choose photos</span>
                   </button>
                 )}
               </div>
@@ -553,6 +557,49 @@ function TrashIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth="1.9"
+      />
+    </svg>
+  );
+}
+
+function PhotoIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true">
+      <path
+        d="M4.5 6.5c0-1.1.9-2 2-2h11c1.1 0 2 .9 2 2v11c0 1.1-.9 2-2 2h-11c-1.1 0-2-.9-2-2v-11Z"
+        fill="none"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+      <path
+        d="m5 16 4.2-4 3.1 3 1.8-1.8L19 18M8.5 8.5h.01"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+    </svg>
+  );
+}
+
+function FileIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true">
+      <path
+        d="M7 3.8h6.4L18 8.4v11.8H7V3.8Z"
+        fill="none"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+      <path
+        d="M13.2 4v4.7h4.6"
+        fill="none"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
       />
     </svg>
   );
