@@ -7,6 +7,7 @@ import { SiteNav } from "../components/layout/SiteNav";
 import type { TabItem } from "../components/layout/SiteNav";
 import { TelevisionTab } from "../components/television/TelevisionTab";
 import { VinylTab } from "../components/vinyl/VinylTab";
+import { PinboardTab } from "../components/pinboard/PinboardTab";
 import { TasteTimeline } from "../components/profile/TasteTimeline";
 import { PlaybackDock } from "../components/common/PlaybackDock";
 import { PlayerProvider } from "../context/PlayerProvider";
@@ -14,10 +15,11 @@ import { VideoProvider } from "../context/VideoProvider";
 import { OwnerControls } from "../components/auth/OwnerControls";
 import { BackgroundPicker } from "../components/common/BackgroundPicker";
 
-type TabId = "about" | "tv" | "vinyl" | "timeline";
+type TabId = "about" | "pinboard" | "tv" | "vinyl" | "timeline";
 
 const TABS: TabItem<TabId>[] = [
   { id: "about", label: "About", icon: "✎" },
+  { id: "pinboard", label: "Pinboard", icon: "📌" },
   { id: "vinyl", label: "Vinyl", icon: "🎵" },
   { id: "tv", label: "Video", icon: "📺" },
   { id: "timeline", label: "Timeline", icon: "📈" },
@@ -83,7 +85,13 @@ export function PublicProfilePage({ readOnly = false }: PublicProfilePageProps) 
             }
           />
 
-          <main className="mx-auto flex w-full max-w-375 flex-1 flex-col gap-12 px-5 py-10 sm:px-10 sm:py-14">
+          <main
+            className={`mx-auto flex w-full max-w-375 flex-1 flex-col px-5 sm:px-10 ${
+              tab === "pinboard"
+                ? "gap-3 py-2 sm:py-3"
+                : "gap-12 py-10 sm:py-14"
+            }`}
+          >
             {/* Greeting keeps a centered hero; the shelves fill the width. */}
             {tab === "about" ? (
               <div className="flex flex-col items-center gap-12 py-8 sm:py-12">
@@ -91,6 +99,7 @@ export function PublicProfilePage({ readOnly = false }: PublicProfilePageProps) 
                 <ProfilePanel />
               </div>
             ) : null}
+            {tab === "pinboard" ? <PinboardTab /> : null}
             {tab === "vinyl" ? <VinylTab /> : null}
             {tab === "tv" ? <TelevisionTab /> : null}
             {tab === "timeline" ? (

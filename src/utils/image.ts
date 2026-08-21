@@ -44,6 +44,49 @@ export async function fileToCoverDataUrl(
   return canvas.toDataURL("image/jpeg", 0.82);
 }
 
+/** A crop window, as fractions of the source image (0–1 on each axis). */
+export interface CropRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Cuts a region out of an image and returns it as a downscaled JPEG data URL.
+ * Fractions rather than pixels so a crop chosen against a preview at whatever
+ * size it happened to render applies correctly to the full-resolution source.
+ */
+export async function cropToDataUrl(
+  src: string,
+  rect: CropRect,
+  maxSize = 900,
+): Promise<string> {
+  const img = await loadImage(src);
+  const sx = Math.round(rect.x * img.width);
+  const sy = Math.round(rect.y * img.height);
+  const sw = Math.max(1, Math.round(rect.width * img.width));
+  const sh = Math.max(1, Math.round(rect.height * img.height));
+
+  const scale = Math.min(1, maxSize / Math.max(sw, sh));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(sw * scale));
+  canvas.height = Math.max(1, Math.round(sh * scale));
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Failed to process the image.");
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/jpeg", 0.85);
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("Failed to load the image."));
+    img.src = src;
+  });
+}
+
 /**
  * Downscaled JPEG Blob for Storage upload (POST /api/uploads). Keeps covers
  * small so they stay well under the server size limit.

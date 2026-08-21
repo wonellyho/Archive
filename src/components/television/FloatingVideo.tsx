@@ -51,7 +51,7 @@ export function FloatingVideo() {
         className={
           docked
             ? "h-full w-full overflow-hidden rounded-2xl"
-            : "overflow-hidden rounded-2xl border border-line bg-paper/95 shadow-xl backdrop-blur"
+            : "glass overflow-hidden rounded-2xl border border-[color:var(--surface-border)] shadow-xl"
         }
       >
         <div

@@ -66,7 +66,7 @@ export function BackgroundPicker() {
         onClick={() => setOpen(true)}
         aria-label="Appearance settings"
         title="Appearance"
-        className="grid size-8 place-items-center rounded-full text-base text-ink-soft transition-colors hover:bg-cream-deep hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+        className="liquid-icon-btn grid size-8 place-items-center rounded-full text-base text-ink-soft focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
       >
         🎨
       </button>
@@ -117,7 +117,7 @@ export function BackgroundPicker() {
             <div className="mt-2 flex items-center justify-between">
               <input
                 type="range"
-                min={10}
+                min={0}
                 max={100}
                 value={navOpacity}
                 onChange={(e) => setNavOpacity(Number(e.target.value))}
@@ -151,7 +151,7 @@ export function BackgroundPicker() {
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 disabled={isProcessing}
-                className="rounded-full bg-ink px-3.5 py-1.5 text-xs font-medium text-paper transition-transform hover:scale-[1.03] active:scale-95 disabled:opacity-50"
+                className="liquid-action rounded-full px-3.5 py-1.5 text-xs font-medium text-ink transition-transform hover:scale-[1.03] active:scale-95 disabled:opacity-50"
               >
                 {isProcessing
                   ? "Processing…"
@@ -163,7 +163,7 @@ export function BackgroundPicker() {
                 <button
                   type="button"
                   onClick={clear}
-                  className="rounded-full border border-line px-3.5 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:bg-cream hover:text-ink"
+                  className="liquid-chip rounded-full px-3.5 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:text-ink"
                 >
                   Remove
                 </button>

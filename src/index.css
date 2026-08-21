@@ -92,19 +92,179 @@
    its own border — pair with a `border-*` utility using --surface-border so
    callers control which edges get one. */
 .glass {
-  background: var(--surface);
-  backdrop-filter: blur(18px) saturate(1.15);
-  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.2), transparent 38%),
+    color-mix(in srgb, var(--surface) 24%, transparent);
+  backdrop-filter: blur(18px) saturate(1.42) contrast(1.02);
+  -webkit-backdrop-filter: blur(18px) saturate(1.42) contrast(1.02);
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.3),
+    inset 0 -1px rgba(255, 255, 255, 0.08),
+    0 18px 42px -34px rgba(24, 20, 14, 0.34);
+}
+
+.liquid-action,
+.liquid-chip {
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  background:
+    radial-gradient(circle at 22% 12%, rgba(255, 255, 255, 0.84), transparent 35%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.24));
+  backdrop-filter: blur(22px) saturate(1.55) contrast(1.04);
+  -webkit-backdrop-filter: blur(22px) saturate(1.55) contrast(1.04);
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.62),
+    inset 0 -1px rgba(27, 25, 22, 0.06),
+    0 10px 26px -20px rgba(24, 20, 14, 0.5);
+}
+
+.liquid-action:hover,
+.liquid-chip:hover {
+  background:
+    radial-gradient(circle at 22% 12%, rgba(255, 255, 255, 0.92), transparent 38%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0.32));
+}
+
+.liquid-icon-btn {
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.18s ease;
+}
+
+.liquid-icon-btn:hover {
+  color: var(--color-ink);
+  transform: scale(1.1);
+}
+
+.modal-surface {
+  background:
+    radial-gradient(circle at 16% 0%, rgba(255, 255, 255, 0.92), transparent 32%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.68));
+  color: var(--color-ink);
+  backdrop-filter: blur(26px) saturate(1.45) contrast(1.03);
+  -webkit-backdrop-filter: blur(26px) saturate(1.45) contrast(1.03);
 }
 
 /* The nav bar's own opacity, independent of every other glass surface — set
-   from the appearance settings modal's slider via --nav-alpha. */
+   from the appearance settings modal's slider via --nav-alpha.
+
+   Everything the surface does fades together, not just its fill: the blur, the
+   saturation lift and the hairline all scale off the same number, so dialling
+   it to 0 leaves genuinely clear glass rather than an invisible pane that still
+   blurs whatever is behind it. */
 .site-nav {
-  background: color-mix(in srgb, var(--surface) calc(var(--nav-alpha, 0.9) * 100%), transparent);
+  font-family: var(--font-serif);
+  top: 0.65rem;
+  width: min(calc(100% - 1.5rem), 92rem);
+  margin-inline: auto;
+  border: 1px solid rgba(255, 255, 255, calc(0.14 + var(--nav-alpha, 0.9) * 0.2));
+  border-radius: 999px;
+  background:
+    radial-gradient(
+      110% 240% at 12% -80%,
+      rgba(255, 255, 255, calc(var(--nav-alpha, 0.9) * 0.2)),
+      transparent 58%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, calc(var(--nav-alpha, 0.9) * 0.08)),
+      color-mix(in srgb, var(--surface) calc(var(--nav-alpha, 0.9) * 18%), transparent) 52%,
+      rgba(195, 229, 238, calc(var(--nav-alpha, 0.9) * 0.05))
+    );
+  backdrop-filter: blur(calc(var(--nav-alpha, 0.9) * 26px))
+    saturate(calc(1 + var(--nav-alpha, 0.9) * 0.75))
+    contrast(1.04);
+  -webkit-backdrop-filter: blur(calc(var(--nav-alpha, 0.9) * 26px))
+    saturate(calc(1 + var(--nav-alpha, 0.9) * 0.75))
+    contrast(1.04);
+  border-bottom-color: color-mix(
+    in srgb,
+    var(--surface-border) calc(var(--nav-alpha, 0.9) * 100%),
+    transparent
+  );
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, calc(0.18 + var(--nav-alpha, 0.9) * 0.24)),
+    inset 0 -1px rgba(255, 255, 255, calc(0.08 + var(--nav-alpha, 0.9) * 0.12)),
+    0 18px 38px -32px rgba(24, 20, 14, calc(var(--nav-alpha, 0.9) * 0.42));
+}
+
+.site-nav::before {
+  content: "";
+  position: absolute;
+  inset: 1px 10px auto;
+  height: 46%;
+  border-radius: inherit;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, calc(0.08 + var(--nav-alpha, 0.9) * 0.18)),
+    transparent
+  );
+  pointer-events: none;
+}
+
+.site-nav-inner {
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
+}
+
+.site-nav-tabs {
+  padding: 0.18rem;
+  border-radius: 999px;
+}
+
+.site-nav-tab {
+  position: relative;
+  color: var(--color-ink-faint);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+  transform: translateZ(0);
+}
+
+.site-nav-tab:hover {
+  color: var(--color-ink);
+}
+
+.site-nav-tab::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transform: scale(0.72);
+  background:
+    radial-gradient(circle at 28% 16%, rgba(255, 255, 255, 0.74), transparent 38%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.1));
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.62),
+    inset 0 -1px rgba(27, 25, 22, 0.06),
+    0 7px 18px -14px rgba(24, 20, 14, 0.55);
+  transition:
+    opacity 220ms ease,
+    transform 360ms cubic-bezier(0.2, 0.8, 0.2, 1.15);
+}
+
+.site-nav-tab[data-active] {
+  color: var(--color-ink);
+}
+
+.site-nav-tab[data-active]::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.site-nav-tab > span {
+  position: relative;
+  z-index: 1;
+  filter: none;
+  text-shadow: 0 0 0 currentColor;
 }
 
 html {
   font-size: 18px;
+  scrollbar-gutter: stable;
 }
 
 /* Headings use the same brand serif as body copy, at its SemiBold cut, so
@@ -1029,6 +1189,1888 @@ body {
   .shelf-under {
     left: 1.25rem;
     right: 1.25rem;
+  }
+}
+
+/* --- Pinboard: a glass wall of pinned memories --- */
+/* The counterpart to the shelves: where Vinyl arranges things in rows, this is
+   the surface nothing is aligned on. Every position here was set by hand, so
+   the styling's job is to stay out of the way — the board is a pane of the same
+   frosted glass as the nav, not a piece of furniture competing with the photos
+   stuck to it. */
+
+.pinboard-wall {
+  position: relative;
+  padding-block: 0.65rem 1.25rem;
+}
+
+.pinboard-board {
+  position: relative;
+  width: 100%;
+  /* Centred, because the owner can make it narrower than the page. */
+  margin-inline: auto;
+  border-radius: 22px;
+  /* Same frosted recipe as the nav bar, but on its own opacity dial (set
+     inline from board settings) rather than the nav's — the two panes are the
+     same material, tuned separately. */
+  background:
+    radial-gradient(
+      140% 120% at 8% -10%,
+      rgba(255, 255, 255, calc(var(--board-alpha, 0.9) * 0.18)),
+      transparent 54%
+    ),
+    radial-gradient(
+      95% 120% at 92% 0%,
+      rgba(174, 226, 239, calc(var(--board-alpha, 0.9) * 0.05)),
+      transparent 58%
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, calc(var(--board-alpha, 0.9) * 0.05)),
+      color-mix(in srgb, var(--surface) calc(var(--board-alpha, 0.9) * 16%), transparent) 58%,
+      rgba(207, 232, 238, calc(var(--board-alpha, 0.9) * 0.035))
+    );
+  /* Blur, saturation and shadow all ride the same dial as the fill, so 0% is
+     clear glass — not an invisible pane that still smears what's behind it. */
+  backdrop-filter: blur(calc(var(--board-alpha, 0.9) * 24px))
+    saturate(calc(1 + var(--board-alpha, 0.9) * 0.75))
+    contrast(1.04);
+  -webkit-backdrop-filter: blur(calc(var(--board-alpha, 0.9) * 24px))
+    saturate(calc(1 + var(--board-alpha, 0.9) * 0.75))
+    contrast(1.04);
+  /* No frame and no outline: depth comes from the shadow the pane casts, which
+     is what a sheet of glass off the wall actually gives you. */
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, calc(0.12 + var(--board-alpha, 0.9) * 0.3)),
+    inset 1px 0 rgba(255, 255, 255, calc(0.06 + var(--board-alpha, 0.9) * 0.12)),
+    inset 0 -1px rgba(27, 25, 22, calc(var(--board-alpha, 0.9) * 0.05)),
+    0 34px 72px -40px rgba(24, 20, 14, calc(var(--board-alpha, 0.9) * 0.38));
+  /* Pins are clamped inside the board anyway; this catches the hover lift at
+     the very top edge rather than letting it spill onto the page. */
+  overflow: hidden;
+  transform-origin: 50% 0;
+  animation: board-drop 760ms both;
+}
+
+/* Free placement: a fixed-proportion canvas, so a layout saved on one screen
+   lands the same way on another. Percentage coordinates need a stable shape to
+   be percentages *of*. Width and aspect are both overridden inline once the
+   owner drags an edge — these are only the starting shape. */
+.pinboard-board[data-mode="free"] {
+  aspect-ratio: 1600 / 920;
+  /* Low enough that a deliberately short board is actually allowed to be
+     short; the aspect ratio is what normally decides the height. */
+  min-height: 14rem;
+}
+
+/* While an edge is being dragged, the size shouldn't lag behind the cursor. */
+.pinboard-board[data-sizing] {
+  transition: none;
+}
+
+.pinboard-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  padding: 2rem;
+  text-align: center;
+  color: var(--color-ink-faint);
+  font-size: 1rem;
+}
+
+/* Sits in the board's own top-right corner rather than in a toolbar above it:
+   the board is the surface you're working on, so the controls that change it
+   belong on it. Quiet until you go near them. */
+.pinboard-tools {
+  position: absolute;
+  top: 0.9rem;
+  right: 1rem;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.pinboard-tool-wrap {
+  position: relative;
+}
+
+.pinboard-tool {
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  background:
+    radial-gradient(circle at 28% 18%, rgba(255, 255, 255, 0.82), transparent 38%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.1));
+  backdrop-filter: blur(24px) saturate(1.7);
+  -webkit-backdrop-filter: blur(24px) saturate(1.7);
+  color: var(--color-ink-soft);
+  font-size: 0.85rem;
+  line-height: 1;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.62),
+    0 8px 22px -14px rgba(24, 20, 14, 0.5);
+  transition:
+    background 0.25s ease,
+    color 0.25s ease;
+}
+
+.pinboard-tool:hover,
+.pinboard-tool[aria-expanded="true"] {
+  background:
+    radial-gradient(circle at 28% 18%, rgba(255, 255, 255, 0.92), transparent 42%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0.16));
+  color: var(--color-ink);
+}
+
+.pinboard-popover {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.9), transparent 36%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.44));
+  backdrop-filter: blur(32px) saturate(1.75);
+  -webkit-backdrop-filter: blur(32px) saturate(1.75);
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.58),
+    0 20px 46px -20px rgba(24, 20, 14, 0.48);
+}
+
+.pinboard-slider {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.6rem;
+  width: 15rem;
+  font-size: 0.75rem;
+  color: var(--color-ink-soft);
+  white-space: nowrap;
+}
+
+.pinboard-slider output {
+  width: 2.4rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.pinboard-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  background:
+    radial-gradient(circle at 18% 10%, rgba(255, 255, 255, 0.82), transparent 32%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.12));
+  backdrop-filter: blur(24px) saturate(1.7);
+  -webkit-backdrop-filter: blur(24px) saturate(1.7);
+  color: var(--color-ink-soft);
+  font-size: 0.82rem;
+  letter-spacing: 0.01em;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.62),
+    0 8px 22px -14px rgba(24, 20, 14, 0.5);
+  transition:
+    background 0.25s ease,
+    color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.pinboard-add span {
+  font-size: 1rem;
+  line-height: 1;
+  opacity: 0.75;
+}
+
+.pinboard-add:hover {
+  background:
+    radial-gradient(circle at 18% 10%, rgba(255, 255, 255, 0.92), transparent 36%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.18));
+  color: var(--color-ink);
+  box-shadow: 0 4px 12px rgba(24, 20, 14, 0.18);
+}
+
+.pinboard-add:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* The board arriving: a weighted fall that overshoots its hook, swings back,
+   and settles. The tell is the timing — accelerating on the way down, easing
+   out of the bounce — not the distance travelled. */
+@keyframes board-drop {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -26%, 0) rotate(-0.9deg) scale(0.975);
+    animation-timing-function: cubic-bezier(0.55, 0, 0.85, 0.42);
+  }
+  38% {
+    opacity: 1;
+  }
+  56% {
+    transform: translate3d(0, 1.8%, 0) rotate(0.45deg) scale(1.006);
+    animation-timing-function: cubic-bezier(0.25, 0.6, 0.3, 1);
+  }
+  74% {
+    transform: translate3d(0, -0.7%, 0) rotate(-0.18deg) scale(0.999);
+  }
+  88% {
+    transform: translate3d(0, 0.25%, 0) rotate(0.06deg);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* --- One pinned memory --- */
+
+.pin-item {
+  position: absolute;
+  /* Lets everything inside size itself against the pin's own width, so a card
+     dragged from 120px to 500px scales its type with it. */
+  container-type: inline-size;
+  /* Square-on unless its owner turned it. --pin-rotate is 0deg by default. */
+  transform: rotate(var(--pin-rotate, 0deg));
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.25, 1);
+  /* Staggered so the pins look like they settled after the board did, rather
+     than arriving welded to it. */
+  animation: pin-settle 420ms cubic-bezier(0.2, 0.8, 0.25, 1) backwards;
+  animation-delay: calc(260ms + var(--pin-index, 0) * 26ms);
+}
+
+@keyframes pin-settle {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -10px, 0) rotate(var(--pin-rotate, 0deg)) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(var(--pin-rotate, 0deg));
+  }
+}
+
+.pin-item[data-interactive] {
+  /* Otherwise a touch-drag scrolls the page instead of moving the pin. */
+  touch-action: none;
+}
+
+/* Hovering lifts the pin slightly — the feel of picking something up off the
+   wall to look at it. It does not straighten it: the angle is the owner's. */
+.pin-item:hover,
+.pin-item:focus-within,
+.pin-item[data-menu] {
+  z-index: 400;
+  transform: rotate(var(--pin-rotate, 0deg)) translateY(-3px) scale(1.012);
+}
+
+.pin-item[data-gesture] {
+  z-index: 450;
+  transition: none;
+  transform: rotate(var(--pin-rotate, 0deg)) scale(1.03);
+}
+
+/* Open in the detail view — kept in the layout (its rect is what the enlarged
+   card animates back into) but not drawn twice. */
+.pin-item[data-lifted] {
+  visibility: hidden;
+}
+
+.pin-card {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* No mount, no border, no paper margin — the photo is the object. */
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow:
+    0 1px 2px rgba(24, 20, 14, 0.16),
+    0 12px 24px -14px rgba(24, 20, 14, 0.4);
+  transition: box-shadow 0.3s ease;
+}
+
+.pin-item[data-interactive] .pin-card {
+  cursor: grab;
+}
+
+.pin-item[data-gesture="move"] .pin-card {
+  cursor: grabbing;
+}
+
+.pin-item:hover .pin-card,
+.pin-item:focus-within .pin-card {
+  box-shadow:
+    0 2px 4px rgba(24, 20, 14, 0.18),
+    0 22px 34px -16px rgba(24, 20, 14, 0.45);
+}
+
+.pin-card:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.pin-photo {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* A note has no photo to be, so it needs a surface of its own. Kept as glass
+   rather than yellow legal-pad paper, to match the board it's stuck to. */
+.pin-item[data-variant="memo"] .pin-card {
+  /* Capped in px as well as %, so a note squeezed down to one line isn't left
+     as mostly padding. */
+  padding: min(9%, 0.7rem);
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.pin-memo-text {
+  margin: 0;
+  font-family: var(--text-font, var(--font-serif));
+  font-size: calc(1rem * var(--text-scale, 1));
+  text-align: var(--text-align, left);
+  line-height: 1.45;
+  color: var(--color-ink-soft);
+  white-space: pre-wrap;
+  /* No line clamp: the card's own overflow decides what fits, so shrinking a
+     note down to just its first line is something you can actually do. */
+  overflow: hidden;
+}
+
+.pin-count {
+  position: absolute;
+  right: 5%;
+  bottom: 5%;
+  display: grid;
+  place-items: center;
+  min-width: 1.9em;
+  padding: 0.15em 0.5em;
+  border-radius: 999px;
+  background: rgba(20, 16, 11, 0.5);
+  color: #fff;
+  font-size: 6cqw;
+  line-height: 1.4;
+  backdrop-filter: blur(2px);
+}
+
+/* --- Decoration: what the owner stuck it up with --- */
+/* Both shapes are flat. At this size an illustrated tack (dome, highlight,
+   needle) reads as clip art, while a plain disc reads as a tack. */
+
+.pin-deco {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.pin-deco[data-kind="pin"]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: clamp(9px, 6cqw, 16px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 26%, rgba(255, 255, 255, 0.82), transparent 28%),
+    color-mix(in srgb, var(--pin-color, var(--color-accent)) 72%, transparent);
+  backdrop-filter: blur(4px) saturate(1.45);
+  -webkit-backdrop-filter: blur(4px) saturate(1.45);
+  transform: translate(-50%, -38%);
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.55),
+    inset 0 -2px rgba(0, 0, 0, 0.12),
+    0 2px 7px rgba(24, 16, 6, 0.28);
+}
+
+/* Two strips across the top corners — washi tape, minus the torn edges. */
+.pin-deco[data-kind="tape"]::before,
+.pin-deco[data-kind="tape"]::after {
+  content: "";
+  position: absolute;
+  top: 3%;
+  width: clamp(34px, 26cqw, 84px);
+  height: clamp(11px, 7cqw, 22px);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.72),
+    rgba(255, 255, 255, 0.42)
+  );
+  box-shadow: 0 1px 3px rgba(24, 20, 14, 0.16);
+}
+
+.pin-deco[data-kind="tape"]::before {
+  left: 0;
+  transform: translate(-32%, -46%) rotate(-38deg);
+}
+
+.pin-deco[data-kind="tape"]::after {
+  right: 0;
+  transform: translate(32%, -46%) rotate(38deg);
+}
+
+/* --- Owner handles --- */
+/* Nothing shows until the cursor is on the pin: the board should look like
+   photos on a wall, not like an editor with the panels left open. */
+
+.pin-handle {
+  position: absolute;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--color-ink-soft);
+  box-shadow: 0 1px 4px rgba(24, 20, 14, 0.3);
+  opacity: 0;
+  transition:
+    opacity 0.2s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+  touch-action: none;
+}
+
+.pin-handle[data-handle="resize"] {
+  right: -6px;
+  bottom: -6px;
+  cursor: nwse-resize;
+}
+
+.pin-handle:hover {
+  opacity: 1;
+  transform: scale(1.16);
+  box-shadow:
+    0 2px 6px rgba(24, 20, 14, 0.32),
+    0 0 0 4px rgba(255, 255, 255, 0.2);
+}
+
+/* Two strokes reading as a corner grip. */
+.pin-handle[data-handle="resize"]::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  opacity: 0.55;
+}
+
+/* Edge grips are bars, not dots: the shape says which way it moves. Each sits
+   centred on the edge it pulls, clear of the three corner controls. */
+.pin-handle[data-handle="resize-x"],
+.pin-handle[data-handle="resize-y"] {
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.pin-handle[data-handle="resize-x"] {
+  top: 50%;
+  right: -5px;
+  width: 9px;
+  height: 26px;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+
+.pin-handle[data-handle="resize-x"]:hover {
+  transform: translateY(-50%) scale(1.16);
+}
+
+.pin-handle[data-handle="resize-y"] {
+  bottom: -5px;
+  left: 50%;
+  width: 26px;
+  height: 9px;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+
+.pin-handle[data-handle="resize-y"]:hover {
+  transform: translateX(-50%) scale(1.16);
+}
+
+.pin-handle[data-handle="rotate"] {
+  left: -6px;
+  bottom: -6px;
+  cursor: grab;
+}
+
+/* An open ring with a gap: the universal "turn this" mark. */
+.pin-handle[data-handle="rotate"]::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  border-top-color: transparent;
+  opacity: 0.6;
+}
+
+.pin-handle[data-handle="decorate"] {
+  right: 6px;
+  top: 6px;
+  cursor: pointer;
+}
+
+.pin-corner-zone {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  z-index: 7;
+  width: 38px;
+  height: 38px;
+}
+
+.pin-handle[data-handle="decorate"]::after {
+  content: "";
+  width: 9px;
+  height: 9px;
+  opacity: 0.62;
+  background: currentColor;
+  clip-path: polygon(70% 0, 100% 30%, 38% 92%, 7% 100%, 16% 68%);
+}
+
+.pin-handle[data-handle="decorate"]:hover,
+.pin-corner-zone:hover .pin-handle[data-handle="decorate"],
+.pin-corner-zone:focus-within .pin-handle[data-handle="decorate"],
+.pin-item[data-menu] .pin-handle[data-handle="decorate"] {
+  opacity: 1;
+  transform: scale(1.18);
+  box-shadow:
+    0 2px 6px rgba(24, 20, 14, 0.32),
+    0 0 0 4px rgba(255, 255, 255, 0.22);
+}
+
+.board-grip {
+  transition:
+    opacity 0.2s ease,
+    transform 0.18s ease;
+}
+
+.board-grip[data-grip="width"]:hover {
+  transform: translateY(-50%) scale(1.28);
+}
+
+.board-grip[data-grip="height"]:hover {
+  transform: translateX(-50%) scale(1.28);
+}
+
+.board-grip[data-grip="both"]:hover {
+  transform: scale(1.24);
+}
+
+.pin-item:hover .pin-handle:not([data-handle="decorate"]),
+.pin-item:focus-within .pin-handle:not([data-handle="decorate"]),
+.pin-item[data-menu] .pin-handle,
+.pin-item[data-gesture] .pin-handle {
+  opacity: 1;
+}
+
+.pin-menu {
+  position: absolute;
+  top: 18px;
+  right: -6px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  min-width: 8rem;
+  padding: 0.25rem;
+  border-radius: 12px;
+  background: var(--surface-strong);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  box-shadow: 0 14px 30px -12px rgba(24, 20, 14, 0.4);
+  /* The pin may be turned; its menu should not be. */
+  rotate: calc(-1 * var(--pin-rotate, 0deg));
+}
+
+.pin-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 8px;
+  color: var(--color-ink-soft);
+  font-size: 0.78rem;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.pin-menu-item svg {
+  flex: none;
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.pin-menu-item:hover {
+  background: rgba(27, 25, 22, 0.06);
+  color: var(--color-ink);
+}
+
+.pin-menu-item[data-active] {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+.pin-menu-item[data-danger] {
+  margin-top: 0.15rem;
+  border-top: 1px solid var(--surface-border);
+  border-radius: 0 0 8px 8px;
+  color: var(--color-accent);
+}
+
+.pin-color-row {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 0.28rem;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  padding: 0 0.25rem;
+  border-bottom: 1px solid var(--surface-border);
+  transform: translateY(-4px);
+  transition:
+    max-height 260ms ease,
+    opacity 180ms ease,
+    padding 260ms ease,
+    transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.pin-color-row[data-open] {
+  max-height: 2.4rem;
+  opacity: 1;
+  padding: 0.35rem 0.25rem 0.45rem;
+  transform: none;
+}
+
+.pin-color-dot {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.92), transparent 32%),
+    color-mix(in srgb, var(--pin-color) 74%, transparent);
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.58),
+    inset 0 -1px rgba(0, 0, 0, 0.14),
+    0 0 0 1px rgba(27, 25, 22, 0.12),
+    0 3px 8px -6px rgba(24, 20, 14, 0.7);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.pin-color-dot:hover {
+  transform: translateY(-1px) scale(1.08);
+}
+
+.pin-color-dot[data-active] {
+  outline: 2px solid rgba(27, 25, 22, 0.62);
+  outline-offset: 2px;
+}
+
+/* Miniature of each option, so the choice isn't made from a word alone. */
+.pin-deco-swatch {
+  position: relative;
+  flex: none;
+  width: 18px;
+  height: 14px;
+  border-radius: 2px;
+  background: rgba(27, 25, 22, 0.12);
+}
+
+.pin-deco-swatch[data-kind="pin"]::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 26%, rgba(255, 255, 255, 0.82), transparent 28%),
+    color-mix(in srgb, var(--pin-color, var(--color-accent)) 72%, transparent);
+  transform: translateX(-50%);
+}
+
+.pin-deco-swatch[data-kind="tape"]::before,
+.pin-deco-swatch[data-kind="tape"]::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  width: 11px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 1px rgba(27, 25, 22, 0.08);
+}
+
+.pin-deco-swatch[data-kind="tape"]::before {
+  left: -3px;
+  transform: rotate(-38deg);
+}
+
+.pin-deco-swatch[data-kind="tape"]::after {
+  right: -3px;
+  transform: rotate(38deg);
+}
+
+/* --- Board grips --- */
+/* Same idea as the pin handles, one level up: the pane itself is resizable on
+   each axis. Drawn inside the board's own edges because the board clips its
+   overflow, and barely visible until the cursor is on the board. */
+
+.board-grip {
+  position: absolute;
+  z-index: 480;
+  border-radius: 999px;
+  background: var(--color-ink);
+  opacity: 0;
+  transition:
+    opacity 0.2s ease,
+    transform 0.18s ease;
+  touch-action: none;
+}
+
+.board-grip[data-grip="width"] {
+  top: 50%;
+  right: 5px;
+  width: 5px;
+  height: 42px;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+
+.board-grip[data-grip="height"] {
+  bottom: 5px;
+  left: 50%;
+  width: 42px;
+  height: 5px;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+
+.board-grip[data-grip="both"] {
+  right: 5px;
+  bottom: 5px;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  cursor: nwse-resize;
+}
+
+.pinboard-board:hover .board-grip {
+  opacity: 0.16;
+}
+
+.board-grip:hover,
+.pinboard-board[data-sizing] .board-grip {
+  opacity: 0.45;
+}
+
+/* --- The add form --- */
+/* Split by concern rather than stacked into one long scroll: what the memory
+   is made of, how it reads, and what's stuck on it are separate decisions. */
+
+.pin-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: rgba(27, 25, 22, 0.05);
+}
+
+.pin-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  justify-content: center;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  color: var(--color-ink-soft);
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.pin-tab:hover {
+  color: var(--color-ink);
+}
+
+.pin-tab[data-active] {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(24, 20, 14, 0.12);
+}
+
+.pin-tab-count {
+  display: grid;
+  place-items: center;
+  min-width: 1.15rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+/* One height for every tab. Without it the dialog resizes and re-centres each
+   time you switch, which turns a set of tabs into a moving target. */
+.pin-panel {
+  height: min(34rem, calc(100svh - 14rem));
+  min-height: 24rem;
+  overflow: hidden;
+  color: var(--color-ink);
+}
+
+.pin-writing-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.pin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--color-ink);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.pin-field input {
+  width: 100%;
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-paper) 78%, transparent);
+  color: var(--color-ink);
+  padding: 0.65rem 0.8rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  outline: none;
+}
+
+.pin-field input:focus {
+  border-color: rgba(27, 25, 22, 0.4);
+}
+
+.photo-text-action {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.2rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid rgba(27, 25, 22, 0.18);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 22% 12%, rgba(255, 255, 255, 0.86), transparent 38%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.38));
+  color: var(--color-ink);
+  font-size: 0.82rem;
+  font-weight: 700;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.7),
+    0 10px 24px -20px rgba(24, 20, 14, 0.5);
+  transition:
+    transform 0.18s ease,
+    border-color 0.2s ease;
+}
+
+.photo-text-action:hover {
+  transform: translateY(-1px) scale(1.04);
+  border-color: rgba(27, 25, 22, 0.3);
+}
+
+.image-composer {
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  gap: 0.55rem;
+  height: 100%;
+  min-height: 0;
+}
+
+.image-composer-empty {
+  position: relative;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0.85rem;
+  min-height: 100%;
+  border: 1.5px dotted rgba(27, 25, 22, 0.28);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.62), transparent 36%),
+    color-mix(in srgb, var(--color-paper) 62%, transparent);
+  color: var(--color-ink);
+  font-size: 1rem;
+  font-weight: 700;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.image-composer-empty::before,
+.image-composer-empty::after {
+  content: "";
+  position: absolute;
+  width: 2.6rem;
+  height: 2.6rem;
+  opacity: 0;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.image-composer-empty::before {
+  top: 0.8rem;
+  left: 0.8rem;
+  border-top: 2px dotted rgba(27, 25, 22, 0.46);
+  border-left: 2px dotted rgba(27, 25, 22, 0.46);
+  border-radius: 14px 0 0 0;
+}
+
+.image-composer-empty::after {
+  right: 0.8rem;
+  bottom: 0.8rem;
+  border-right: 2px dotted rgba(27, 25, 22, 0.46);
+  border-bottom: 2px dotted rgba(27, 25, 22, 0.46);
+  border-radius: 0 0 14px 0;
+}
+
+.image-composer-empty:hover {
+  border-color: rgba(27, 25, 22, 0.42);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.78), transparent 36%),
+    color-mix(in srgb, var(--color-paper) 76%, transparent);
+  transform: translateY(-1px);
+}
+
+.image-composer-empty:hover::before,
+.image-composer-empty:hover::after {
+  opacity: 1;
+  transform: scale(1.04);
+}
+
+.image-empty-icons {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 4.3rem;
+  height: 3.6rem;
+  color: var(--color-ink-soft);
+}
+
+.image-empty-icons svg {
+  position: absolute;
+  width: 2.7rem;
+  height: 2.7rem;
+  filter: drop-shadow(0 8px 14px rgba(24, 20, 14, 0.12));
+}
+
+.image-empty-icons svg:first-child {
+  left: 0.15rem;
+  bottom: 0.1rem;
+  transform: rotate(-7deg);
+}
+
+.image-empty-icons svg:last-child {
+  right: 0.05rem;
+  top: 0;
+  color: var(--color-accent);
+  transform: rotate(7deg);
+}
+
+.image-composer-stage {
+  display: grid;
+  place-items: start center;
+  min-height: 0;
+  height: 100%;
+  overflow: auto;
+  padding: 1rem;
+  border-radius: 16px;
+  background: #050505;
+  overscroll-behavior: contain;
+}
+
+.image-composer-stage img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.image-composer-stage-wrap {
+  position: relative;
+  min-height: 0;
+  height: 100%;
+  padding-bottom: 1.15rem;
+}
+
+.image-stage-actions {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.1rem;
+  z-index: 2;
+  display: flex;
+  gap: 0.55rem;
+}
+
+.image-stage-action {
+  display: grid;
+  place-items: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #1b1916;
+  box-shadow: 0 8px 24px -14px rgba(0, 0, 0, 0.48);
+  transition:
+    transform 0.18s ease,
+    background 0.2s ease;
+}
+
+.image-stage-action:hover {
+  transform: scale(1.08);
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.image-composer-tray {
+  justify-self: center;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0.5rem;
+  border-radius: 18px;
+  background: rgba(20, 18, 15, 0.68);
+  backdrop-filter: blur(18px) saturate(1.25);
+  -webkit-backdrop-filter: blur(18px) saturate(1.25);
+}
+
+.image-thumb,
+.image-stack-add {
+  position: relative;
+  flex: 0 0 auto;
+  width: 4.3rem;
+  height: 4.3rem;
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.86);
+  background: rgba(255, 255, 255, 0.12);
+  transition:
+    transform 0.18s ease,
+    border-color 0.2s ease;
+}
+
+.image-thumb:hover,
+.image-stack-add:hover {
+  transform: scale(1.05);
+}
+
+.image-thumb[data-active] {
+  border-color: rgba(255, 255, 255, 0.88);
+}
+
+.image-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-thumb span {
+  position: absolute;
+  right: 0.25rem;
+  bottom: 0.2rem;
+  display: grid;
+  place-items: center;
+  min-width: 1rem;
+  height: 1rem;
+  border-radius: 999px;
+  background: rgba(20, 18, 15, 0.72);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.image-stack-add {
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  width: 3.4rem;
+  height: 3.4rem;
+}
+
+.image-composer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.55rem;
+}
+
+.image-text-next {
+  justify-self: end;
+  gap: 0.35rem;
+}
+
+.photo-writing {
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.8fr) minmax(24rem, 1.45fr);
+  gap: 1rem;
+}
+
+.photo-writing-form,
+.photo-writing-preview {
+  min-width: 0;
+  border: 1px solid rgba(27, 25, 22, 0.1);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.64), transparent 36%),
+    color-mix(in srgb, var(--color-paper) 74%, transparent);
+}
+
+.photo-writing-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1rem;
+}
+
+.photo-writing-tabs {
+  display: flex;
+  gap: 0.45rem;
+  overflow-x: auto;
+  padding-bottom: 0.15rem;
+}
+
+.photo-writing-tabs button {
+  position: relative;
+  flex: 0 0 auto;
+  width: 3.3rem;
+  height: 3.3rem;
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  background: rgba(27, 25, 22, 0.08);
+  transition:
+    transform 0.18s ease,
+    border-color 0.2s ease;
+}
+
+.photo-writing-tabs button:hover {
+  transform: scale(1.05);
+}
+
+.photo-writing-tabs button[data-active] {
+  border-color: rgba(181, 83, 29, 0.85);
+}
+
+.photo-writing-tabs img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-writing-tabs span {
+  position: absolute;
+  right: 0.25rem;
+  bottom: 0.2rem;
+  display: grid;
+  place-items: center;
+  min-width: 1rem;
+  height: 1rem;
+  border-radius: 999px;
+  background: rgba(27, 25, 22, 0.72);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.photo-spacing-control {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  color: var(--color-ink-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.photo-spacing-control input {
+  flex: 1;
+  min-width: 7rem;
+}
+
+.photo-writing-preview {
+  overflow: hidden;
+  padding: 0;
+}
+
+.photo-preview-feed {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(15rem, 0.58fr);
+  height: 100%;
+  min-height: 22rem;
+}
+
+.photo-preview-media {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  background: #050505;
+}
+
+.photo-preview-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.photo-preview-copy {
+  min-width: 0;
+  overflow-y: auto;
+  padding: 1rem;
+  border-left: 1px solid rgba(27, 25, 22, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  color: #1b1916;
+}
+
+.photo-preview-body {
+  color: #514c43;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.photo-preview-body p {
+  margin: 0 0 calc(0.75rem * var(--detail-spacing, 1));
+}
+
+/* --- The note editor --- */
+
+.rich-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rich-size {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex: 1 1 9rem;
+  min-width: 9rem;
+  font-size: 0.72rem;
+  color: var(--color-ink-faint);
+  white-space: nowrap;
+}
+
+.rich-size input {
+  flex: 1;
+  min-width: 4rem;
+}
+
+.rich-size output {
+  width: 2.6rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.rich-highlight {
+  width: 1.7rem;
+  min-width: 1.7rem;
+  color: transparent;
+}
+
+.rich-highlight::before {
+  content: "";
+  display: block;
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 999px;
+  background: var(--highlight);
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.55),
+    0 0 0 1px rgba(27, 25, 22, 0.12);
+}
+
+.rich-editor {
+  min-height: 9rem;
+  max-height: 12rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--color-line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--color-paper) 82%, transparent);
+  color: var(--color-ink);
+  outline: none;
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.rich-editor:focus {
+  border-color: rgba(27, 25, 22, 0.4);
+}
+
+/* contenteditable has no placeholder attribute; :empty plus the data attribute
+   is the standard stand-in. */
+.rich-editor:empty::before {
+  content: attr(data-placeholder);
+  color: var(--color-ink-faint);
+  pointer-events: none;
+}
+
+.pin-choices {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.2rem;
+  border-radius: 10px;
+  background: rgba(27, 25, 22, 0.05);
+}
+
+.pin-choice {
+  padding: 0.3rem 0.7rem;
+  border-radius: 7px;
+  color: var(--color-ink-soft);
+  font-weight: 600;
+  font-size: 0.78rem;
+  line-height: 1.3;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.pin-choice:hover {
+  color: var(--color-ink);
+}
+
+.pin-choice[data-active] {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  box-shadow: 0 1px 2px rgba(24, 20, 14, 0.14);
+}
+
+/* --- Cropping an image before it goes up --- */
+
+/* inline-block, with the image sized by its own intrinsics under a cap: the
+   frame has to hug the rendered photo exactly, because crop coordinates are
+   fractions *of this box*. Letterboxing inside a full-width frame would map
+   every fraction onto the wrong region. */
+.crop-frame {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #17140f;
+  line-height: 0;
+  /* Every drag in here adjusts the window; none of them should scroll. */
+  touch-action: none;
+  user-select: none;
+}
+
+.crop-image {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 52vh;
+  pointer-events: none;
+}
+
+.crop-shade {
+  position: absolute;
+  background: rgba(16, 13, 9, 0.6);
+  pointer-events: none;
+}
+
+.crop-window {
+  position: absolute;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9);
+  cursor: move;
+}
+
+/* Rule-of-thirds guides — the cheapest thing that makes a crop easier to judge. */
+.crop-window::before,
+.crop-window::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      to right,
+      transparent calc(33.33% - 0.5px),
+      rgba(255, 255, 255, 0.28) calc(33.33% - 0.5px) calc(33.33% + 0.5px),
+      transparent calc(33.33% + 0.5px)
+    ),
+    linear-gradient(
+      to right,
+      transparent calc(66.66% - 0.5px),
+      rgba(255, 255, 255, 0.28) calc(66.66% - 0.5px) calc(66.66% + 0.5px),
+      transparent calc(66.66% + 0.5px)
+    );
+}
+
+.crop-window::after {
+  background:
+    linear-gradient(
+      to bottom,
+      transparent calc(33.33% - 0.5px),
+      rgba(255, 255, 255, 0.28) calc(33.33% - 0.5px) calc(33.33% + 0.5px),
+      transparent calc(33.33% + 0.5px)
+    ),
+    linear-gradient(
+      to bottom,
+      transparent calc(66.66% - 0.5px),
+      rgba(255, 255, 255, 0.28) calc(66.66% - 0.5px) calc(66.66% + 0.5px),
+      transparent calc(66.66% + 0.5px)
+    );
+}
+
+.crop-handle {
+  position: absolute;
+  z-index: 2;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 3px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  touch-action: none;
+}
+
+.crop-handle[data-corner="nw"] {
+  left: -8px;
+  top: -8px;
+  cursor: nwse-resize;
+}
+
+.crop-handle[data-corner="ne"] {
+  right: -8px;
+  top: -8px;
+  cursor: nesw-resize;
+}
+
+.crop-handle[data-corner="sw"] {
+  left: -8px;
+  bottom: -8px;
+  cursor: nesw-resize;
+}
+
+.crop-handle[data-corner="se"] {
+  right: -8px;
+  bottom: -8px;
+  cursor: nwse-resize;
+}
+
+/* --- Small screens: a scrapbook column instead of a canvas --- */
+/* Free placement on a phone means dragging 200px cards around a 340px board,
+   which is worse than not having it. The tilt and the detail view stay; only
+   the arranging goes. */
+.pinboard-board[data-mode="flow"] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.5rem;
+  padding: 3.5rem 1rem 2.75rem;
+}
+
+.pin-item[data-layout="flow"] {
+  position: relative;
+  width: min(80%, 320px);
+}
+
+/* Alternation comes from the pin's own index (data-side), not from :nth-child:
+   the board's toolbar is a sibling and would otherwise flip every row. */
+.pin-item[data-layout="flow"][data-side="left"] {
+  align-self: flex-start;
+  margin-left: 7%;
+}
+
+.pin-item[data-layout="flow"][data-side="right"] {
+  align-self: flex-end;
+  margin-right: 7%;
+}
+
+/* --- Detail view: the pin, enlarged --- */
+/* Opened by growing out of the pin's own rect and closed by shrinking back
+   into it (the transform is computed in PinDetail.tsx), so a photo never
+   teleports away from its place on the wall. */
+
+.pin-detail-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(0.75rem, 4vw, 3rem);
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background: rgba(22, 18, 13, 0);
+  transition:
+    background-color 300ms ease,
+    backdrop-filter 300ms ease;
+}
+
+/* Mostly a dark wash; the blur is deliberately shallow, since a heavy one over
+   a full-screen layer costs more than it adds while a card is animating. */
+.pin-detail-layer[data-shade="in"] {
+  background: rgba(22, 18, 13, 0.62);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+.pin-detail-card {
+  position: relative;
+  display: flex;
+  gap: 0;
+  width: min(96vw, 1540px);
+  height: min(88vh, 940px);
+  max-height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.96);
+  overflow: hidden;
+  box-shadow: 0 42px 110px -38px rgba(0, 0, 0, 0.82);
+  will-change: transform;
+  animation: detail-pop 520ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes detail-pop {
+  0% {
+    filter: blur(1px);
+    border-radius: 22px;
+  }
+  58% {
+    filter: blur(0);
+    border-radius: 8px;
+  }
+  100% {
+    filter: none;
+  }
+}
+
+.pin-detail-card:has(.pin-carousel[data-orientation="portrait"]) {
+  width: auto;
+  max-width: 96vw;
+  background: #fff;
+}
+
+/* A note has no photo to sit beside, so it gets a narrower, text-first card. */
+.pin-detail-card[data-variant="memo"] {
+  width: min(34rem, 100%);
+  height: auto;
+  padding: 1.4rem;
+}
+
+.pin-detail-close {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.7rem;
+  z-index: 2;
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+  color: var(--color-ink-faint);
+  font-size: 0.85rem;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+
+.pin-detail-close:hover {
+  color: var(--color-ink);
+}
+
+.pin-detail-text {
+  flex: 0 0 min(38vw, 38rem);
+  min-width: 0;
+  max-width: none;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.95rem * var(--detail-spacing, 1));
+  padding: 4rem 1.5rem 1.4rem;
+  border-left: 1px solid #e6e6e6;
+  font-family: var(--text-font, var(--font-serif));
+  font-size: calc(0.95rem * var(--text-scale, 1));
+  text-align: var(--text-align, left);
+  line-height: 1.65;
+  color: #514c43;
+}
+
+.pin-detail-body {
+  padding-top: 0;
+}
+
+.pin-detail-body p {
+  margin: 0 0 calc(0.9rem * var(--detail-spacing, 1));
+}
+
+.pin-detail-card[data-variant="memo"] .pin-detail-text {
+  flex: 1 1 auto;
+  max-width: none;
+  font-size: calc(1.05rem * var(--text-scale, 1));
+}
+
+.pin-detail-date {
+  margin-top: auto;
+  align-self: flex-end;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  color: #8c8678;
+}
+
+/* --- Carousel --- */
+
+.pin-carousel {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: #050505;
+}
+
+.pin-carousel[data-orientation="portrait"] {
+  flex: 0 0 auto;
+  width: var(--portrait-image-width, auto);
+  min-width: 0;
+  background: transparent;
+}
+
+.pin-carousel-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0;
+  background: #050505;
+  height: 100%;
+  max-height: none;
+  /* Horizontal drags are swipes; vertical ones still scroll the page. */
+  touch-action: pan-y;
+}
+
+.pin-carousel[data-orientation="portrait"] .pin-carousel-frame {
+  background: transparent;
+  width: var(--portrait-image-width, auto);
+}
+
+.pin-carousel-track {
+  display: flex;
+  height: 100%;
+  transition: transform 380ms cubic-bezier(0.22, 0.8, 0.24, 1);
+}
+
+.pin-carousel[data-orientation="portrait"] .pin-carousel-track {
+  width: max-content;
+}
+
+.pin-carousel-slide {
+  flex: 0 0 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.pin-carousel[data-orientation="portrait"] .pin-carousel-slide {
+  flex: 0 0 var(--portrait-image-width, auto);
+  width: var(--portrait-image-width, auto);
+}
+
+.pin-carousel-image {
+  height: auto;
+  min-height: 0;
+  background: transparent;
+  object-fit: fill;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.pin-carousel-image[data-orientation="landscape"],
+.pin-carousel-image:not([data-orientation]) {
+  width: 100%;
+  max-height: 100%;
+}
+
+.pin-carousel-image[data-orientation="portrait"] {
+  width: var(--portrait-image-width, auto);
+  height: auto;
+  max-width: none;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.pin-carousel-arrow {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #1b1916;
+  font-size: 1.3rem;
+  line-height: 1;
+  transform: translateY(-50%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition:
+    opacity 0.2s ease,
+    background 0.2s ease;
+}
+
+.pin-carousel-arrow[data-side="prev"] {
+  left: 0.6rem;
+}
+
+.pin-carousel-arrow[data-side="next"] {
+  right: 0.6rem;
+}
+
+.pin-carousel-arrow:disabled {
+  opacity: 0.28;
+  cursor: default;
+}
+
+.pin-carousel-counter {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(20, 16, 11, 0.6);
+  color: #fff;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+
+.pin-carousel-dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 1rem;
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.pin-carousel-dot {
+  width: 6px;
+  height: 6px;
+  padding: 0;
+  border-radius: 999px;
+  background: var(--color-ink-faint);
+  opacity: 0.4;
+  transition:
+    opacity 0.2s ease,
+    width 0.2s ease;
+}
+
+.pin-carousel-dot[data-active] {
+  width: 16px;
+  opacity: 1;
+  background: var(--color-ink);
+}
+
+/* Stack the card on phones — the carousel itself is unchanged. */
+@media (max-width: 860px) {
+  .photo-writing {
+    grid-template-columns: 1fr;
+  }
+  .photo-writing-preview > img {
+    height: 10rem;
+  }
+  .pin-detail-card {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .pin-detail-text {
+    flex: 0 0 auto;
+    border-left: 0;
+    border-top: 1px solid #e6e6e6;
+    max-width: none;
+    padding: 1.2rem;
+  }
+  .pin-carousel-frame {
+    height: 58vh;
+    max-height: none;
+  }
+}
+
+/* On a dark wallpaper the board's own tint already flips with --surface; only
+   the white-glass bits layered on top of it need saying again. */
+:root[data-bg-tone="dark"] .pinboard-add,
+:root[data-bg-tone="dark"] .pin-handle {
+  background: rgba(38, 34, 28, 0.82);
+  color: var(--color-ink-soft);
+}
+
+:root[data-bg-tone="dark"] .pinboard-add:hover {
+  background: rgba(48, 43, 35, 0.95);
+  color: var(--color-ink);
+}
+
+:root[data-bg-tone="dark"] .pin-item[data-variant="memo"] .pin-card {
+  background: rgba(28, 25, 20, 0.6);
+}
+
+:root[data-bg-tone="dark"] .pin-deco[data-kind="tape"]::before,
+:root[data-bg-tone="dark"] .pin-deco[data-kind="tape"]::after {
+  background: linear-gradient(
+    180deg,
+    rgba(246, 243, 236, 0.5),
+    rgba(246, 243, 236, 0.26)
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pinboard-board,
+  .pin-item {
+    animation: none;
+  }
+  .pin-item,
+  .pin-card,
+  .pin-carousel-track,
+  .pin-detail-layer {
+    transition: none;
+  }
+  .pin-item:hover,
+  .pin-item:focus-within {
+    transform: rotate(var(--pin-rotate, 0deg));
   }
 }
 

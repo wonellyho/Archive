@@ -16,7 +16,7 @@ function OwnerArea() {
   const handle = profile.username ? `@${profile.username}` : profile.name;
 
   const iconBtn =
-    "grid size-7 place-items-center rounded-full text-[0.95rem] text-ink-soft transition-colors hover:bg-cream-deep hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent";
+    "liquid-icon-btn grid size-7 place-items-center rounded-full text-[0.95rem] text-ink-soft focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent";
 
   return (
     <div className="flex items-center gap-2">
@@ -35,7 +35,7 @@ function OwnerArea() {
         {handle}
       </span>
 
-      <div className="flex items-center gap-0.5 rounded-full border border-line bg-paper/70 p-0.5">
+      <div className="liquid-chip flex items-center gap-0.5 rounded-full p-0.5">
         <button
           type="button"
           className={iconBtn}
@@ -97,7 +97,7 @@ export function OwnerControls() {
         <button
           type="button"
           onClick={() => setLoginOpen(true)}
-          className="rounded-full px-3 py-1.5 text-ink-faint transition-colors hover:text-ink"
+          className="liquid-action rounded-full px-3 py-1.5 text-ink"
         >
           🔒 Admin
         </button>
