@@ -22,6 +22,22 @@ def _deterministic_auth():
 
 
 @pytest.fixture(autouse=True)
+def _deterministic_llm_key():
+    """LLM 키도 `.env` 값에 좌우되지 않도록 고정한다.
+
+    `/api/llm/suggest`는 키가 비어 있으면 provider에 닿기 전에 503을 먼저 반환한다.
+    그래서 키를 채워둔 개발자 머신에서만 통과하고 빈 `.env`에서는 5개가 깨졌다.
+    provider는 어차피 모킹하므로 이 값으로 네트워크를 타지는 않는다.
+    키 미설정(503) 자체를 검증하는 테스트는 get_settings를 통째로 교체하므로 영향 없음.
+    """
+    settings = get_settings()
+    original = settings.anthropic_api_key
+    settings.anthropic_api_key = "sk-ant-test"
+    yield
+    settings.anthropic_api_key = original
+
+
+@pytest.fixture(autouse=True)
 def _disable_rate_limit():
     """기본적으로 rate limit을 끈다(누적 카운트로 기존 테스트가 흔들리지 않게).
 
