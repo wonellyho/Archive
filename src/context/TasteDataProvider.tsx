@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import type { Profile } from "../types/profile";
 import type { TasteFolder } from "../types/folder";
 import type { TasteContent, ContentType } from "../types/content";
+import type { BoardSettings, Pin } from "../types/pin";
+import { DEFAULT_BOARD } from "../types/pin";
 import { defaultProfile } from "../services/storageService";
 import { getRepository } from "../services/repository";
 import type { TasteRepository } from "../services/repository";
@@ -58,6 +60,8 @@ export function TasteDataProvider({ children, repository }: TasteDataProviderPro
   const [videoFolders, setVideoFolders] = useState<TasteFolder[]>([]);
   const [musicContents, setMusicContents] = useState<TasteContent[]>([]);
   const [videoContents, setVideoContents] = useState<TasteContent[]>([]);
+  const [pins, setPins] = useState<Pin[]>([]);
+  const [pinBoard, setPinBoard] = useState<BoardSettings>(DEFAULT_BOARD);
 
   // Latest-state snapshot so mutations can compute next values without putting
   // side effects inside setState updaters (which run twice under StrictMode).
@@ -66,12 +70,16 @@ export function TasteDataProvider({ children, repository }: TasteDataProviderPro
     videoFolders,
     musicContents,
     videoContents,
+    pins,
+    pinBoard,
   });
   snapshot.current = {
     musicFolders,
     videoFolders,
     musicContents,
     videoContents,
+    pins,
+    pinBoard,
   };
 
   useEffect(() => {
@@ -93,6 +101,8 @@ export function TasteDataProvider({ children, repository }: TasteDataProviderPro
         setVideoFolders(data.videoFolders);
         setMusicContents(data.musicContents);
         setVideoContents(data.videoContents);
+        setPins(data.pins);
+        setPinBoard(data.pinBoard);
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -270,6 +280,28 @@ export function TasteDataProvider({ children, repository }: TasteDataProviderPro
     [musicContents, videoContents],
   );
 
+  const savePinBoard = useCallback((board: BoardSettings) => {
+    setPinBoard(board);
+    persist(repo.current.savePinBoard(board));
+  }, []);
+
+  const addPin = useCallback((pin: Pin) => {
+    setPins((current) => [...current, pin]);
+    persist(repo.current.addPin(pin));
+  }, []);
+
+  const updatePin = useCallback((pinId: string, patch: Partial<Pin>) => {
+    setPins((current) =>
+      current.map((pin) => (pin.id === pinId ? { ...pin, ...patch } : pin)),
+    );
+    persist(repo.current.updatePin(pinId, patch));
+  }, []);
+
+  const deletePin = useCallback((pinId: string) => {
+    setPins((current) => current.filter((pin) => pin.id !== pinId));
+    persist(repo.current.deletePin(pinId));
+  }, []);
+
   const value = useMemo<TasteDataValue>(
     () => ({
       loading,
@@ -279,6 +311,8 @@ export function TasteDataProvider({ children, repository }: TasteDataProviderPro
       videoFolders,
       musicContents,
       videoContents,
+      pins,
+      pinBoard,
       updateProfile,
       addFolder,
       updateFolder,
@@ -289,6 +323,10 @@ export function TasteDataProvider({ children, repository }: TasteDataProviderPro
       deleteContent,
       reorderContent,
       hasContent,
+      savePinBoard,
+      addPin,
+      updatePin,
+      deletePin,
     }),
     [
       loading,
@@ -298,6 +336,8 @@ export function TasteDataProvider({ children, repository }: TasteDataProviderPro
       videoFolders,
       musicContents,
       videoContents,
+      pins,
+      pinBoard,
       updateProfile,
       addFolder,
       updateFolder,
@@ -308,6 +348,10 @@ export function TasteDataProvider({ children, repository }: TasteDataProviderPro
       deleteContent,
       reorderContent,
       hasContent,
+      savePinBoard,
+      addPin,
+      updatePin,
+      deletePin,
     ],
   );
 

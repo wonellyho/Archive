@@ -33,6 +33,29 @@ CONTENT_ROW = {
     "sort_order": 3,
     "created_at": "2026-07-05T00:00:00+00:00",
 }
+PIN_ROW = {
+    "id": "pin-1",
+    "images": ["https://example.com/pin.jpg"],
+    "aspect_ratio": 1.2,
+    "title": None,
+    "subtitle": None,
+    "photo_texts": [{"content": "hello"}],
+    "detail_spacing": 1,
+    "content": "hello",
+    "format": "html",
+    "x": 4,
+    "y": 5,
+    "width": 250,
+    "height": 180,
+    "rotation": 0,
+    "z": 1,
+    "decoration": "none",
+    "pin_color": "red",
+    "text_style": {"size": "m", "align": "left", "font": "serif"},
+    "variant": "photo",
+    "created_at": "2026-07-05T00:00:00+00:00",
+    "user_id": "test-user",
+}
 
 
 @pytest.fixture
@@ -56,6 +79,10 @@ def authed():
         ("POST", "/api/contents"),
         ("PATCH", f"/api/contents/{VALID_UUID}"),
         ("DELETE", f"/api/contents/{VALID_UUID}"),
+        ("PUT", "/api/pinboard"),
+        ("POST", "/api/pins"),
+        ("PATCH", "/api/pins/pin-1"),
+        ("DELETE", "/api/pins/pin-1"),
     ],
 )
 def test_requires_auth(method, path):
@@ -265,3 +292,80 @@ def test_content_delete_scoped_to_owner(authed, monkeypatch):
     resp = client.delete(f"/api/contents/{VALID_UUID}")
     assert resp.status_code == 204
     assert calls == [("contents", "id", VALID_UUID, "test-user")]
+
+
+def test_pin_board_save_upserts_owner_settings(authed, monkeypatch):
+    captured = {}
+
+    async def fake_upsert(user_id, fields):
+        captured.update(user_id=user_id, **fields)
+
+    monkeypatch.setattr(db, "upsert_pin_board", fake_upsert)
+    resp = client.put("/api/pinboard", json={"widthPct": 92, "aspect": 1.6, "opacity": 80})
+    assert resp.status_code == 204
+    assert captured == {
+        "user_id": "test-user",
+        "width_pct": 92,
+        "aspect": 1.6,
+        "opacity": 80,
+    }
+
+
+def test_pin_create_stamps_owner(authed, monkeypatch):
+    captured = {}
+
+    async def fake_insert(row):
+        captured.update(row)
+        return PIN_ROW
+
+    monkeypatch.setattr(db, "insert_pin", fake_insert)
+    resp = client.post(
+        "/api/pins",
+        json={
+            "id": "pin-1",
+            "images": ["https://example.com/pin.jpg"],
+            "aspectRatio": 1.2,
+            "photoTexts": [{"content": "hello"}],
+            "detailSpacing": 1,
+            "content": "hello",
+            "format": "html",
+            "x": 4,
+            "y": 5,
+            "width": 250,
+            "height": 180,
+            "rotation": 0,
+            "z": 1,
+            "decoration": "none",
+            "pinColor": "red",
+            "textStyle": {"size": "m", "align": "left", "font": "serif"},
+            "variant": "photo",
+        },
+    )
+    assert resp.status_code == 201
+    assert captured["user_id"] == "test-user"
+    assert captured["photo_texts"] == [{"content": "hello"}]
+    assert resp.json()["pinColor"] == "red"
+
+
+def test_pin_patch_forwards_only_sent_fields(authed, monkeypatch):
+    calls = []
+
+    async def fake_patch(table, row_id, fields, user_id):
+        calls.append((table, row_id, fields, user_id))
+
+    monkeypatch.setattr(db, "patch_row", fake_patch)
+    resp = client.patch("/api/pins/pin-1", json={"x": 12, "decoration": "tape"})
+    assert resp.status_code == 204
+    assert calls == [("pins", "pin-1", {"x": 12.0, "decoration": "tape"}, "test-user")]
+
+
+def test_pin_delete_scoped_to_owner(authed, monkeypatch):
+    calls = []
+
+    async def fake_delete(table, column, value, user_id):
+        calls.append((table, column, value, user_id))
+
+    monkeypatch.setattr(db, "delete_rows", fake_delete)
+    resp = client.delete("/api/pins/pin-1")
+    assert resp.status_code == 204
+    assert calls == [("pins", "id", "pin-1", "test-user")]

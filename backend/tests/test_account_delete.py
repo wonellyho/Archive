@@ -148,7 +148,14 @@ def test_continues_after_one_table_fails(_service_role_configured, monkeypatch):
         asyncio.run(db.delete_all_owned_rows("test-user"))
     assert exc.value.status_code == 502
     # folders가 실패했어도 contents·saves·profiles 전부 시도됐어야 한다(순차 중단 아님).
-    assert set(called_tables) == {"contents", "folders", "saves", "profiles"}
+    assert set(called_tables) == {
+        "pins",
+        "pin_boards",
+        "contents",
+        "folders",
+        "saves",
+        "profiles",
+    }
 
 
 def test_auth_delete_success(_service_role_configured, monkeypatch):

@@ -44,6 +44,14 @@ async def _select(
     return resp.json()
 
 
+def _is_missing_table_error(exc: BaseException) -> bool:
+    return (
+        isinstance(exc, HTTPException)
+        and exc.status_code == 502
+        and "HTTP 404" in str(exc.detail)
+    )
+
+
 # ── 쓰기 (service_role 필수) ──────────────────────────────────────────
 
 
@@ -126,7 +134,7 @@ async def fetch_profile(user_id: str) -> dict[str, Any] | None:
 
 async def fetch_public_archive(
     username: str,
-) -> tuple[dict[str, Any], list[dict], list[dict]] | None:
+) -> tuple[dict[str, Any], list[dict], list[dict], list[dict], dict[str, Any] | None] | None:
     """username으로 공개 아카이브(프로필+폴더+콘텐츠)를 조회. 없으면 None."""
     base, key = _credentials()
     prof = await _select(
@@ -141,7 +149,50 @@ async def fetch_public_archive(
     contents = await _select(
         base, key, "contents", {"user_id": f"eq.{uid}", "select": "*", "order": "sort_order.asc"}
     )
-    return prof[0], folders, contents
+    pins, board = await fetch_pinboard(uid)
+    return prof[0], folders, contents, pins, board
+
+
+async def fetch_pinboard(user_id: str) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+    """Return the user's pin rows and board settings."""
+    base, key = _credentials()
+    results = await asyncio.gather(
+        _select(
+            base,
+            key,
+            "pins",
+            {"user_id": f"eq.{user_id}", "select": "*", "order": "z.asc,created_at.asc"},
+        ),
+        _select(
+            base,
+            key,
+            "pin_boards",
+            {"user_id": f"eq.{user_id}", "select": "width_pct,aspect,opacity"},
+        ),
+        return_exceptions=True,
+    )
+    for result in results:
+        if _is_missing_table_error(result):
+            return [], None
+        if isinstance(result, BaseException):
+            raise result
+    pins, boards = results
+    return pins, (boards[0] if boards else None)
+
+
+async def upsert_pin_board(user_id: str, fields: dict[str, Any]) -> None:
+    await _write(
+        "POST",
+        "pin_boards",
+        params={"on_conflict": "user_id"},
+        json={"user_id": user_id, **fields},
+        prefer="resolution=merge-duplicates",
+    )
+
+
+async def insert_pin(row: dict[str, Any]) -> dict[str, Any]:
+    created = await _write("POST", "pins", json=row, prefer="return=representation")
+    return created[0]
 
 
 async def next_sort_order(table: str, content_type: str, user_id: str) -> int:
@@ -408,6 +459,8 @@ async def delete_all_owned_rows(user_id: str) -> None:
     테이블은 그대로 스킵된다(자연스러운 재시도 안전성).
     """
     results = await asyncio.gather(
+        _write("DELETE", "pins", params={"user_id": f"eq.{user_id}"}),
+        _write("DELETE", "pin_boards", params={"user_id": f"eq.{user_id}"}),
         _write("DELETE", "contents", params={"user_id": f"eq.{user_id}"}),
         _write("DELETE", "folders", params={"user_id": f"eq.{user_id}"}),
         _write("DELETE", "saves", params={"user_id": f"eq.{user_id}"}),
@@ -465,7 +518,7 @@ async def list_highlights(content_id: str) -> list[dict[str, Any]]:
 
 async def fetch_bootstrap(
     user_id: str,
-) -> tuple[dict[str, Any] | None, list[dict], list[dict]]:
+) -> tuple[dict[str, Any] | None, list[dict], list[dict], list[dict], dict[str, Any] | None]:
     """로그인한 사용자(user_id) 본인의 프로필·폴더·콘텐츠를 병렬 조회한다 — #66 멀티유저 홈.
 
     이전엔 고정 프로필(id='me') + 무필터 폴더/콘텐츠를 반환해 모두가 같은 화면을
@@ -489,12 +542,14 @@ async def fetch_bootstrap(
             "contents",
             {"user_id": f"eq.{user_id}", "select": "*", "order": "sort_order.asc"},
         ),
+        fetch_pinboard(user_id),
         return_exceptions=True,
     )
     for result in results:
         if isinstance(result, BaseException):
             raise result
-    profile_rows, folder_rows, content_rows = results
+    profile_rows, folder_rows, content_rows, pinboard = results
 
     profile_row = profile_rows[0] if profile_rows else None
-    return profile_row, folder_rows, content_rows
+    pin_rows, board_row = pinboard
+    return profile_row, folder_rows, content_rows, pin_rows, board_row

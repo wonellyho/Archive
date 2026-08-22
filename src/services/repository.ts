@@ -1,6 +1,8 @@
 import type { Profile } from "../types/profile";
 import type { TasteFolder } from "../types/folder";
 import type { TasteContent, ContentType } from "../types/content";
+import type { BoardSettings, Pin } from "../types/pin";
+import { DEFAULT_BOARD } from "../types/pin";
 import type { FolderPatch, ContentPatch } from "../context/tasteDataContext";
 import { localTasteStorage } from "./storageService";
 import { isSupabaseConfigured } from "./supabaseClient";
@@ -14,6 +16,8 @@ export interface RepoData {
   videoFolders: TasteFolder[];
   musicContents: TasteContent[];
   videoContents: TasteContent[];
+  pins: Pin[];
+  pinBoard: BoardSettings;
 }
 
 /**
@@ -33,6 +37,31 @@ export interface TasteRepository {
     patch: ContentPatch,
   ): Promise<void>;
   deleteContent(type: ContentType, id: string): Promise<void>;
+  savePinBoard(board: BoardSettings): Promise<void>;
+  addPin(pin: Pin): Promise<void>;
+  updatePin(id: string, patch: Partial<Pin>): Promise<void>;
+  deletePin(id: string): Promise<void>;
+}
+
+const PIN_STORAGE_KEY = "taste:v3:pins";
+const PIN_BOARD_KEY = "taste:v3:board";
+
+function getLocalPins(): Pin[] {
+  try {
+    const raw = localStorage.getItem(PIN_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as Pin[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function getLocalPinBoard(): BoardSettings {
+  try {
+    const raw = localStorage.getItem(PIN_BOARD_KEY);
+    return raw ? { ...DEFAULT_BOARD, ...(JSON.parse(raw) as Partial<BoardSettings>) } : DEFAULT_BOARD;
+  } catch {
+    return DEFAULT_BOARD;
+  }
 }
 
 const localRepository: TasteRepository = {
@@ -43,6 +72,8 @@ const localRepository: TasteRepository = {
       videoFolders: localTasteStorage.getFolders("video"),
       musicContents: localTasteStorage.getContents("music"),
       videoContents: localTasteStorage.getContents("video"),
+      pins: getLocalPins(),
+      pinBoard: getLocalPinBoard(),
     });
   },
   saveProfile(profile) {
@@ -88,6 +119,28 @@ const localRepository: TasteRepository = {
     localTasteStorage.saveContents(
       type,
       localTasteStorage.getContents(type).filter((c) => c.id !== id),
+    );
+    return Promise.resolve();
+  },
+  savePinBoard(board) {
+    localStorage.setItem(PIN_BOARD_KEY, JSON.stringify(board));
+    return Promise.resolve();
+  },
+  addPin(pin) {
+    localStorage.setItem(PIN_STORAGE_KEY, JSON.stringify([...getLocalPins(), pin]));
+    return Promise.resolve();
+  },
+  updatePin(id, patch) {
+    localStorage.setItem(
+      PIN_STORAGE_KEY,
+      JSON.stringify(getLocalPins().map((pin) => (pin.id === id ? { ...pin, ...patch } : pin))),
+    );
+    return Promise.resolve();
+  },
+  deletePin(id) {
+    localStorage.setItem(
+      PIN_STORAGE_KEY,
+      JSON.stringify(getLocalPins().filter((pin) => pin.id !== id)),
     );
     return Promise.resolve();
   },

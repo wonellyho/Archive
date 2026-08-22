@@ -9,7 +9,15 @@ from fastapi import APIRouter, Depends, Request
 from .. import db
 from ..deps import CurrentUser, get_current_user
 from ..limiter import LIMIT_BOOTSTRAP, limiter
-from ..schemas import BootstrapResponse, Content, Folder, Profile, default_profile
+from ..schemas import (
+    BoardSettings,
+    BootstrapResponse,
+    Content,
+    Folder,
+    Pin,
+    Profile,
+    default_profile,
+)
 
 router = APIRouter(prefix="/api", tags=["data"])
 
@@ -18,6 +26,8 @@ def build_archive_response(
     profile_row: dict | None,
     folder_rows: list[dict],
     content_rows: list[dict],
+    pin_rows: list[dict] | None = None,
+    board_row: dict | None = None,
 ) -> BootstrapResponse:
     """DB 행들을 프론트 RepoData(BootstrapResponse) 형태로 조립한다.
 
@@ -37,12 +47,15 @@ def build_archive_response(
     )
     folders = [Folder(**row) for row in folder_rows]
     contents = [Content(**row) for row in content_rows]
+    pins = [Pin(**row) for row in (pin_rows or [])]
     return BootstrapResponse(
         profile=profile,
         music_folders=[f for f in folders if f.type == "music"],
         video_folders=[f for f in folders if f.type == "video"],
         music_contents=[c for c in contents if c.type == "music"],
         video_contents=[c for c in contents if c.type == "video"],
+        pins=pins,
+        pin_board=BoardSettings(**board_row) if board_row else BoardSettings(),
     )
 
 
@@ -67,5 +80,5 @@ def build_archive_response(
 async def bootstrap(
     request: Request, user: CurrentUser = Depends(get_current_user)
 ) -> BootstrapResponse:
-    profile_row, folder_rows, content_rows = await db.fetch_bootstrap(user.id)
-    return build_archive_response(profile_row, folder_rows, content_rows)
+    profile_row, folder_rows, content_rows, pin_rows, board_row = await db.fetch_bootstrap(user.id)
+    return build_archive_response(profile_row, folder_rows, content_rows, pin_rows, board_row)

@@ -1,9 +1,12 @@
 import type { Profile } from "../types/profile";
 import type { TasteFolder } from "../types/folder";
 import type { TasteContent, ContentType } from "../types/content";
+import type { BoardSettings, Pin } from "../types/pin";
+import { DEFAULT_BOARD } from "../types/pin";
 import type { FolderPatch, ContentPatch } from "../context/tasteDataContext";
 import type { RepoData, TasteRepository } from "./repository";
-import { api } from "./apiClient";
+import { api, uploadImage } from "./apiClient";
+import { dataUrlToBlob } from "../utils/image";
 
 /**
  * FastAPI 백엔드 경유 저장소 — P4: 읽기·쓰기 전부 백엔드 API 모드.
@@ -28,7 +31,28 @@ function normalize(data: RepoData): RepoData {
       ...f,
       coverImageUrl: f.coverImageUrl ?? undefined,
     })),
+    pins: (data.pins ?? []).map((pin) => ({
+      ...pin,
+      aspectRatio: pin.aspectRatio ?? undefined,
+      title: pin.title ?? undefined,
+      subtitle: pin.subtitle ?? undefined,
+      pinColor: pin.pinColor ?? undefined,
+    })),
+    pinBoard: data.pinBoard ?? DEFAULT_BOARD,
   };
+}
+
+type PinImagePayload = Pick<Pin, "id" | "images">;
+
+async function uploadInlinePinImages<T extends PinImagePayload>(pin: T): Promise<T> {
+  const images = await Promise.all(
+    pin.images.map(async (src, i) => {
+      if (!src.startsWith("data:")) return src;
+      const blob = await dataUrlToBlob(src);
+      return uploadImage(blob, `pin-${pin.id}-${i + 1}.jpg`);
+    }),
+  );
+  return { ...pin, images };
 }
 
 export const apiRepository: TasteRepository = {
@@ -113,6 +137,36 @@ export const apiRepository: TasteRepository = {
   deleteContent(_type: ContentType, id: string): Promise<void> {
     return api<void>(`/api/contents/${id}`, { method: "DELETE" });
   },
+
+  savePinBoard(board: BoardSettings): Promise<void> {
+    return api<void>("/api/pinboard", {
+      method: "PUT",
+      body: JSON.stringify(board),
+    });
+  },
+
+  async addPin(pin: Pin): Promise<void> {
+    const uploaded = await uploadInlinePinImages(pin);
+    await api<void>("/api/pins", {
+      method: "POST",
+      body: JSON.stringify(uploaded),
+    });
+  },
+
+  async updatePin(id: string, patch: Partial<Pin>): Promise<void> {
+    const next =
+      patch.images !== undefined
+        ? await uploadInlinePinImages({ ...patch, id, images: patch.images })
+        : patch;
+    await api<void>(`/api/pins/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(next),
+    });
+  },
+
+  deletePin(id: string): Promise<void> {
+    return api<void>(`/api/pins/${id}`, { method: "DELETE" });
+  },
 };
 
 /** 쓰기 메서드는 절대 호출되지 않는다(isOwner=false가 편집 UI를 전부 가림) — 방어적으로 거부. */
@@ -138,5 +192,9 @@ export function publicRepository(username: string): TasteRepository {
     addContent: readOnly,
     updateContent: readOnly,
     deleteContent: readOnly,
+    savePinBoard: readOnly,
+    addPin: readOnly,
+    updatePin: readOnly,
+    deletePin: readOnly,
   };
 }

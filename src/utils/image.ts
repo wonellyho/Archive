@@ -102,3 +102,8 @@ export async function fileToCoverBlob(file: File, maxSize = 480): Promise<Blob> 
     );
   });
 }
+
+export async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
+  const res = await fetch(dataUrl);
+  return res.blob();
+}

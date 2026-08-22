@@ -171,3 +171,37 @@ def test_fetch_searchable_users_filters_null_username(configured, monkeypatch):
     assert result == [{"username": "wonho", "name": "최원호"}]
     assert captured["params"]["username"] == "not.is.null"
     assert captured["params"]["select"] == "username,name"
+
+
+def test_fetch_pinboard_missing_tables_returns_empty(configured, monkeypatch):
+    def responder(method, url, **kwargs):
+        if url.endswith("/pins") or url.endswith("/pin_boards"):
+            return FakeResponse(404)
+        return FakeResponse(200, [])
+
+    monkeypatch.setattr(db, "get_client", lambda: FakeAsyncClient(responder))
+
+    pins, board = asyncio.run(db.fetch_pinboard("test-user"))
+
+    assert pins == []
+    assert board is None
+
+
+def test_fetch_bootstrap_allows_missing_pinboard_tables(configured, monkeypatch):
+    def responder(method, url, **kwargs):
+        table = url.rsplit("/", 1)[-1]
+        if table in {"pins", "pin_boards"}:
+            return FakeResponse(404)
+        if table == "profiles":
+            return FakeResponse(200, [{"user_id": "test-user", "name": "Tester"}])
+        return FakeResponse(200, [])
+
+    monkeypatch.setattr(db, "get_client", lambda: FakeAsyncClient(responder))
+
+    profile, folders, contents, pins, board = asyncio.run(db.fetch_bootstrap("test-user"))
+
+    assert profile == {"user_id": "test-user", "name": "Tester"}
+    assert folders == []
+    assert contents == []
+    assert pins == []
+    assert board is None

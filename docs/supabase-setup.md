@@ -146,3 +146,59 @@ Vercel 프로젝트 **Settings → Environment Variables** 에 동일하게 입�
 - 지금까지 localStorage에 입력한 데이터는 Supabase로 자동 이전되지 않습니다.
   Supabase 설정 후에는 콘텐츠를 다시 등록하면 됩니다.
 - 폴더 커버 이미지는 480px JPEG data URL로 DB에 함께 저장됩니다.
+
+## Pinboard tables (G7)
+
+Pinboard posts are persisted through the backend instead of browser-only
+`localStorage`. Run this after the base profile/folder/content schema.
+
+```sql
+create table if not exists pin_boards (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  width_pct numeric not null default 100,
+  aspect numeric not null default 1.7391304347826086,
+  opacity numeric not null default 90,
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists pins (
+  id text primary key,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  images text[] not null default '{}',
+  aspect_ratio numeric,
+  title text,
+  subtitle text,
+  photo_texts jsonb not null default '[]'::jsonb,
+  detail_spacing numeric not null default 1,
+  content text not null default '',
+  format text not null default 'html' check (format in ('text', 'html')),
+  x numeric not null,
+  y numeric not null,
+  width int not null,
+  height int not null,
+  rotation numeric not null default 0,
+  z int not null default 1,
+  decoration text not null default 'none' check (decoration in ('none', 'pin', 'tape')),
+  pin_color text check (pin_color in ('red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet', 'white', 'black')),
+  text_style jsonb not null default '{"size":"m","align":"left","font":"serif"}'::jsonb,
+  variant text not null check (variant in ('photo', 'memo')),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_pins_user_id on pins (user_id);
+create index if not exists idx_pins_user_z on pins (user_id, z);
+
+alter table pin_boards enable row level security;
+alter table pins enable row level security;
+
+create policy "public read pin_boards" on pin_boards for select using (true);
+create policy "public read pins" on pins for select using (true);
+
+create policy "owner insert pin_boards" on pin_boards for insert to authenticated with check (auth.uid() = user_id);
+create policy "owner update pin_boards" on pin_boards for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "owner delete pin_boards" on pin_boards for delete to authenticated using (auth.uid() = user_id);
+
+create policy "owner insert pins" on pins for insert to authenticated with check (auth.uid() = user_id);
+create policy "owner update pins" on pins for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "owner delete pins" on pins for delete to authenticated using (auth.uid() = user_id);
+```

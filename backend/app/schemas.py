@@ -8,6 +8,15 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic.alias_generators import to_camel
 
 ContentType = Literal["music", "video"]
+PinVariant = Literal["photo", "memo"]
+ContentFormat = Literal["text", "html"]
+PinDecoration = Literal["none", "pin", "tape"]
+PinColor = Literal[
+    "red", "orange", "yellow", "green", "blue", "indigo", "violet", "white", "black"
+]
+TextSize = Literal["s", "m", "l"]
+TextAlign = Literal["left", "center", "right"]
+TextFont = Literal["serif", "sans", "mono"]
 
 # username: 영문 소문자·숫자·_·- 3~30자. 예약어는 공개 라우트/시스템과 충돌 방지.
 _USERNAME_RE = re.compile(r"^[a-z0-9_-]{3,30}$")
@@ -98,6 +107,88 @@ class Content(CamelModel):
     created_at: str
 
 
+class PinPhotoText(CamelModel):
+    content: str = Field(default="", max_length=4000)
+
+
+class PinTextStyle(CamelModel):
+    size: TextSize = "m"
+    align: TextAlign = "left"
+    font: TextFont = "serif"
+
+
+class BoardSettings(CamelModel):
+    width_pct: float = Field(default=100, ge=0, le=100)
+    aspect: float = Field(default=1600 / 920, ge=0.2, le=10)
+    opacity: float = Field(default=90, ge=0, le=100)
+
+
+class Pin(CamelModel):
+    id: str = Field(min_length=1, max_length=80)
+    images: list[str] = Field(default_factory=list, max_length=6)
+    aspect_ratio: Optional[float] = Field(default=None, gt=0, le=20)
+    title: Optional[str] = Field(default=None, max_length=120)
+    subtitle: Optional[str] = Field(default=None, max_length=200)
+    photo_texts: list[PinPhotoText] = Field(default_factory=list, max_length=6)
+    detail_spacing: float = Field(default=1, ge=0.5, le=3)
+    content: str = Field(default="", max_length=10000)
+    format: ContentFormat = "html"
+    x: float = Field(ge=0, le=100)
+    y: float = Field(ge=0, le=100)
+    width: int = Field(ge=1, le=2000)
+    height: int = Field(ge=1, le=2000)
+    rotation: float = Field(ge=-360, le=360)
+    z: int = Field(ge=0)
+    decoration: PinDecoration = "none"
+    pin_color: Optional[PinColor] = "red"
+    text_style: PinTextStyle
+    variant: PinVariant
+    created_at: str
+
+
+class PinIn(CamelModel):
+    id: str = Field(min_length=1, max_length=80)
+    images: list[str] = Field(default_factory=list, max_length=6)
+    aspect_ratio: Optional[float] = Field(default=None, gt=0, le=20)
+    title: Optional[str] = Field(default=None, max_length=120)
+    subtitle: Optional[str] = Field(default=None, max_length=200)
+    photo_texts: list[PinPhotoText] = Field(default_factory=list, max_length=6)
+    detail_spacing: float = Field(default=1, ge=0.5, le=3)
+    content: str = Field(default="", max_length=10000)
+    format: ContentFormat = "html"
+    x: float = Field(ge=0, le=100)
+    y: float = Field(ge=0, le=100)
+    width: int = Field(ge=1, le=2000)
+    height: int = Field(ge=1, le=2000)
+    rotation: float = Field(ge=-360, le=360)
+    z: int = Field(ge=0)
+    decoration: PinDecoration = "none"
+    pin_color: Optional[PinColor] = "red"
+    text_style: PinTextStyle
+    variant: PinVariant
+
+
+class PinPatch(CamelModel):
+    images: Optional[list[str]] = Field(default=None, max_length=6)
+    aspect_ratio: Optional[float] = Field(default=None, gt=0, le=20)
+    title: Optional[str] = Field(default=None, max_length=120)
+    subtitle: Optional[str] = Field(default=None, max_length=200)
+    photo_texts: Optional[list[PinPhotoText]] = Field(default=None, max_length=6)
+    detail_spacing: Optional[float] = Field(default=None, ge=0.5, le=3)
+    content: Optional[str] = Field(default=None, max_length=10000)
+    format: Optional[ContentFormat] = None
+    x: Optional[float] = Field(default=None, ge=0, le=100)
+    y: Optional[float] = Field(default=None, ge=0, le=100)
+    width: Optional[int] = Field(default=None, ge=1, le=2000)
+    height: Optional[int] = Field(default=None, ge=1, le=2000)
+    rotation: Optional[float] = Field(default=None, ge=-360, le=360)
+    z: Optional[int] = Field(default=None, ge=0)
+    decoration: Optional[PinDecoration] = None
+    pin_color: Optional[PinColor] = None
+    text_style: Optional[PinTextStyle] = None
+    variant: Optional[PinVariant] = None
+
+
 class BootstrapResponse(CamelModel):
     """프론트 services/repository.ts RepoData — loadAll() 응답과 동일한 형태."""
 
@@ -106,6 +197,8 @@ class BootstrapResponse(CamelModel):
     video_folders: list[Folder]
     music_contents: list[Content]
     video_contents: list[Content]
+    pins: list[Pin] = Field(default_factory=list)
+    pin_board: BoardSettings = Field(default_factory=BoardSettings)
 
 
 # ── 쓰기 요청 스키마 ──

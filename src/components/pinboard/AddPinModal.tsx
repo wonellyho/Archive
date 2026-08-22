@@ -69,9 +69,8 @@ interface AddPinModalProps {
 /**
  * Pins up a new memory, one concern per tab: what's in it, how it reads, and
  * what's stuck on it. Images are downscaled to data URLs and kept in local
- * board state — there is no pins endpoint on the backend yet, so nothing is
- * uploaded. When there is one, only the submit handler changes: `PinDraft`
- * already carries exactly what the API would take.
+ * board state. In API mode, the repository uploads the images before saving the
+ * pin row.
  */
 export function AddPinModal({ pin, onAdd, onSave, onClose }: AddPinModalProps) {
   const [step, setStep] = useState<Step>("images");

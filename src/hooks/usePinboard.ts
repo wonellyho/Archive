@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTasteData } from "../context/tasteDataContext";
 import type {
   BoardSettings,
   Pin,
@@ -13,44 +14,12 @@ import {
   DEFAULT_TEXT_STYLE,
 } from "../types/pin";
 
-/**
- * Board state (#pinboard). Local-only for now — the backend has no pins table
- * yet, so this persists to localStorage alongside the rest of the app's keys.
- * Every mutation produces a whole `Pin` with the exact shape the API will take,
- * so swapping this for a repository call later is a one-file change.
- */
-
-// v3: pins gained `z`/`decoration` and lost their default tilt. Old boards are
-// discarded rather than migrated — nothing on them was worth a migration path.
-const STORAGE_KEY = "taste:v3:pins";
-const BOARD_KEY = "taste:v3:board";
 const MOCK_PIN_IDS = new Set(Array.from({ length: 12 }, (_, i) => `pin-${i + 1}`));
-
-/** Only used to reason about vertical overlap when auto-placing a new pin. */
+const LEGACY_PIN_STORAGE_KEY = "taste:v3:pins";
+const LEGACY_BOARD_STORAGE_KEY = "taste:v3:board";
 const BOARD_REF_HEIGHT = BOARD_REF_WIDTH / DEFAULT_BOARD.aspect;
-
-/** Dragging fires continuously; don't hit localStorage on every frame. */
 const SAVE_DEBOUNCE_MS = 400;
 
-function load(): Pin[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw === null) return [];
-    const parsed = JSON.parse(raw) as Pin[];
-    if (!Array.isArray(parsed) || parsed.length === 0) return [];
-    return normaliseStack(
-      parsed.filter((pin) => !MOCK_PIN_IDS.has(pin.id)).map(fillDefaults),
-    );
-  } catch {
-    // Corrupted JSON or storage unavailable — start from an empty board.
-    return [];
-  }
-}
-
-/**
- * Fills in fields added after a board was last saved, so an older board opens
- * instead of rendering with undefined text settings.
- */
 function fillDefaults(pin: Pin): Pin {
   return {
     ...pin,
@@ -59,28 +28,17 @@ function fillDefaults(pin: Pin): Pin {
     photoTexts:
       pin.photoTexts ??
       pin.images.map((_, i) =>
-        i === 0
-          ? {
-              content: pin.content ?? "",
-            }
-          : { content: "" },
+        i === 0 ? { content: pin.content ?? "" } : { content: "" },
       ),
     detailSpacing: pin.detailSpacing ?? 1,
     aspectRatio:
       pin.aspectRatio ??
       (pin.images.length > 0 && pin.height > 0 ? pin.width / pin.height : undefined),
-    // Boards written before the note editor hold plain text, and must keep
-    // rendering as plain text — not be reinterpreted as markup.
     format: pin.format ?? "text",
     textStyle: { ...DEFAULT_TEXT_STYLE, ...pin.textStyle },
   };
 }
 
-/**
- * Re-numbers `z` to 1..n on load, preserving order. Raising a pin only ever
- * increments, so without this a long-lived board's top value climbs forever and
- * eventually collides with the z-indexes the hover and drag states use.
- */
 function normaliseStack(pins: Pin[]): Pin[] {
   const order = pins
     .map((pin, i) => ({ id: pin.id, z: pin.z ?? i, i }))
@@ -89,27 +47,58 @@ function normaliseStack(pins: Pin[]): Pin[] {
   return pins.map((pin) => ({ ...pin, z: rank.get(pin.id) ?? 1 }));
 }
 
-function save(pins: Pin[]): void {
+function normalisePins(pins: Pin[]): Pin[] {
+  return normaliseStack(
+    pins.filter((pin) => !MOCK_PIN_IDS.has(pin.id)).map(fillDefaults),
+  );
+}
+
+// Pins lived in this browser before the database tables existed. Keep that
+// source visible until the API starts returning the user's pin rows.
+function loadLegacyPins(): Pin[] {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(pins));
+    const raw = localStorage.getItem(LEGACY_PIN_STORAGE_KEY);
+    return raw ? normalisePins(JSON.parse(raw) as Pin[]) : [];
   } catch {
-    // Quota exceeded (data-URL images add up) — the board still works in memory.
+    return [];
   }
 }
 
-function loadBoard(): BoardSettings {
+function loadLegacyBoard(): BoardSettings {
   try {
-    const raw = localStorage.getItem(BOARD_KEY);
-    if (raw === null) return DEFAULT_BOARD;
-    // Spread over the defaults so a board saved before a field existed still
-    // opens instead of rendering with an undefined aspect.
-    return { ...DEFAULT_BOARD, ...(JSON.parse(raw) as Partial<BoardSettings>) };
+    const raw = localStorage.getItem(LEGACY_BOARD_STORAGE_KEY);
+    return raw
+      ? { ...DEFAULT_BOARD, ...(JSON.parse(raw) as Partial<BoardSettings>) }
+      : DEFAULT_BOARD;
   } catch {
     return DEFAULT_BOARD;
   }
 }
 
-/** Percentage-space bounding box of a pin, for the overlap check below. */
+function isDefaultBoard(board: BoardSettings): boolean {
+  return (
+    board.widthPct === DEFAULT_BOARD.widthPct &&
+    board.aspect === DEFAULT_BOARD.aspect &&
+    board.opacity === DEFAULT_BOARD.opacity
+  );
+}
+
+function saveLegacyPins(pins: Pin[]): void {
+  try {
+    localStorage.setItem(LEGACY_PIN_STORAGE_KEY, JSON.stringify(pins));
+  } catch {
+    // The current session stays usable if an image exceeds browser storage.
+  }
+}
+
+function saveLegacyBoard(board: BoardSettings): void {
+  try {
+    localStorage.setItem(LEGACY_BOARD_STORAGE_KEY, JSON.stringify(board));
+  } catch {
+    // The current session stays usable if browser storage is unavailable.
+  }
+}
+
 function boxOf(pin: Pin) {
   return {
     left: pin.x,
@@ -119,11 +108,6 @@ function boxOf(pin: Pin) {
   };
 }
 
-/**
- * Finds somewhere on the board a new pin can go without landing on top of an
- * existing one. Walks a loose lattice rather than a tidy grid so added pins keep
- * the hand-placed feel; falls back to the bottom of the board once it's full.
- */
 function findFreeSpot(
   pins: Pin[],
   width: number,
@@ -148,13 +132,10 @@ function findFreeSpot(
 
 export interface PinboardApi {
   pins: Pin[];
-  /** Move/resize during a drag. Cheap: no persistence until the gesture settles. */
   updateLayout: (id: string, layout: Partial<PinLayout>) => void;
   addPin: (draft: PinDraft) => Pin;
   removePin: (id: string) => void;
-  /** Re-stacks a pin on top of the others — called when a drag ends. */
   raisePin: (id: string) => void;
-  /** Sticks tape or a tack on a pin, or takes it back off. */
   decoratePin: (id: string, decoration: PinDecoration) => void;
   updatePinColor: (id: string, color: PinColor) => void;
   updatePin: (id: string, draft: PinDraft) => void;
@@ -163,129 +144,206 @@ export interface PinboardApi {
 }
 
 export function usePinboard(): PinboardApi {
-  const [pins, setPins] = useState<Pin[]>(load);
-  const [board, setBoard] = useState<BoardSettings>(loadBoard);
-  const saveTimer = useRef<number | undefined>(undefined);
-  const boardTimer = useRef<number | undefined>(undefined);
-  // Mirrors `pins` so addPin can look at the current board without taking a
-  // dependency on it (a setPins updater can't be read back synchronously).
+  const {
+    pins: storedPins,
+    pinBoard,
+    addPin: persistAddPin,
+    updatePin: persistUpdatePin,
+    deletePin: persistDeletePin,
+    savePinBoard,
+  } = useTasteData();
+  const [pins, setPins] = useState<Pin[]>(() =>
+    storedPins.length > 0 ? normalisePins(storedPins) : loadLegacyPins(),
+  );
+  const [board, setBoard] = useState<BoardSettings>(() =>
+    isDefaultBoard(pinBoard) ? loadLegacyBoard() : pinBoard,
+  );
   const pinsRef = useRef(pins);
+  const boardRef = useRef(board);
+  const pinTimer = useRef<number | undefined>(undefined);
+  const boardTimer = useRef<number | undefined>(undefined);
+  const pendingPinPatches = useRef(new Map<string, Partial<Pin>>());
+
   pinsRef.current = pins;
+  boardRef.current = board;
 
   useEffect(() => {
-    window.clearTimeout(saveTimer.current);
-    saveTimer.current = window.setTimeout(() => save(pins), SAVE_DEBOUNCE_MS);
-    return () => window.clearTimeout(saveTimer.current);
+    if (storedPins.length > 0 || pinsRef.current.length === 0) {
+      setPins(storedPins.length > 0 ? normalisePins(storedPins) : loadLegacyPins());
+    }
+  }, [storedPins]);
+
+  useEffect(() => {
+    if (!isDefaultBoard(pinBoard) || isDefaultBoard(boardRef.current)) {
+      setBoard(isDefaultBoard(pinBoard) ? loadLegacyBoard() : pinBoard);
+    }
+  }, [pinBoard]);
+
+  useEffect(() => {
+    saveLegacyPins(pins);
   }, [pins]);
 
-  // Same treatment: dragging the board's edge fires as fast as the pointer does.
   useEffect(() => {
-    window.clearTimeout(boardTimer.current);
-    boardTimer.current = window.setTimeout(() => {
-      try {
-        localStorage.setItem(BOARD_KEY, JSON.stringify(board));
-      } catch {
-        // Storage unavailable — the board still works for this session.
-      }
-    }, SAVE_DEBOUNCE_MS);
-    return () => window.clearTimeout(boardTimer.current);
+    saveLegacyBoard(board);
   }, [board]);
 
-  const updateBoard = useCallback((patch: Partial<BoardSettings>) => {
-    setBoard((current) => ({ ...current, ...patch }));
-  }, []);
+  useEffect(
+    () => () => {
+      window.clearTimeout(pinTimer.current);
+      window.clearTimeout(boardTimer.current);
+    },
+    [],
+  );
 
-  const updateLayout = useCallback((id: string, layout: Partial<PinLayout>) => {
-    setPins((current) =>
-      current.map((pin) => (pin.id === id ? { ...pin, ...layout } : pin)),
-    );
-  }, []);
+  const flushPinPatches = useCallback(() => {
+    const patches = pendingPinPatches.current;
+    pendingPinPatches.current = new Map();
+    patches.forEach((patch, id) => persistUpdatePin(id, patch));
+  }, [persistUpdatePin]);
 
-  const raisePin = useCallback((id: string) => {
-    // Bumps `z` and leaves the array alone: reordering it would make React move
-    // the pin's DOM node, and a moved node replays its entrance animation —
-    // which read as the pin vanishing for half a second on drop.
-    setPins((current) => {
-      const top = current.reduce((max, pin) => Math.max(max, pin.z), 0);
-      const target = current.find((pin) => pin.id === id);
-      if (!target || target.z === top) return current;
-      return current.map((pin) => (pin.id === id ? { ...pin, z: top + 1 } : pin));
-    });
-  }, []);
+  const schedulePinPatch = useCallback(
+    (id: string, patch: Partial<Pin>) => {
+      const current = pendingPinPatches.current.get(id) ?? {};
+      pendingPinPatches.current.set(id, { ...current, ...patch });
+      window.clearTimeout(pinTimer.current);
+      pinTimer.current = window.setTimeout(flushPinPatches, SAVE_DEBOUNCE_MS);
+    },
+    [flushPinPatches],
+  );
 
-  const decoratePin = useCallback((id: string, decoration: PinDecoration) => {
-    setPins((current) =>
-      current.map((pin) => (pin.id === id ? { ...pin, decoration } : pin)),
-    );
-  }, []);
+  const scheduleBoard = useCallback(
+    (next: BoardSettings) => {
+      window.clearTimeout(boardTimer.current);
+      boardTimer.current = window.setTimeout(
+        () => savePinBoard(next),
+        SAVE_DEBOUNCE_MS,
+      );
+    },
+    [savePinBoard],
+  );
 
-  const updatePinColor = useCallback((id: string, color: PinColor) => {
-    setPins((current) =>
-      current.map((pin) => (pin.id === id ? { ...pin, pinColor: color } : pin)),
-    );
-  }, []);
+  const updateBoard = useCallback(
+    (patch: Partial<BoardSettings>) => {
+      const next = { ...boardRef.current, ...patch };
+      setBoard(next);
+      scheduleBoard(next);
+    },
+    [scheduleBoard],
+  );
 
-  const updatePin = useCallback((id: string, draft: PinDraft) => {
-    setPins((current) =>
-      current.map((pin) =>
-        pin.id === id
-          ? {
-              ...pin,
-              images: draft.images,
-              aspectRatio: draft.aspectRatio,
-              photoTexts: draft.photoTexts ?? [],
-              detailSpacing: draft.detailSpacing ?? pin.detailSpacing ?? 1,
-              content: draft.content,
-              textStyle: draft.textStyle,
-              variant: draft.images.length === 0 ? "memo" : "photo",
-              format: "html",
-            }
-          : pin,
-      ),
-    );
-  }, []);
+  const updateLayout = useCallback(
+    (id: string, layout: Partial<PinLayout>) => {
+      setPins((current) =>
+        current.map((pin) => (pin.id === id ? { ...pin, ...layout } : pin)),
+      );
+      schedulePinPatch(id, layout);
+    },
+    [schedulePinPatch],
+  );
 
-  const addPin = useCallback((draft: PinDraft): Pin => {
-    const variant = draft.images.length === 0 ? "memo" : "photo";
-    const ratio = draft.aspectRatio && Number.isFinite(draft.aspectRatio)
-      ? draft.aspectRatio
-      : 250 / 185;
-    const width =
-      variant === "memo" ? 200 : Math.round(ratio < 1 ? 190 : 250);
-    const height =
-      variant === "memo"
-        ? 150
-        : Math.round(Math.min(360, Math.max(120, width / ratio)));
-    const current = pinsRef.current;
-    const [x, y] = findFreeSpot(current, width, height);
-    const created: Pin = {
-      id: `pin-${Date.now().toString(36)}`,
-      images: draft.images,
-      aspectRatio: draft.aspectRatio,
-      photoTexts: draft.photoTexts ?? [],
-      detailSpacing: draft.detailSpacing ?? 1,
-      content: draft.content,
-      format: "html",
-      x,
-      y,
-      width,
-      height,
-      // Square-on and bare. Tilt and tape are the owner's to add.
-      rotation: 0,
-      z: current.reduce((max, pin) => Math.max(max, pin.z), 0) + 1,
-      decoration: "none",
-      pinColor: "red",
-      textStyle: draft.textStyle,
-      variant,
-      createdAt: new Date().toISOString(),
-    };
-    setPins((pins) => [...pins, created]);
-    return created;
-  }, []);
+  const raisePin = useCallback(
+    (id: string) => {
+      let patch: Partial<Pin> | null = null;
+      setPins((current) => {
+        const top = current.reduce((max, pin) => Math.max(max, pin.z), 0);
+        const target = current.find((pin) => pin.id === id);
+        if (!target || target.z === top) return current;
+        patch = { z: top + 1 };
+        return current.map((pin) => (pin.id === id ? { ...pin, ...patch } : pin));
+      });
+      if (patch) schedulePinPatch(id, patch);
+    },
+    [schedulePinPatch],
+  );
 
-  const removePin = useCallback((id: string) => {
-    setPins((current) => current.filter((pin) => pin.id !== id));
-  }, []);
+  const decoratePin = useCallback(
+    (id: string, decoration: PinDecoration) => {
+      setPins((current) =>
+        current.map((pin) => (pin.id === id ? { ...pin, decoration } : pin)),
+      );
+      persistUpdatePin(id, { decoration });
+    },
+    [persistUpdatePin],
+  );
+
+  const updatePinColor = useCallback(
+    (id: string, color: PinColor) => {
+      setPins((current) =>
+        current.map((pin) => (pin.id === id ? { ...pin, pinColor: color } : pin)),
+      );
+      persistUpdatePin(id, { pinColor: color });
+    },
+    [persistUpdatePin],
+  );
+
+  const updatePin = useCallback(
+    (id: string, draft: PinDraft) => {
+      const patch: Partial<Pin> = {
+        images: draft.images,
+        aspectRatio: draft.aspectRatio,
+        photoTexts: draft.photoTexts ?? [],
+        detailSpacing: draft.detailSpacing ?? 1,
+        content: draft.content,
+        textStyle: draft.textStyle,
+        variant: draft.images.length === 0 ? "memo" : "photo",
+        format: "html",
+      };
+      setPins((current) =>
+        current.map((pin) => (pin.id === id ? { ...pin, ...patch } : pin)),
+      );
+      persistUpdatePin(id, patch);
+    },
+    [persistUpdatePin],
+  );
+
+  const addPin = useCallback(
+    (draft: PinDraft): Pin => {
+      const variant = draft.images.length === 0 ? "memo" : "photo";
+      const ratio =
+        draft.aspectRatio && Number.isFinite(draft.aspectRatio)
+          ? draft.aspectRatio
+          : 250 / 185;
+      const width = variant === "memo" ? 200 : Math.round(ratio < 1 ? 190 : 250);
+      const height =
+        variant === "memo"
+          ? 150
+          : Math.round(Math.min(360, Math.max(120, width / ratio)));
+      const current = pinsRef.current;
+      const [x, y] = findFreeSpot(current, width, height);
+      const created: Pin = {
+        id: `pin-${Date.now().toString(36)}`,
+        images: draft.images,
+        aspectRatio: draft.aspectRatio,
+        photoTexts: draft.photoTexts ?? [],
+        detailSpacing: draft.detailSpacing ?? 1,
+        content: draft.content,
+        format: "html",
+        x,
+        y,
+        width,
+        height,
+        rotation: 0,
+        z: current.reduce((max, pin) => Math.max(max, pin.z), 0) + 1,
+        decoration: "none",
+        pinColor: "red",
+        textStyle: draft.textStyle,
+        variant,
+        createdAt: new Date().toISOString(),
+      };
+      setPins((currentPins) => [...currentPins, created]);
+      persistAddPin(created);
+      return created;
+    },
+    [persistAddPin],
+  );
+
+  const removePin = useCallback(
+    (id: string) => {
+      setPins((current) => current.filter((pin) => pin.id !== id));
+      persistDeletePin(id);
+    },
+    [persistDeletePin],
+  );
 
   return {
     pins,

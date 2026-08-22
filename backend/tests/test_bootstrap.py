@@ -43,7 +43,7 @@ CONTENT_ROW = {
 def _mock_fetch(profile_row, folder_rows, content_rows):
     async def fake(user_id):
         assert user_id == "test-user"  # 토큰 sub로 스코프됨
-        return profile_row, folder_rows, content_rows
+        return profile_row, folder_rows, content_rows, [], None
 
     return fake
 
@@ -73,6 +73,8 @@ def test_returns_camel_case_repo_data(authed, monkeypatch):
     assert sorted(data.keys()) == [
         "musicContents",
         "musicFolders",
+        "pinBoard",
+        "pins",
         "profile",
         "videoContents",
         "videoFolders",
@@ -89,6 +91,8 @@ def test_returns_camel_case_repo_data(authed, monkeypatch):
     content = data["videoContents"][0]
     assert content["youtubeVideoId"] == "abc123"
     assert content["folderId"] is None
+    assert data["pins"] == []
+    assert data["pinBoard"]["widthPct"] == 100
 
 
 def test_returns_default_profile_when_missing(authed, monkeypatch):

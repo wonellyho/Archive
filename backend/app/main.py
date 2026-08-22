@@ -20,6 +20,7 @@ from .routers import (
     health,
     highlights,
     llm,
+    pins,
     profile,
     public,
     saves,
@@ -170,6 +171,7 @@ app.include_router(bootstrap.router)
 app.include_router(profile.router)
 app.include_router(folders.router)
 app.include_router(contents.router)
+app.include_router(pins.router)
 app.include_router(youtube.router)
 app.include_router(llm.router)
 app.include_router(uploads.router)

@@ -2,6 +2,7 @@ import { createContext, useContext } from "react";
 import type { Profile } from "../types/profile";
 import type { TasteFolder } from "../types/folder";
 import type { TasteContent, ContentType } from "../types/content";
+import type { BoardSettings, Pin } from "../types/pin";
 
 /** Fields needed to register a new piece of content (ids/dates are generated). */
 export interface NewContentInput {
@@ -22,6 +23,7 @@ export type FolderPatch = Partial<
 export type ContentPatch = Partial<
   Pick<TasteContent, "title" | "subtitle" | "body" | "sortOrder">
 >;
+export type PinPatch = Partial<Pin>;
 
 export interface TasteDataValue {
   /** True while the initial load from the backend is in flight. */
@@ -36,6 +38,8 @@ export interface TasteDataValue {
   videoFolders: TasteFolder[];
   musicContents: TasteContent[];
   videoContents: TasteContent[];
+  pins: Pin[];
+  pinBoard: BoardSettings;
   /**
    * Replace the whole profile and persist it. Awaits the backend so callers can
    * surface validation errors (e.g. username taken/invalid); state only updates
@@ -74,6 +78,10 @@ export interface TasteDataValue {
   reorderContent: (type: ContentType, orderedIds: string[]) => void;
   /** True if the same YouTube id is already saved for that content type. */
   hasContent: (type: ContentType, youtubeVideoId: string) => boolean;
+  savePinBoard: (board: BoardSettings) => void;
+  addPin: (pin: Pin) => void;
+  updatePin: (pinId: string, patch: PinPatch) => void;
+  deletePin: (pinId: string) => void;
 }
 
 export const TasteDataContext = createContext<TasteDataValue | null>(null);
