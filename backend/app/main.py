@@ -41,7 +41,7 @@ async def lifespan(_app: FastAPI):
     await close_client()
 
 DESCRIPTION = """
-개인 취향 아카이빙 서비스 **Archive**의 백엔드 API입니다.
+개인 취향 아카이빙 서비스 **Maydove**의 백엔드 API입니다.
 
 ## 프론트 연동 기본값
 - Base URL(로컬): `http://localhost:8001` → 프론트 `.env`의 `VITE_API_URL`
@@ -110,7 +110,7 @@ TAGS_METADATA = [
 ]
 
 app = FastAPI(
-    title="Archive Backend API",
+    title="Maydove Backend API",
     description=DESCRIPTION,
     version="0.1.0",
     lifespan=lifespan,

@@ -13,20 +13,29 @@
 
 > **취향을 설명하는 대신, 좋아했던 콘텐츠로 자신을 보여준다.**
 
-### ⚠️ 명칭 통일 필요 (결정 대기)
+### 정식 명칭 — 확정 ✅
 
-현재 리포에 서비스명이 5개로 흩어져 있다. 하나로 정하고 전부 맞춰야 한다.
-
-| 위치 | 현재 표기 |
+| 구분 | 표기 |
 |---|---|
-| 본 PRD | Maydove |
-| `README.md` | 메이도브 (Made of) |
-| `backend/README.md` | Archive |
-| `index.html` `<title>` | **NOAH — a taste archive** ← 공유 링크 열면 탭에 뜨는 이름 |
-| 리포 · 폴더명 | dumpout |
+| 영문 (기본) | **Maydove** |
+| 한글 | **메이도브** |
+| 병기 시 | Maydove(메이도브) |
 
-공유가 핵심 플로우인 제품에서 **방문자가 보는 첫 문자열**이 통일돼 있지 않은 건
-그 자체로 제품 결함이다. 정식 표기(한글/영문)를 확정해 이 절에 박아둔다.
+2026-08-22 확정. 다음 위치를 모두 Maydove로 통일했다.
+
+- `index.html` `<title>` — 이전 `NOAH — a taste archive` → `Maydove — a taste archive`
+  (공유 링크를 연 방문자가 보는 첫 문자열이라 우선 처리)
+- `README.md` · `backend/README.md` · `docs/supabase-status.md` 제목
+- `backend/app/main.py` — Swagger 제목 및 설명
+- `backend/app/__init__.py` 패키지 docstring
+
+**바꾸지 않은 것** (서비스명이 아니라서):
+
+- 원격 저장소 URL `github.com/wonellyho/Archive.git` — 실제 주소
+- 기본 프로필 이름 `"My Archive"` (`schemas.py`, `storageService.ts`) — 사용자가 바꾸는
+  프로필 데이터의 초기값이지 서비스명이 아니다. 문구를 바꾸려면 DB 기본값·테스트를
+  함께 손봐야 하므로 별건으로 다룬다.
+- `ProfileHeader`의 `Taste Archive` 라벨 — 화면 설명 문구
 
 ---
 

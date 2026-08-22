@@ -1,7 +1,10 @@
 # CLAUDE.md
 
-메이도브(Made of) — 개인 취향 아카이빙 서비스. 좋아하는 YouTube 음악·영상을 폴더로
+**Maydove**(메이도브) — 개인 취향 아카이빙 서비스. 좋아하는 YouTube 음악·영상을 폴더로
 큐레이션해 영상은 TV, 음악은 회전 바이닐, 이미지·글은 핀보드로 전시한다.
+
+> 서비스명은 **Maydove**로 통일한다. 리포·원격 URL은 역사적 이유로 `Archive`/`dumpout`
+> 이지만 **사용자에게 보이는 문자열에는 쓰지 않는다.**
 
 이 파일은 **작업 규칙**만 담는다. 설치·실행 절차는 `README.md`(프론트) /
 `backend/README.md`(백엔드)에 있으니 중복 작성하지 말고 그쪽을 갱신할 것.
@@ -56,8 +59,11 @@ python -m pytest -q                          # 네트워크 없이 모킹, 항�
   한쪽을 바꾸면 반대쪽도 같이 바꾼다.
 - **🔒 엔드포인트에 `user_id`를 입력으로 받지 않는다.** 사용자 식별은 항상 JWT의 `sub`.
   (사칭 방지) 소유권 스코프는 `app/db.py`에서 처리.
-- 새 라우터는 `app/routers/`에 만들고 `app/main.py`에 등록 + `app/limiter.py`로 per-IP
-  rate limit을 건다.
+- 새 라우터는 `app/routers/`에 만들고 `app/main.py`에 등록한다.
+- rate limit(`app/limiter.py`)은 **전부에 걸려 있지 않다.** 공개·비용 발생 엔드포인트
+  (bootstrap·youtube·llm·uploads·public·timeline·discover·search·account)와 최근
+  추가분(saves·highlights)에만 있고, 초기 CRUD(`folders`·`contents`·`profile`)에는
+  없다. 새 라우터에는 거는 쪽이 기본이며, 안 걸 거면 이유가 있어야 한다.
 - 테스트는 네트워크를 타지 않는다. 외부 호출은 `tests/_http_fakes.py` 패턴으로 모킹.
 - 테스트 함수명은 영어, docstring·주석은 한국어 (기존 컨벤션).
 

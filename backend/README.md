@@ -1,6 +1,6 @@
-# Archive Backend (FastAPI)
+# Maydove Backend (FastAPI)
 
-개인 취향 아카이빙 서비스 **Archive**의 백엔드. 프론트엔드(React)에 내장돼 있던
+개인 취향 아카이빙 서비스 **Maydove**의 백엔드. 프론트엔드(React)에 내장돼 있던
 외부 API 호출·데이터 접근 로직을 독립 백엔드로 이관한 서버다.
 
 - 프레임워크: FastAPI (Python 3.12)
